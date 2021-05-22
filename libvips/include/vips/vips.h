@@ -80,14 +80,19 @@
 #ifndef VIPS_VIPS_H
 #define VIPS_VIPS_H
 
+#include "vips-config.h"
+#if defined(HAVE_GLIB_H) && defined(HAVE_GSTDIO_H) && defined(HAVE_GMODULE_H) && defined(HAVE_GLIB_OBJECT_H)
 #include <glib.h>
 #include <glib/gstdio.h>
 #include <gmodule.h>
 #include <glib-object.h>
+#endif
 
 /* Needed for VipsGInputStream.
  */
+#if defined(HAVE_GIO_H)
 #include <gio/gio.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
