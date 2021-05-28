@@ -82,12 +82,16 @@
 
 /* A handy #define for we-will-handle-svgz.
  */
-#if LIBRSVG_CHECK_FEATURE(SVGZ) && defined(HAVE_ZLIB)
+#if LIBRSVG_CHECK_FEATURE(SVGZ) && (defined(HAVE_ZLIB) || defined(HAVE_ZLIB_NG))
 #define HANDLE_SVGZ
 #endif
 
-#ifdef HANDLE_SVGZ
+#ifdef HAVE_ZLIB
 #include <zlib.h>
+#endif
+
+#ifdef HAVE_ZLIB_NG
+#include <zlib-ng.h>
 #endif
 
 typedef struct _VipsForeignLoadSvg {
@@ -161,7 +165,7 @@ vips_foreign_load_svg_is_a( const void *buf, size_t len )
 	if( len >= 18 && 
 		str[0] == '\037' && 
 		str[1] == '\213' ) {
-		z_stream zs;
+		zng_stream zs;
 		size_t opos;
 
 		zs.zalloc = (alloc_func) vips_foreign_load_svg_zalloc;
@@ -172,22 +176,22 @@ vips_foreign_load_svg_is_a( const void *buf, size_t len )
 
 		/* There isn't really an error return from is_a_buffer()
 		 */
-		if( inflateInit2( &zs, 15 | 32 ) != Z_OK ) 
+		if(zng_inflateInit2( &zs, 15 | 32 ) != Z_OK )
 			return( FALSE );
 
 		opos = 0;
 		do {
 			zs.avail_out = sizeof( obuf ) - opos;
 			zs.next_out = (unsigned char *) obuf + opos;
-			if( inflate( &zs, Z_NO_FLUSH ) < Z_OK ) {
-				inflateEnd( &zs );
+			if(zng_inflate( &zs, Z_NO_FLUSH ) < Z_OK ) {
+				zng_inflateEnd( &zs );
 				return( FALSE );
 			}
 			opos = sizeof( obuf ) - zs.avail_out;
 		} while( opos < sizeof( obuf ) && 
 			zs.avail_in > 0 );
 
-		inflateEnd( &zs );
+		zng_inflateEnd( &zs );
 
 		str = obuf;
 		len = opos;
