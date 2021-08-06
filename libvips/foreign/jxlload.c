@@ -200,6 +200,11 @@ vips_foreign_load_jxl_fill_input( VipsForeignLoadJxl *jxl,
 {
 	gint64 bytes_read;
 
+#ifdef DEBUG_VERBOSE
+	printf( "vips_foreign_load_jxl_fill_input: %zd bytes requested\n", 
+		INPUT_BUFFER_SIZE - bytes_remaining );
+#endif /*DEBUG_VERBOSE*/
+
 	memcpy( jxl->input_buffer, 
 		jxl->input_buffer + jxl->bytes_in_buffer - bytes_remaining,
 		bytes_remaining );
@@ -364,6 +369,10 @@ static JxlDecoderStatus
 vips_foreign_load_jxl_process( VipsForeignLoadJxl *jxl )
 {
 	JxlDecoderStatus status;
+
+#ifdef DEBUG
+	printf( "vips_foreign_load_jxl_process: starting ...\n" );
+#endif /*DEBUG*/
 
 	while( (status = JxlDecoderProcessInput( jxl->decoder )) == 
 		JXL_DEC_NEED_MORE_INPUT ) {
