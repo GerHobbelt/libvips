@@ -22,7 +22,7 @@
 
 #include <stdlib.h>
 
-#include <vips/vips8>
+#include <vips/vips8.h>
 
 using namespace vips;
 

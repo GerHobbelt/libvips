@@ -32,11 +32,13 @@
 
 #include <vips/version.h>
 
+#ifdef HAVE_GLIB_OBJECT_H
 #include <glib-object.h>
+#endif
 
 /* Define VIPS_CPLUSPLUS_EXPORTS to build a DLL using MSVC.
  */
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(VIPS_STATICLIB)
 #  ifdef VIPS_CPLUSPLUS_EXPORTS
 #    define VIPS_CPLUSPLUS_API __declspec(dllexport)
 #  else
