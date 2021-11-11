@@ -491,7 +491,7 @@ typedef enum {
 } VipsForeignTiffCompression;
 
 /**
- * VipsForeignTiffPoor:
+ * VipsForeignTiffPredictor:
  * @VIPS_FOREIGN_TIFF_PREDICTOR_NONE: no prediction
  * @VIPS_FOREIGN_TIFF_PREDICTOR_HORIZONTAL: horizontal differencing
  * @VIPS_FOREIGN_TIFF_PREDICTOR_FLOAT: float predictor
@@ -611,6 +611,31 @@ int vips_pngsave( VipsImage *in, const char *filename, ... )
 	__attribute__((sentinel));
 int vips_pngsave_buffer( VipsImage *in, void **buf, size_t *len, ... )
 	__attribute__((sentinel));
+
+/**
+ * VipsForeignPpmFormat:
+ * @VIPS_FOREIGN_PPM_FORMAT_PBM: portable bitmap
+ * @VIPS_FOREIGN_PPM_FORMAT_PGM: portable greymap
+ * @VIPS_FOREIGN_PPM_FORMAT_PPM: portable pixmap
+ * @VIPS_FOREIGN_PPM_FORMAT_PFM: portable float map
+ *
+ * The netpbm file format to save as.
+ *
+ * #VIPS_FOREIGN_PPM_FORMAT_PBM images are single bit.
+ *
+ * #VIPS_FOREIGN_PPM_FORMAT_PGM images are 8, 16, or 32-bits, one band.
+ *
+ * #VIPS_FOREIGN_PPM_FORMAT_PPM images are 8, 16, or 32-bits, three bands.
+ *
+ * #VIPS_FOREIGN_PPM_FORMAT_PFM images are 32-bit float pixels.
+ */
+typedef enum {
+	VIPS_FOREIGN_PPM_FORMAT_PBM,
+	VIPS_FOREIGN_PPM_FORMAT_PGM,
+	VIPS_FOREIGN_PPM_FORMAT_PPM,
+	VIPS_FOREIGN_PPM_FORMAT_PFM,
+	VIPS_FOREIGN_PPM_FORMAT_LAST
+} VipsForeignPpmFormat;
 
 int vips_ppmload( const char *filename, VipsImage **out, ... )
 	__attribute__((sentinel));
