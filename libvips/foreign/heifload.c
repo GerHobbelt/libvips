@@ -279,7 +279,11 @@ static int
 vips_foreign_load_heif_is_a( const char *buf, int len )
 {
 	if( len >= 12 ) {
-		const guint chunk_len = GUINT_FROM_BE( *((guint32 *) buf) );
+		const guint32 chunk_len = 
+			(guint32) buf[0] << 24 |
+			(guint32) buf[1] << 16 |
+			(guint32) buf[2] << 8 |
+			(guint32) buf[3];
 
 		int i;
 
@@ -621,7 +625,8 @@ vips_foreign_load_heif_set_header( VipsForeignLoadHeif *heif, VipsImage *out )
 	/* FIXME .. we always decode to RGB in generate. We should check for
 	 * all grey images, perhaps. 
 	 */
-	vips_image_pipelinev( out, VIPS_DEMAND_STYLE_SMALLTILE, NULL );
+	if( vips_image_pipelinev( out, VIPS_DEMAND_STYLE_THINSTRIP, NULL ) )
+		return( -1 );
 	vips_image_init_fields( out,
 		heif->page_width, heif->page_height * heif->n, bands, 
 		VIPS_FORMAT_UCHAR, VIPS_CODING_NONE, VIPS_INTERPRETATION_sRGB, 

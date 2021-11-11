@@ -45,8 +45,9 @@
  */
 
 /*
-#define VIPS_DEBUG
 #define TEST_SANITY
+#define VIPS_DEBUG
+#define DEBUG_MINIMISE
  */
 
 #ifdef HAVE_CONFIG_H
@@ -267,7 +268,9 @@ vips_source_finalize( GObject *gobject )
 {
 	VipsSource *source = VIPS_SOURCE( gobject );
 
-	VIPS_DEBUG_MSG( "vips_source_finalize: %p\n", source );
+#ifdef DEBUG_MINIMISE
+	printf( "vips_source_finalize: %p\n", source );
+#endif /*DEBUG_MINIMISE*/
 
 	VIPS_FREEF( g_byte_array_unref, source->header_bytes ); 
 	VIPS_FREEF( g_byte_array_unref, source->sniff ); 
@@ -579,7 +582,12 @@ vips_source_minimise( VipsSource *source )
 		connection->descriptor != -1 &&
 		connection->tracked_descriptor == connection->descriptor &&
 		!source->is_pipe ) {
-		VIPS_DEBUG_MSG( "vips_source_minimise:\n" );
+#ifdef DEBUG_MINIMISE
+		printf( "vips_source_minimise: %p %s\n", 
+			source,
+			vips_connection_nick( VIPS_CONNECTION( source ) ) );
+#endif /*DEBUG_MINIMISE*/
+
 		vips_tracked_close( connection->tracked_descriptor );
 		connection->tracked_descriptor = -1;
 		connection->descriptor = -1;
@@ -609,7 +617,11 @@ vips_source_unminimise( VipsSource *source )
 		connection->filename ) {
 		int fd;
 
-		VIPS_DEBUG_MSG( "vips_source_unminimise: %p\n", source );
+#ifdef DEBUG_MINIMISE
+		printf( "vips_source_unminimise: %p %s\n",
+			source,
+			vips_connection_nick( VIPS_CONNECTION( source ) ) );
+#endif /*DEBUG_MINIMISE*/
 
 		if( (fd = vips_tracked_open( connection->filename, 
 			MODE_READ, 0 )) == -1 ) {
@@ -990,23 +1002,26 @@ vips_source_map( VipsSource *source, size_t *length_out )
 		vips_source_test_features( source ) )
 		return( NULL );
 
-	if( !source->data ) {
-		/* Seekable descriptors can simply be mapped. Seekable sources
-		 * can be read. All other sources must be streamed into memory.
-		 */
-		if( vips_source_is_mappable( source ) ) {
-			if( vips_source_descriptor_to_memory( source ) )
-				return( NULL );
-		}
-		else if( !source->is_pipe ) {
-			if( vips_source_read_to_memory( source ) )
-				return( NULL );
-		}
-		else {
-			if( vips_source_pipe_read_to_position( source, -1 ) )
-				return( NULL );
-		}
-	}
+	/* Try to map the file into memory, if possible. Some filesystems have
+	 * mmap disabled, so we don't give up if this fails.
+	 */
+	if( !source->data &&
+		vips_source_is_mappable( source ) ) 
+		(void) vips_source_descriptor_to_memory( source );
+
+	/* If it's not a pipe, we can rewind, get the length, and read the
+	 * whole thing.
+	 */
+	if( !source->data &&
+		!source->is_pipe &&
+		vips_source_read_to_memory( source ) )
+		return( NULL );
+
+	/* We don't know the length and must read and assemble in chunks.
+	 */
+	if( !source->data &&
+		vips_source_pipe_read_to_position( source, -1 ) )
+		return( NULL );
 
 	if( length_out )
 		*length_out = source->length;
