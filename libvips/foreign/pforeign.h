@@ -69,7 +69,8 @@ int vips__tiff_write( VipsImage *in, const char *filename,
 	gboolean lossless,
 	VipsForeignDzDepth depth,
 	gboolean subifd, 
-	gboolean premultiply );
+	gboolean premultiply,
+	int page_height );
 
 int vips__tiff_write_buf( VipsImage *in, 
 	void **obuf, size_t *olen, 
@@ -89,7 +90,8 @@ int vips__tiff_write_buf( VipsImage *in,
 	gboolean lossless,
 	VipsForeignDzDepth depth,
 	gboolean subifd,
-	gboolean premultiply );
+	gboolean premultiply,
+	int page_height );
 
 gboolean vips__istiff_source( VipsSource *source );
 gboolean vips__istifftiled_source( VipsSource *source );
@@ -174,7 +176,7 @@ int vips__jpeg_write_target( VipsImage *in, VipsTarget *target,
 	gboolean optimize_coding, gboolean progressive, gboolean strip,
 	gboolean trellis_quant, gboolean overshoot_deringing,
 	gboolean optimize_scans, int quant_table,
-	VipsForeignSubsample subsample_mode );
+	VipsForeignSubsample subsample_mode, int restart_interval );
 
 int vips__jpeg_read_source( VipsSource *source, VipsImage *out,
 	gboolean header_only, int shrink, int fail, gboolean autorotate );
@@ -252,5 +254,3 @@ extern const char *vips__jxl_suffs[];
 #endif /*__cplusplus*/
 
 #endif /*VIPS_PFOREIGN_H*/
-
-

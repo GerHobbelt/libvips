@@ -118,10 +118,6 @@ int vips__print_renders( void );
 int vips__type_leak( void );
 int vips__object_leak( void );
 
-typedef int (*im__fftproc_fn)( VipsImage *, VipsImage *, VipsImage * );
-int im__fftproc( VipsImage *dummy, 
-	VipsImage *in, VipsImage *out, im__fftproc_fn fn );
-
 /* iofuncs
  */
 int vips__open_image_read( const char *filename );
@@ -183,11 +179,6 @@ VipsPel *vips__vector_to_pels( const char *domain,
 	double *real, double *imag, int n );
 VipsPel *vips__vector_to_ink( const char *domain, 
 	VipsImage *im, double *real, double *imag, int n );
-double *vips__ink_to_vector( const char *domain, 
-	VipsImage *im, VipsPel *ink, int *n ); 
-
-VipsPel *im__vector_to_ink( const char *domain, 
-	VipsImage *im, int n, double *vec );
 
 int vips__draw_flood_direct( VipsImage *image, VipsImage *test, 
 	int serial, int x, int y );
