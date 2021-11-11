@@ -31,8 +31,8 @@
 
  */
 
-#ifndef IM_ARITHMETIC_H
-#define IM_ARITHMETIC_H
+#ifndef VIPS_ARITHMETIC_H
+#define VIPS_ARITHMETIC_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,6 +50,12 @@ extern "C" {
  * @VIPS_OPERATION_MATH_LOG10: log base 10 
  * @VIPS_OPERATION_MATH_EXP: e to the something
  * @VIPS_OPERATION_MATH_EXP10: 10 to the something
+ * @VIPS_OPERATION_MATH_SINH: sinh(), angles in radians
+ * @VIPS_OPERATION_MATH_COSH: cosh(), angles in radians
+ * @VIPS_OPERATION_MATH_TANH: tanh(), angles in radians
+ * @VIPS_OPERATION_MATH_ASINH: asinh(), angles in radians
+ * @VIPS_OPERATION_MATH_ACOSH: acosh(), angles in radians
+ * @VIPS_OPERATION_MATH_ATANH: atanh(), angles in radians
  *
  * See also: vips_math().
  */
@@ -64,6 +70,12 @@ typedef enum {
 	VIPS_OPERATION_MATH_LOG10,
 	VIPS_OPERATION_MATH_EXP,
 	VIPS_OPERATION_MATH_EXP10,
+	VIPS_OPERATION_MATH_SINH,
+	VIPS_OPERATION_MATH_COSH,
+	VIPS_OPERATION_MATH_TANH,
+	VIPS_OPERATION_MATH_ASINH,
+	VIPS_OPERATION_MATH_ACOSH,
+	VIPS_OPERATION_MATH_ATANH,
 	VIPS_OPERATION_MATH_LAST
 } VipsOperationMath;
 
@@ -431,4 +443,4 @@ int vips_profile( VipsImage *in, VipsImage **columns, VipsImage **rows, ... )
 }
 #endif /*__cplusplus*/
 
-#endif /*IM_ARITHMETIC_H*/
+#endif /*VIPS_ARITHMETIC_H*/

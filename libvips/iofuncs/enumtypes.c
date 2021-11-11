@@ -22,6 +22,12 @@ vips_operation_math_get_type( void )
 			{VIPS_OPERATION_MATH_LOG10, "VIPS_OPERATION_MATH_LOG10", "log10"},
 			{VIPS_OPERATION_MATH_EXP, "VIPS_OPERATION_MATH_EXP", "exp"},
 			{VIPS_OPERATION_MATH_EXP10, "VIPS_OPERATION_MATH_EXP10", "exp10"},
+			{VIPS_OPERATION_MATH_SINH, "VIPS_OPERATION_MATH_SINH", "sinh"},
+			{VIPS_OPERATION_MATH_COSH, "VIPS_OPERATION_MATH_COSH", "cosh"},
+			{VIPS_OPERATION_MATH_TANH, "VIPS_OPERATION_MATH_TANH", "tanh"},
+			{VIPS_OPERATION_MATH_ASINH, "VIPS_OPERATION_MATH_ASINH", "asinh"},
+			{VIPS_OPERATION_MATH_ACOSH, "VIPS_OPERATION_MATH_ACOSH", "acosh"},
+			{VIPS_OPERATION_MATH_ATANH, "VIPS_OPERATION_MATH_ATANH", "atanh"},
 			{VIPS_OPERATION_MATH_LAST, "VIPS_OPERATION_MATH_LAST", "last"},
 			{0, NULL, NULL}
 		};
@@ -474,6 +480,26 @@ vips_foreign_flags_get_type( void )
 		};
 		
 		etype = g_flags_register_static( "VipsForeignFlags", values );
+	}
+
+	return( etype );
+}
+GType
+vips_fail_on_get_type( void )
+{
+	static GType etype = 0;
+
+	if( etype == 0 ) {
+		static const GEnumValue values[] = {
+			{VIPS_FAIL_ON_NONE, "VIPS_FAIL_ON_NONE", "none"},
+			{VIPS_FAIL_ON_TRUNCATED, "VIPS_FAIL_ON_TRUNCATED", "truncated"},
+			{VIPS_FAIL_ON_ERROR, "VIPS_FAIL_ON_ERROR", "error"},
+			{VIPS_FAIL_ON_WARNING, "VIPS_FAIL_ON_WARNING", "warning"},
+			{VIPS_FAIL_ON_LAST, "VIPS_FAIL_ON_LAST", "last"},
+			{0, NULL, NULL}
+		};
+		
+		etype = g_enum_register_static( "VipsFailOn", values );
 	}
 
 	return( etype );
