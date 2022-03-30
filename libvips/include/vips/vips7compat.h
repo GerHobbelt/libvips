@@ -581,10 +581,11 @@ size_t im_ref_string_get_length( const GValue *value );
 #define IM_MICRO_VERSION VIPS_MICRO_VERSION
 
 #if defined(G_PLATFORM_WIN32) || defined(G_WITH_CYGWIN)
-#define IM_EXEEXT ".exe"
+#define VIPS_EXEEXT ".exe"
 #else /* !defined(G_PLATFORM_WIN32) && !defined(G_WITH_CYGWIN) */
-#define IM_EXEEXT ""
+#define VIPS_EXEEXT ""
 #endif /* defined(G_PLATFORM_WIN32) || defined(G_WITH_CYGWIN) */
+#define IM_EXEEXT VIPS_EXEEXT
 
 #define IM_SIZEOF_HEADER VIPS_SIZEOF_HEADER
 
@@ -1164,12 +1165,6 @@ int vips__find_tboverlap( VipsImage *ref_in, VipsImage *sec_in, VipsImage *out,
         int halfcorrelation, int halfarea,
         int *dx0, int *dy0,
         double *scale1, double *angle1, double *dx1, double *dy1 );
-int im__find_best_contrast( VipsImage *image,
-	int xpos, int ypos, int xsize, int ysize,
-	int xarray[], int yarray[], int cont[],
-	int nbest, int hcorsize );
-int im__balance( VipsImage *ref, VipsImage *sec, VipsImage *out,
-	VipsImage **ref_out, VipsImage **sec_out, int dx, int dy, int balancetype );
 
 void imb_LCh2Lab( float *, float *, int );
 
