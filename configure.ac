@@ -795,7 +795,7 @@ AC_ARG_WITH([OpenEXR],
 # require 1.2.2 since 1.2.1 has a broken ImfCloseTiledInputFile()
 if test x"$with_OpenEXR" != x"no"; then
   PKG_CHECK_MODULES(OPENEXR, OpenEXR >= 1.2.2,
-    [AC_DEFINE(HAVE_OPENEXR,1,[define if you have OpenEXR >=1.2.2 installed.])
+    [AC_DEFINE(HAVE_OPENEXR,1,[define if you have OpenEXR >= 1.2.2 installed.])
      with_OpenEXR=yes
      PACKAGES_USED="$PACKAGES_USED OpenEXR"
     ],
@@ -837,9 +837,8 @@ AS_IF([test x"$with_libjxl" = x"module"],
   [with_libjxl_module=no])
 
 if test x"$with_libjxl" != x"no"; then
-  PKG_CHECK_MODULES(LIBJXL, libjxl_threads >= 0.6 libjxl >= 0.6,
-    [AC_DEFINE(HAVE_LIBJXL,1,
-       [define if you have libjxl >= 0.6 installed.])
+  PKG_CHECK_MODULES(LIBJXL, libjxl_threads >= 0.5 libjxl >= 0.5,
+    [AC_DEFINE(HAVE_LIBJXL,1,[define if you have libjxl >= 0.5 installed.])
      with_libjxl=yes
      AS_IF([test x"$with_libjxl_module" = x"no"],
        [PACKAGES_USED="$PACKAGES_USED libjxl"])
@@ -850,6 +849,19 @@ if test x"$with_libjxl" != x"no"; then
     ]
   )
 fi
+
+if test x"$with_libjxl" = x"yes"; then
+  save_LIBS="$LIBS"
+  LIBS="$LIBS $LIBJXL_LIBS"
+  # Introduced in 0.6
+  AC_CHECK_FUNCS(JxlEncoderInitBasicInfo,[
+     AC_DEFINE(HAVE_LIBJXL_JXLENCODERINITBASICINFO,1,
+               [define if you have JxlEncoderInitBasicInfo.])
+   ],[]
+  )
+  LIBS="$save_LIBS"
+fi
+
 
 AS_IF([test x"$with_libjxl_module" = x"yes"],
   [AC_DEFINE([LIBJXL_MODULE], [1], [define to build libjxl as a dynamically loadable module.])],
@@ -866,7 +878,7 @@ AC_ARG_WITH([libopenjp2],
 if test x"$with_libopenjp2" != x"no"; then
   PKG_CHECK_MODULES(LIBOPENJP2, libopenjp2 >= 2.4,
     [AC_DEFINE(HAVE_LIBOPENJP2,1,
-       [define if you have libopenjp2 >=2.4 installed.])
+       [define if you have libopenjp2 >= 2.4 installed.])
      with_libopenjp2=yes
      PACKAGES_USED="$PACKAGES_USED libopenjp2"
     ],
