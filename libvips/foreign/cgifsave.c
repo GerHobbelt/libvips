@@ -91,12 +91,9 @@ typedef struct _VipsForeignSaveCgif {
 	const VipsQuantisePalette *lp;
 
 	/* The current colourmap, updated on a significant frame change.
-	 *
-	 * frame_sum is 32-bit, so we can handle a max of about 2000 x 2000 
-	 * RGB pixel per frame.
 	 */
 	VipsPel *palette_rgb;
-	guint frame_sum;
+	gint64 frame_sum;
 
 	/* The index frame we get libimagequant to generate.
 	 */
@@ -193,14 +190,13 @@ vips_foreign_save_cgif_write_frame( VipsForeignSaveCgif *cgif )
 	/* We know this fits in an int since we limit frame size.
 	 */
 	int n_pels = frame_rect->height * frame_rect->width;
-	guint max_sum = 256 * n_pels * 4;
 	VipsPel *frame_bytes = 
 		VIPS_REGION_ADDR( cgif->frame, 0, frame_rect->top );
 
 	VipsPel * restrict p;
 	VipsPel *rgb;
-	guint sum;
-	double percent_change;
+	gint64 sum;
+	double change;
 	int i;
 	CGIF_FrameConfig frame_config;
 
@@ -230,14 +226,21 @@ vips_foreign_save_cgif_write_frame( VipsForeignSaveCgif *cgif )
 	 */
 	sum = 0;
 	p = frame_bytes;
-	for( i = 0; i < n_pels * 4; i++ )
-		sum += p[i]; 
-	percent_change = 100 * 
-		fabs( ((double) sum / max_sum) - 
-			((double) cgif->frame_sum / max_sum) );
+	for( i = 0; i < n_pels; i++ ) {
+		/* Scale RGBA differently so that changes like [0, 255, 0] 
+		 * to [255, 0, 0] are detected.
+		 */
+		sum += p[0] * 1000; 
+		sum += p[1] * 100; 
+		sum += p[2] * 10; 
+		sum += p[3]; 
+
+		p += 4;
+	}
+	change = VIPS_ABS( ((double) sum - cgif->frame_sum) ) / n_pels;
 
 	if( cgif->frame_sum == 0 ||
-		percent_change > 0 ) { 
+		change > 0 ) { 
 		cgif->frame_sum = sum;
 
 		/* If this is not our first cmap, make a note that we need to
@@ -286,18 +289,18 @@ vips_foreign_save_cgif_write_frame( VipsForeignSaveCgif *cgif )
 		rgb += 3;
 	}
 
-	/* If there's a transparent pixel, it's always first.
-	 */
-	cgif->has_transparency = cgif->lp->entries[0].a == 0;
-
 #ifdef DEBUG_PERCENT
-	if( percent_change > 0 )
-		printf( "frame %d, %.4g%% change, new %d item colourmap\n",
-			page_index, percent_change, cgif->lp->count );
+	if( change > 0 )
+		printf( "frame %d, change %g, new %d item colourmap\n",
+			page_index, change, cgif->lp->count );
 	else
 		printf( "frame %d, reusing previous %d item colourmap\n",
 			page_index, cgif->lp->count );
 #endif/*DEBUG_PERCENT*/
+
+	/* If there's a transparent pixel, it's always first.
+	 */
+	cgif->has_transparency = cgif->lp->entries[0].a == 0;
 
 	/* Set up cgif on first use, so we can set the first cmap as the global
 	 * one.
@@ -510,9 +513,7 @@ vips_foreign_save_cgif_build( VipsObject *object )
 	frame_rect.top = 0;
 	frame_rect.width = cgif->in->Xsize;
 	frame_rect.height = page_height;
-	if( (guint64) frame_rect.width * frame_rect.height > 2000 * 2000 ) {
-		/* RGBA sum may overflow a 32-bit uint.
-		 */
+	if( (guint64) frame_rect.width * frame_rect.height > 5000 * 5000 ) {
 		vips_error( class->nickname, "%s", _( "frame too large" ) );
 		return( -1 );
 	}
