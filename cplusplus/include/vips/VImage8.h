@@ -38,6 +38,9 @@
 
 #include <vips/vips.h>
 
+#undef min
+#undef max
+
 VIPS_NAMESPACE_START
 
 /* Small utility things.

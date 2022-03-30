@@ -5,7 +5,7 @@
 #endif /*HAVE_CONFIG_H*/
 #include <glib/gi18n-lib.h>
 
-#include <vips/vips8>
+#include <vips/vips8.h>
 
 #include <vips/debug.h>
 
