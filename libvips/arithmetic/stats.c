@@ -244,6 +244,7 @@ vips_stats_start( VipsStatistic *statistic )
 /* We scan lines bands times to avoid repeating band loops.
  * Use temp variables of same type for min/max for faster comparisons.
  */
+#undef small    // MSVC
 #define LOOP( TYPE ) { \
 	for( b = 0; b < bands; b++ ) { \
 		TYPE *p = ((TYPE *) in) + b; \

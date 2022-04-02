@@ -419,7 +419,7 @@ file_compare( VipsForeignClass *a, VipsForeignClass *b, void *user_data )
  * Returns: (transfer none): the result of iteration
  */
 void *
-vips_foreign_map( const char *base, VipsSListMap2Fn fn, void *a, void *b )
+vips_foreign_map( const char *base, VipsSListMap2Fn fn, const void *a, void *b )
 {
 	GSList *files;
 	void *result;
@@ -670,7 +670,7 @@ vips_foreign_find_load_buffer( const void *data, size_t size )
 /* Can this VipsForeign open this source?
  */
 static void *
-vips_foreign_find_load_source_sub( void *item, void *a, void *b )
+vips_foreign_find_load_source_sub( void *item, const void *a, void *b )
 {
 	VipsObjectClass *object_class = VIPS_OBJECT_CLASS( item );
 	VipsForeignLoadClass *load_class = VIPS_FOREIGN_LOAD_CLASS( item );
@@ -1747,7 +1747,7 @@ vips_foreign_save_build( VipsObject *object )
 #define D VIPS_FORMAT_DOUBLE
 #define DX VIPS_FORMAT_DPCOMPLEX
 
-static int vips_foreign_save_format_table[10] = {
+static VipsBandFormat vips_foreign_save_format_table[10] = {
 // UC  C   US  S   UI  I  F  X  D  DX 
    UC, C,  US, S,  UI, I, F, X, D, DX
 };

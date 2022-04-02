@@ -465,7 +465,7 @@ vips__cache_init( void )
 }
 
 static void *
-vips_cache_print_fn( void *value, void *a, void *b )
+vips_cache_print_fn( void *value, const void *a, void *b )
 {
 	VipsOperationCacheEntry *entry = value;
 
@@ -663,7 +663,7 @@ vips_cache_insert( VipsOperation *operation )
 }
 
 static void *
-vips_cache_get_first_fn( void *value, void *a, void *b )
+vips_cache_get_first_fn( void *value, const void *a, void *b )
 {
 	return( value );
 }

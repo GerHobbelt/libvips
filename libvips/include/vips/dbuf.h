@@ -31,6 +31,8 @@
 #ifndef VIPS_DBUF_H
 #define VIPS_DBUF_H
 
+#include <sys/types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif /*__cplusplus*/

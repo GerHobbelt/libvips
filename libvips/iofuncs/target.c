@@ -54,7 +54,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>
 
 #include <vips/vips.h>
 
@@ -288,8 +287,9 @@ vips_target_new_to_memory( void )
 
 static int
 vips_target_write_unbuffered( VipsTarget *target, 
-	const void *data, size_t length )
+	const void *_data, size_t length )
 {
+	const uint8_t* data = _data;
 	VipsTargetClass *class = VIPS_TARGET_GET_CLASS( target );
 
 	VIPS_DEBUG_MSG( "vips_target_write_unbuffered:\n" );

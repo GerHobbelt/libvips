@@ -34,6 +34,8 @@
 #ifndef VIPS_VIPS7COMPAT_H
 #define VIPS_VIPS7COMPAT_H
 
+#include <vips/mask.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif /*__cplusplus*/

@@ -482,8 +482,13 @@ thumbnail_parse_geometry( const char *geometry )
 	return( 0 );
 }
 
+
+#if defined(BUILD_MONOLITHIC)
+#define main       vips_thumbnail_tool_main
+#endif
+
 int
-main( int argc, char **argv )
+main( int argc, const char **argv )
 {
 	GOptionContext *context;
 	GOptionGroup *main_group;

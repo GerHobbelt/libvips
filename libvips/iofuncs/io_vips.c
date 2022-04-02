@@ -56,10 +56,8 @@
 
  */
 
-/*
 #define SHOW_HEADER
 #define DEBUG
- */
 
 /* Enable linux extensions like O_TMPFILE, if available.
  */

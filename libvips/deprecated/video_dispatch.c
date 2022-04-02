@@ -38,6 +38,8 @@
 #include <vips/vips.h>
 #include <vips/vips7compat.h>
 
+#if 0  // does not build with 8.12 libvips codebase
+
 /** 
  * SECTION: video
  * @short_description: various video grabbers
@@ -120,4 +122,5 @@ im_package im__video = {
         video_list
 };
 
+#endif
 

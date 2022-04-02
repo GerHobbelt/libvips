@@ -51,6 +51,9 @@
 #ifdef HAVE_IO_H
 #include <io.h>
 #endif /*HAVE_IO_H*/
+#ifdef HAVE_DIRECT_H
+#include <direct.h>
+#endif /*HAVE_DIRECT_H*/
 #include <fcntl.h>
 
 #include <vips/vips.h>
@@ -90,7 +93,7 @@ vips_slist_equal( GSList *l1, GSList *l2 )
 /* Map over an slist. _copy() the list in case the callback changes it.
  */
 void *
-vips_slist_map2( GSList *list, VipsSListMap2Fn fn, void *a, void *b )
+vips_slist_map2( GSList *list, VipsSListMap2Fn fn, const void *a, void *b )
 {
 	GSList *copy;
 	GSList *i;
@@ -108,7 +111,7 @@ vips_slist_map2( GSList *list, VipsSListMap2Fn fn, void *a, void *b )
 /* Map backwards. We _reverse() rather than recurse and unwind to save stack.
  */
 void *
-vips_slist_map2_rev( GSList *list, VipsSListMap2Fn fn, void *a, void *b )
+vips_slist_map2_rev( GSList *list, VipsSListMap2Fn fn, const void *a, void *b )
 {
 	GSList *copy;
 	GSList *i;
@@ -1606,7 +1609,7 @@ vips__temp_dir( void )
 		static char buf[256];
 
 		if( !done ) {
-			if( !GetTempPath( 256, buf ) )
+			if( !GetTempPathA( 256, buf ) )
 				strcpy( buf, "C:\\temp" );
 		}
 		tmpd = buf;

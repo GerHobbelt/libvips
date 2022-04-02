@@ -200,7 +200,7 @@ vips_fastcor_correlation( VipsCorrelation *correlation,
 /* Type promotion for multiplication. Sign and value preserving. Make sure 
  * these match the case statement in multiply_buffer() above.
  */
-static int vips_fastcor_format_table[10] = {
+static VipsBandFormat vips_fastcor_format_table[10] = {
 /* UC  C   US  S   UI  I  F  X  D  DX */
    UI, UI, UI, UI, UI, UI,F, X, D, DX
 };

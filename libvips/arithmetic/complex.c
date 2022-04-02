@@ -951,7 +951,7 @@ vips_complexform_buffer( VipsArithmetic *arithmetic,
 /* Type promotion for form complex. Sign and value preserving. Make sure 
  * these match the case statement in complexform_buffer() above.
  */
-static int vips_complexform_format_table[10] = {
+static VipsBandFormat vips_complexform_format_table[10] = {
 /* UC  C   US  S   UI  I  F  X  D  DX */
    X,  X,  X,  X,  X,  X, X, X, DX,DX
 };

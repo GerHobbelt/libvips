@@ -206,7 +206,7 @@ vips_math2_buffer( VipsArithmetic *arithmetic,
 
 /* Type promotion for math2. Keep in sync with math2_buffer() above.
  */
-static int vips_math2_format_table[10] = {
+static VipsBandFormat vips_math2_format_table[10] = {
 /* UC  C   US  S   UI  I   F   X   D   DX */
    F,  F,  F,  F,  F,  F,  F,  X,  D,  DX 
 };

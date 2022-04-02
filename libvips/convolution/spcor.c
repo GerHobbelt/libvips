@@ -300,7 +300,7 @@ vips_spcor_correlation( VipsCorrelation *correlation,
 #define D VIPS_FORMAT_DOUBLE
 #define DX VIPS_FORMAT_DPCOMPLEX
 
-static int vips_spcor_format_table[10] = {
+static VipsBandFormat vips_spcor_format_table[10] = {
 /* UC  C   US  S   UI  I  F  X  D  DX */
    F,  F,  F,  F,  F,  F, F, F, F, F
 };

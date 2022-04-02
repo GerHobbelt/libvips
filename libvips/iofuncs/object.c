@@ -1691,7 +1691,7 @@ vips_object_init( VipsObject *object )
 }
 
 static void *
-traverse_find_required_priority( void *data, void *a, void *b )
+traverse_find_required_priority( void *data, const void *a, void *b )
 {
 	VipsArgumentClass *argument_class = (VipsArgumentClass *) data;
 	int priority = GPOINTER_TO_INT( a ); 

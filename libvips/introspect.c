@@ -44,6 +44,9 @@
 #include <locale.h>
 
 #include <vips/vips.h>
+
+#if !defined(_MSC_VER)  // introspect library not available on Windows.
+
 #include <girepository.h>
 
 static char *main_option_introspect_dump = NULL;
@@ -55,8 +58,13 @@ static GOptionEntry main_option[] = {
 	{ NULL }
 };
 
+
+#if defined(BUILD_MONOLITHIC)
+#define main       vips_introspect_main
+#endif
+
 int
-main( int argc, char *argv[] )
+main( int argc, const char **argv )
 {
 	GOptionContext *context;
 	GOptionGroup *main_group;
@@ -117,3 +125,5 @@ main( int argc, char *argv[] )
 
 	return( 0 );
 }
+
+#endif

@@ -22,6 +22,8 @@
 
 using namespace vips;
 
+namespace {
+
 bool
 equal_vector( std::vector<double> a, std::vector<double> b )
 {
@@ -361,11 +363,18 @@ TEST_ASSIGNMENT( test_divideequals );
 /* We can't test remainder easily, vips does not support constant % image.
  */
 
+} // anonymous namespace to make these functions local/static
+
 /* We'd need an int version to test the bool operators.
  */
 
+
+#if defined(BUILD_MONOLITHIC)
+#define main       vips_test_overloads_main
+#endif
+
 int
-main( int argc, char **argv )
+main( int argc, const char **argv )
 {
 	if( VIPS_INIT( argv[0] ) )
 		vips_error_exit( NULL ); 

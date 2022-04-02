@@ -53,7 +53,7 @@ typedef int (*VipsCallbackFn)( void *a, void *b );
 /* Like GFunc, but return a value.
  */
 typedef void *(*VipsSListMap2Fn)( void *item, 
-	void *a, void *b );
+	const void *a, void *b );
 typedef void *(*VipsSListMap4Fn)( void *item, 
 	void *a, void *b, void *c, void *d );
 typedef void *(*VipsSListFold2Fn)( void *item, 

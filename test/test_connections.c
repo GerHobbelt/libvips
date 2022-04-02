@@ -1,10 +1,19 @@
 /* Test stream*u.
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif /*HAVE_CONFIG_H*/
+#include <glib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif /*HAVE_UNISTD_H*/
+#ifdef HAVE_IO_H
+#include <io.h>
+#endif /*HAVE_IO_H*/
 #include <string.h>
 #include <vips/vips.h>
 
@@ -97,8 +106,13 @@ finish_cb( VipsTargetCustom *target_custom, MyOutput *my_output )
 	my_output->fd = -1;
 }
 
+
+#if defined(BUILD_MONOLITHIC)
+#define main       vips_test_connections_main
+#endif
+
 int
-main( int argc, char **argv )
+main( int argc, const char **argv )
 {
 	MyInput my_input;
 	MyOutput my_output;

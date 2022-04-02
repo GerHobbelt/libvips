@@ -11,8 +11,13 @@
 
 using namespace vips;
 
+
+#if defined(BUILD_MONOLITHIC)
+#define main       vips_example_invert_main
+#endif
+
 int
-main( int argc, char **argv )
+main( int argc, const char **argv )
 {
 	if( vips_init( argv[0] ) )
 		vips_error_exit( NULL ); 

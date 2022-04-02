@@ -117,7 +117,7 @@ int vips_call_split_option_string( const char *operation_name,
 	const char *option_string, va_list optional, ... );
 
 void vips_call_options( GOptionGroup *group, VipsOperation *operation );
-int vips_call_argv( VipsOperation *operation, int argc, char **argv );
+int vips_call_argv( VipsOperation *operation, int argc, const char **argv );
 
 void vips_cache_drop_all( void );
 VipsOperation *vips_cache_operation_lookup( VipsOperation *operation );

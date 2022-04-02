@@ -26,6 +26,8 @@
 
 using namespace vips;
 
+namespace {
+
 bool
 equal_vector( std::vector<double> a, std::vector<double> b )
 {
@@ -239,8 +241,15 @@ std::vector<T> operator/(std::vector<T> &v1, const std::vector<T> &v2)
 
 TEST_BINARY( test_divide );
 
+} // anonymous namespace to make these functions local/static
+
+
+#if defined(BUILD_MONOLITHIC)
+#define main       vips_test_main
+#endif
+
 int
-main( int argc, char **argv )
+main( int argc, const char **argv )
 {
 	if( VIPS_INIT( argv[0] ) )
 		vips_error_exit( NULL ); 

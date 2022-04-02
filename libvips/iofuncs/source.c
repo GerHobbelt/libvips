@@ -67,7 +67,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>
 
 #include <vips/vips.h>
 
@@ -713,8 +712,9 @@ vips_source_print( VipsSource *source )
  * Returns: the number of bytes read, 0 on end of file, -1 on error.
  */
 gint64
-vips_source_read( VipsSource *source, void *buffer, size_t length )
+vips_source_read( VipsSource *source, void *_buffer, size_t length )
 {
+	uint8_t* buffer = _buffer;
 	VipsSourceClass *class = VIPS_SOURCE_GET_CLASS( source );
 
 	gint64 total_read;
@@ -737,7 +737,7 @@ vips_source_read( VipsSource *source, void *buffer, size_t length )
 
 		VIPS_DEBUG_MSG( "    %zd bytes from memory\n", available );
 		memcpy( buffer, 
-			source->data + source->read_position, available );
+			((const uint8_t *)source->data) + source->read_position, available );
 		source->read_position += available;
 		total_read += available;
 	}

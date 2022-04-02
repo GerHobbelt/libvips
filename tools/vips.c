@@ -251,7 +251,7 @@ list_function( im_function *func )
 #endif
 
 static int
-print_list( int argc, char **argv )
+print_list( int argc, const char **argv )
 {
 #if ENABLE_DEPRECATED
 	if( !argv[0] || strcmp( argv[0], "packages" ) == 0 ) 
@@ -298,7 +298,7 @@ print_links_package( im_package *pack )
 /* Print "ln -s" lines for this package.
  */
 static int
-print_links( int argc, char **argv )
+print_links( int argc, const char **argv )
 {
 	im_map_packages( (VSListMap2Fn) print_links_package, NULL );
 
@@ -404,7 +404,7 @@ usage( im_function *fn )
 #endif
 
 static int
-print_help( int argc, char **argv ) 
+print_help( int argc, const char **argv ) 
 {
 	return( 0 );
 }
@@ -412,11 +412,11 @@ print_help( int argc, char **argv )
 /* All our built-in actions.
  */
 
-typedef int (*Action)( int argc, char **argv );
+typedef int (*Action)( int argc, const char **argv );
 
 typedef struct _ActionEntry {
-	char *name;
-	char *description;
+	const char *name;
+	const char *description;
 	GOptionEntry *group;
 	Action action;
 } ActionEntry;
@@ -441,7 +441,7 @@ static ActionEntry actions[] = {
 };
 
 static void
-parse_options( GOptionContext *context, int *argc, char **argv )
+parse_options( GOptionContext *context, int *argc, const char **argv )
 {
 	char txt[1024];
 	VipsBuf buf = VIPS_BUF_STATIC( txt );
@@ -507,10 +507,15 @@ add_operation_group( GOptionContext *context, VipsOperation *user_data )
 
 /* VIPS universal main program. 
  */
-int
-main( int argc, char **argv )
+
+#if defined(BUILD_MONOLITHIC)
+#define main       vips_tool_main
+#endif
+
+int 
+main( int argc, const char **argv )
 {
-	char *action;
+	const char *action;
 	GOptionContext *context;
 	GOptionGroup *main_group;
 	GOptionGroup *group;

@@ -77,6 +77,9 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif /*HAVE_UNISTD_H*/
+#ifdef HAVE_IO_H
+#include <io.h>
+#endif /*HAVE_UNISTD_H*/
 
 #include <vips/vips.h>
 
@@ -86,6 +89,7 @@
 #endif
 #include <windows.h>
 #include <io.h>
+typedef unsigned short mode_t;
 #endif /*G_OS_WIN32*/
 
 /* Does this fd support mmap. Pipes won't, for example.

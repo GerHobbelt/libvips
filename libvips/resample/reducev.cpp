@@ -163,6 +163,8 @@ vips_reducev_finalize( GObject *gobject )
 	G_OBJECT_CLASS( vips_reducev_parent_class )->finalize( gobject );
 }
 
+#undef CONST   // MSVC::minwindef.h
+
 #define TEMP( N, S ) vips_vector_temporary( v, (char *) N, S )
 #define PARAM( N, S ) vips_vector_parameter( v, (char *) N, S )
 #define SCANLINE( N, P, S ) vips_vector_source_scanline( v, (char *) N, P, S )

@@ -201,6 +201,7 @@ typedef struct _VipsColourRoute {
 /* Some defines to save typing. These are the colour spaces we support
  * conversions between.
  */
+#undef CMYK     // MSVC::wingdi.h
 #define XYZ VIPS_INTERPRETATION_XYZ
 #define LAB VIPS_INTERPRETATION_LAB
 #define LABQ VIPS_INTERPRETATION_LABQ

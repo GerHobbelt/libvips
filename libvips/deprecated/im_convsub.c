@@ -160,10 +160,10 @@ im__create_int_luts( int *buffer, int buffersize,
 }
 
 
-int im_convsub( in, out, m, xskip, yskip )
-IMAGE *in, *out;
-INTMASK *m;
-int xskip, yskip;
+int im_convsub( 
+IMAGE *in, IMAGE *out,
+INTMASK *m,
+int xskip, int yskip )
 {
 
 

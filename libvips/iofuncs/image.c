@@ -862,7 +862,7 @@ vips_image_build( VipsObject *object )
 		if( (magic = vips__file_magic( filename )) ) {
 			/* We may need to byteswap.
 			 */
-			if( GUINT_FROM_BE( magic ) == image->magic ) {
+			if( GUINT32_FROM_BE( magic ) == image->magic ) {
 				/* Native open.
 				 */
 				if( vips_image_open_input( image ) )
@@ -2190,7 +2190,7 @@ vips_image_new_from_source( VipsSource *source,
 	const char *operation_name;
 	va_list ap;
 	int result;
-	VipsImage *out;
+	VipsImage *out = NULL;
 
 	vips_check_init();
 

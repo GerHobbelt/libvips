@@ -1238,7 +1238,7 @@ vips_call_options( GOptionGroup *group, VipsOperation *operation )
 typedef struct _VipsCall {
 	VipsOperation *operation;
 	int argc;
-	char **argv;
+	const char **argv;
 	int i;
 } VipsCall;
 
@@ -1336,7 +1336,7 @@ vips_call_argv_output( VipsObject *object,
  * all code paths.
  */
 int
-vips_call_argv( VipsOperation *operation, int argc, char **argv )
+vips_call_argv( VipsOperation *operation, int argc, const char **argv )
 {
 	VipsCall call;
 

@@ -83,6 +83,8 @@ XGRAD_GEN_DECLARATION( double );
 YGRAD_GEN_DECLARATION( double );
 #endif
 
+#undef small  // MSVC
+
 int im_gradcor_raw( IMAGE *large, IMAGE *small, IMAGE *out ){
 #define FUNCTION_NAME "im_gradcor_raw"
 

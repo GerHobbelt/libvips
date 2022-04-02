@@ -241,6 +241,7 @@ vips_morph_start( VipsImage *out, void *a, void *b )
 	return( seq );
 }
 
+#undef CONST     // MSVC::minwindef.h
 #define TEMP( N, S ) vips_vector_temporary( v, N, S )
 #define SCANLINE( N, P, S ) vips_vector_source_scanline( v, N, P, S )
 #define CONST( N, V, S ) vips_vector_constant( v, N, V, S )

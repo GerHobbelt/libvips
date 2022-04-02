@@ -4,8 +4,13 @@
  * does not exist.
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif /*HAVE_CONFIG_H*/
 #include <sys/types.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif /*HAVE_UNISTD_H*/
 
 #include <vips/vips.h>
 
@@ -28,8 +33,13 @@ count_files( const char *dirname )
 	return( n );
 }
 
+
+#if defined(BUILD_MONOLITHIC)
+#define main       vips_test_descriptors_main
+#endif
+
 int
-main( int argc, char **argv )
+main( int argc, const char **argv )
 {
 	VipsSource *source;
 	VipsImage *image, *x;

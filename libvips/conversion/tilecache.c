@@ -611,7 +611,7 @@ vips_tile_cache_gen( VipsRegion *or,
 	VipsBlockCache *cache = (VipsBlockCache *) b;
 	VipsRect *r = &or->valid;
 
-	VipsTile *tile;
+	VipsTile *tile = NULL;
 	GSList *work;
 	GSList *p;
 	int result;

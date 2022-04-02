@@ -221,8 +221,8 @@ int vips_enum_from_nick( const char *domain, GType type, const char *str );
 int vips_flags_from_nick( const char *domain, GType type, const char *nick );
 
 gboolean vips_slist_equal( GSList *l1, GSList *l2 );
-void *vips_slist_map2( GSList *list, VipsSListMap2Fn fn, void *a, void *b );
-void *vips_slist_map2_rev( GSList *list, VipsSListMap2Fn fn, void *a, void *b );
+void *vips_slist_map2( GSList *list, VipsSListMap2Fn fn, const void *a, void *b );
+void *vips_slist_map2_rev( GSList *list, VipsSListMap2Fn fn, const void *a, void *b );
 void *vips_slist_map4( GSList *list, 
 	VipsSListMap4Fn fn, void *a, void *b, void *c, void *d );
 void *vips_slist_fold2( GSList *list, void *start, 

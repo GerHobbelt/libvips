@@ -406,7 +406,7 @@ static nsgif_error nsgif__decode_complex(
 	nsgif_error ret = NSGIF_OK;
 	uint32_t clip_x = gif__clip(offset_x, width, gif->info.width);
 	uint32_t clip_y = gif__clip(offset_y, height, gif->info.height);
-	const uint8_t *uncompressed;
+	const uint8_t *uncompressed = NULL;
 	uint32_t available = 0;
 	uint8_t step = 24;
 	uint32_t skip = 0;

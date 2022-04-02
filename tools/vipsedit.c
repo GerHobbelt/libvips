@@ -57,7 +57,12 @@
 #include <string.h>
 #include <ctype.h>
 #include <sys/types.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif /*HAVE_UNISTD_H*/
+#ifdef HAVE_IO_H
+#include <io.h>
+#endif /*HAVE_IO_H*/
 #include <locale.h>
 
 #include <vips/vips.h>
@@ -127,8 +132,13 @@ parse_pint( char *arg, int *out )
 		vips_error_exit( _( "'%s' is not a positive integer" ), arg );
 }
 
+
+#if defined(BUILD_MONOLITHIC)
+#define main       vips_edit_tool_main
+#endif
+
 int
-main( int argc, char **argv )
+main( int argc, const char **argv )
 {
 	GOptionContext *context;
 	GOptionGroup *main_group;

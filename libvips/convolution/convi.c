@@ -284,6 +284,7 @@ vips_convi_start( VipsImage *out, void *a, void *b )
 	return( (void *) seq );
 }
 
+#undef CONST    // MSVC::minwindef.h
 #define TEMP( N, S ) vips_vector_temporary( v, (char *) N, S )
 #define PARAM( N, S ) vips_vector_parameter( v, (char *) N, S )
 #define SCANLINE( N, P, S ) vips_vector_source_scanline( v, (char *) N, P, S )

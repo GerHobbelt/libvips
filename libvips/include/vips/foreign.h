@@ -90,7 +90,7 @@ GType vips_foreign_get_type(void);
  * subclasses of VipsForeign.
  */
 void *vips_foreign_map( const char *base, 
-	VipsSListMap2Fn fn, void *a, void *b );
+	VipsSListMap2Fn fn, const void *a, void *b );
 
 /* Image file load properties. 
  *
@@ -371,7 +371,7 @@ typedef struct _VipsForeignSaveClass {
 	 *
 	 * Default NONE TRUE, RAD and LABQ FALSE.
 	 */
-	gboolean coding[VIPS_CODING_LAST];
+	VipsCoding coding[VIPS_CODING_LAST];
 } VipsForeignSaveClass;
 
 /* Don't put spaces around void here, it breaks gtk-doc.

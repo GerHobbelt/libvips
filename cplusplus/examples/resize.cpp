@@ -7,8 +7,13 @@
 
 using namespace vips;
 
+
+#if defined(BUILD_MONOLITHIC)
+#define main       vips_example_resize_main
+#endif
+
 int
-main( int argc, char **argv )
+main( int argc, const char **argv )
 {
 	if( VIPS_INIT( argv[0] ) )
 		vips_error_exit( NULL ); 

@@ -158,7 +158,7 @@ vips_multiply_buffer( VipsArithmetic *arithmetic,
 /* Type promotion for multiplication. Sign and value preserving. Make sure 
  * these match the case statement in multiply_buffer() above.
  */
-static int vips_multiply_format_table[10] = {
+static VipsBandFormat vips_multiply_format_table[10] = {
 /* UC  C   US  S   UI  I  F  X  D  DX */
    US, S,  UI, I,  UI, I, F, X, D, DX
 };
