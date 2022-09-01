@@ -775,7 +775,7 @@ main( int argc, const char **argv )
 	g_option_context_free( context );
 
 #ifdef G_OS_WIN32
-	g_strfreev( argv ); 
+	g_strfreev( (char **)argv );
 #endif /*G_OS_WIN32*/
 
 	vips_shutdown();

@@ -582,7 +582,7 @@ main( int argc, const char **argv )
 	/* We don't free this on error exit, sadly.
 	 */
 #ifdef G_OS_WIN32
-	g_strfreev( argv ); 
+	g_strfreev( (char **)argv );
 #endif /*G_OS_WIN32*/
 
 	vips_shutdown();

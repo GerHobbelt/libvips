@@ -53,6 +53,10 @@ main( int argc, const char **argv )
 	if( argc != 2 ) 
 		vips_error_exit( "usage: %s test-image", argv[0] ); 
 
+#if defined(_WIN32)
+	vips_error_exit("%s: not supported on this platform", argv[0]);
+	return EXIT_FAILURE;
+#else
 	vips_snprintf( fd_dir, 256, "/proc/%d/fd", getpid() );
 	n_files = count_files( fd_dir );
 	if( n_files == -1 )
@@ -114,4 +118,5 @@ main( int argc, const char **argv )
 			argv[1] );
 
 	return( 0 );
+#endif
 }

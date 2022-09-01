@@ -607,9 +607,9 @@ parser_element_start_handler( void *user_data,
 	const XML_Char **p;
 
 #ifdef DEBUG
-	printf( "parser_element_start: %s\n", name );
+	printf( "parser_element_start: " EXPAT_FORMAT_XML_CHAR "\n", name );
 	for( p = atts; *p; p += 2 ) 
-		printf( "%s = %s\n", p[0], p[1] );
+		printf( "" EXPAT_FORMAT_XML_CHAR " = " EXPAT_FORMAT_XML_CHAR "\n", p[0], p[1] );
 #endif /*DEBUG*/
 
 	if( strcmp( name, "field" ) == 0 ) { 
@@ -696,7 +696,7 @@ parser_element_end_handler( void *user_data, const XML_Char *name )
 	VipsExpatParse *vep = (VipsExpatParse *) user_data;
 
 #ifdef DEBUG
-	printf( "parser_element_end_handler: %s\n", name ); 
+	printf( "parser_element_end_handler: " EXPAT_FORMAT_XML_CHAR "\n", name );
 #endif /*DEBUG*/
 
 	if( strcmp( name, "field" ) == 0 ) {
