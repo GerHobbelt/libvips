@@ -350,17 +350,17 @@ vips_foreign_save_jxl_build( VipsObject *object )
 		jxl->info.intensity_target = stonits;
 	}
 
-	/* We will be setting the ICC profile, and/or calling
-	 * JxlEncoderSetColorEncoding().
+	/* uses_original_profile forces libjxl to not use lossy XYB
+	 * colourspace. The name is very confusing.
 	 */
-	jxl->info.uses_original_profile = TRUE;
+	jxl->info.uses_original_profile = jxl->lossless;
 
 	if( JxlEncoderSetBasicInfo( jxl->encoder, &jxl->info ) ) {
 		vips_foreign_save_jxl_error( jxl, "JxlEncoderSetBasicInfo" );
 		return( -1 );
 	}
 
-	/* Set ICC profile.
+	/* Set any ICC profile.
 	 */
 	if( vips_image_get_typeof( in, VIPS_META_ICC_NAME ) ) {
 		const void *data;
@@ -380,32 +380,33 @@ vips_foreign_save_jxl_build( VipsObject *object )
 			return( -1 );
 		}
 	}
-
-	/* libjxl will use linear 0 - 1 by default for float, so we don't need
-	 * to call JxlColorEncodingSetToLinearSRGB() or
-	 * JxlColorEncodingSetToSRGB().
-	 */
-	if( in->Type == VIPS_INTERPRETATION_scRGB ) {
-#ifdef DEBUG
-		printf( "setting scRGB colourspace\n" );
-#endif /*DEBUG*/
-
-		JxlColorEncodingSetToLinearSRGB( &jxl->color_encoding, 
-			jxl->format.num_channels < 3 );
-	}
 	else {
+		/* If there's no ICC profile, we must set the colour encoding
+		 * ourselves.
+		 */
+		if( in->Type == VIPS_INTERPRETATION_scRGB ) {
 #ifdef DEBUG
-		printf( "setting sRGB colourspace\n" );
+			printf( "setting scRGB colourspace\n" );
 #endif /*DEBUG*/
 
-		JxlColorEncodingSetToSRGB( &jxl->color_encoding, 
-			jxl->format.num_channels < 3 );
-	}
+			JxlColorEncodingSetToLinearSRGB( &jxl->color_encoding,
+				jxl->format.num_channels < 3 );
+		}
+		else {
+#ifdef DEBUG
+			printf( "setting sRGB colourspace\n" );
+#endif /*DEBUG*/
 
-	if( JxlEncoderSetColorEncoding( jxl->encoder, &jxl->color_encoding ) ) {
-		vips_foreign_save_jxl_error( jxl, 
-			"JxlEncoderSetColorEncoding" );
-		return( -1 );
+			JxlColorEncodingSetToSRGB( &jxl->color_encoding,
+				jxl->format.num_channels < 3 );
+		}
+
+		if( JxlEncoderSetColorEncoding( jxl->encoder, 
+			&jxl->color_encoding ) ) {
+			vips_foreign_save_jxl_error( jxl,
+				"JxlEncoderSetColorEncoding" );
+			return( -1 );
+		}
 	}
 
 	/* Render the entire image in memory. libjxl seems to be missing

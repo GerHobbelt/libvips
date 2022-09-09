@@ -226,13 +226,11 @@ gsf_output_target_close( GsfOutput *output )
 static void
 gsf_output_target_finalize( GObject *obj )
 {
-        GObjectClass *parent_class;
         GsfOutputTarget *output_target = (GsfOutputTarget *) obj;
 
         (void) gsf_output_target_close( GSF_OUTPUT( output_target ) );
 
-        parent_class = g_type_class_peek( GSF_OUTPUT_TYPE );
-        parent_class->finalize( obj );
+	G_OBJECT_CLASS( gsf_output_target_parent_class )->finalize( obj );
 }
 
 static gboolean
@@ -250,9 +248,9 @@ gsf_output_target_write( GsfOutput *output,
 static gboolean
 gsf_output_target_seek( GsfOutput *output, gsf_off_t offset, GSeekType whence )
 {
-	/* No seek needed.
+	/* This will make our parent class handle the seek.
 	 */
-	return FALSE;
+	return( TRUE );
 }
 
 static void
@@ -678,6 +676,21 @@ G_DEFINE_ABSTRACT_TYPE( VipsForeignSaveDz, vips_foreign_save_dz,
 #define VIPS_ZIP_EOCD_SIZE 22
 
 #ifndef HAVE_GSF_ZIP64
+/* ZIP and SZI are both written as zip files.
+ */
+static gboolean
+iszip( VipsForeignDzContainer container )
+{
+	switch( container ) {
+	case VIPS_FOREIGN_DZ_CONTAINER_ZIP:
+	case VIPS_FOREIGN_DZ_CONTAINER_SZI:
+		return( TRUE );
+
+	default:
+		return( FALSE );
+	}
+}
+
 static size_t
 estimate_zip_size( VipsForeignSaveDz *dz )
 {
@@ -744,7 +757,7 @@ write_image( VipsForeignSaveDz *dz,
 	gsf_output_close( out );
 
 #ifndef HAVE_GSF_ZIP64
-	if( iszip( dz->container ) ) {
+	if( iszip( dz->container ) ) { 
 		/* Leave 3 entry headroom for blank.png and metadata files.
 		 */
 		if( dz->tree->file_count + 3 >= (unsigned int) USHRT_MAX ) {
