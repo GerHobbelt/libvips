@@ -1,5 +1,5 @@
 project('vips', 'c', 'cpp',
-    version: '8.13.0',
+    version: '8.13.1',
     meson_version: '>=0.56',
     default_options: [
         # this is what glib uses (one of our required deps), so we use it too
@@ -21,7 +21,7 @@ version_patch = version_parts[2]
 #   binary interface changes not backwards compatible?: reset age to 0
 library_current = 57
 library_age = 15
-library_revision = 0
+library_revision = 1
 library_version = '@0@.@1@.@2@'.format(library_current - library_age, library_age, library_revision)
 darwin_versions = [library_current + 1, '@0@.@1@'.format(library_current + 1, library_revision)]
 
@@ -174,29 +174,34 @@ if not get_option('magick').disabled() and magick_dep.found()
     else
         libvips_deps += magick_dep
     endif
-    if magick_dep.version().version_compare('>=7.0')
+    magick7 = magick_dep.version().version_compare('>=7.0')
+    # IM7 uses <MagickCore/MagickCore.h>
+    # IM6 uses <magick/MagickCore.h> (since 6.2.3) but still provides <magick/api.h>
+    # GM uses <magick/api.h>
+    magick_include = magick7 ? '#include <MagickCore/MagickCore.h>' : '#include <magick/api.h>'
+    if magick7
         cfg_var.set('HAVE_MAGICK7', '1')
     else
         # come here for imagemagick6, and graphicsmagick1.x, which also uses 
         # the im6 API
         cfg_var.set('HAVE_MAGICK6', '1')
-        if cc.has_member('struct _ImageInfo', 'number_scenes', prefix: '#include <magick/api.h>', dependencies: magick_dep)
+        if cc.has_member('struct _ImageInfo', 'number_scenes', prefix: magick_include, dependencies: magick_dep)
             cfg_var.set('HAVE_NUMBER_SCENES', '1')
         endif
         func_names = [ 'InheritException', 'AcquireExceptionInfo', 'SetImageProperty', 'SetImageExtent', 'AcquireImage', 'GetVirtualPixels', 'ResetImageProfileIterator', 'ResetImageAttributeIterator', 'ResetImagePropertyIterator', 'MagickCoreGenesis', 'SetImageOption', 'BlobToStringInfo', 'OptimizePlusImageLayers', 'OptimizeImageTransparency' ]
         foreach func_name : func_names
-            if cc.has_function(func_name, prefix: '#include <magick/api.h>', dependencies: magick_dep)
+            if cc.has_function(func_name, prefix: magick_include, dependencies: magick_dep)
                 cfg_var.set('HAVE_' + func_name.to_upper(), '1')
             endif
         endforeach
-        if cc.compiles('#include <magick/api.h>\nColorspaceType colorspace = CMYColorspace;', name: 'Has CMYColorspace', dependencies: magick_dep)
+        if cc.compiles(magick_include + '\nColorspaceType colorspace = CMYColorspace;', name: 'Has CMYColorspace', dependencies: magick_dep)
             cfg_var.set('HAVE_CMYCOLORSPACE', '1')
         endif
-        if cc.compiles('#include <magick/api.h>\nColorspaceType colorspace = HCLpColorspace;', name: 'Has HCLpColorspace', dependencies: magick_dep)
+        if cc.compiles(magick_include + '\nColorspaceType colorspace = HCLpColorspace;', name: 'Has HCLpColorspace', dependencies: magick_dep)
             cfg_var.set('HAVE_HCLPCOLORSPACE', '1')
         endif
         # GetImageMagick() takes two args under GM, three under IM
-        if cc.compiles('#include <magick/api.h>\nint main() {(void)GetImageMagick(NULL, 0, NULL);}', name: 'GetImageMagick takes three arguments', dependencies: magick_dep)
+        if cc.compiles(magick_include + '\nint main() {(void)GetImageMagick(NULL, 0, NULL);}', name: 'GetImageMagick takes three arguments', dependencies: magick_dep)
             cfg_var.set('HAVE_GETIMAGEMAGICK3', '1')
         endif
     endif
@@ -206,10 +211,10 @@ if not get_option('magick').disabled() and magick_dep.found()
     endif
     if 'save' in get_option('magick-features')
         cfg_var.set('ENABLE_MAGICKSAVE', '1')
-        if cc.has_function('ImportImagePixels', prefix: '#include <magick/api.h>', dependencies: magick_dep)
+        if cc.has_function('ImportImagePixels', prefix: magick_include, dependencies: magick_dep)
             cfg_var.set('HAVE_IMPORTIMAGEPIXELS', '1')
         endif
-        if cc.has_function('ImagesToBlob', prefix: '#include <magick/api.h>', dependencies: magick_dep)
+        if cc.has_function('ImagesToBlob', prefix: magick_include, dependencies: magick_dep)
             cfg_var.set('HAVE_IMAGESTOBLOB', '1')
         endif
     endif
@@ -335,7 +340,8 @@ endif
 # text rendering with fontconfig requires pangoft2
 pangoft2_dep = dependency('pangoft2', version: '>=1.32.6', required: get_option('fontconfig'))
 fontconfig_dep = dependency('fontconfig', required: get_option('fontconfig'))
-if pangoft2_dep.found() and fontconfig_dep.found() and pangocairo_dep.found()
+fontconfig_found = pangoft2_dep.found() and fontconfig_dep.found() and pangocairo_dep.found()
+if fontconfig_found
     libvips_deps += pangoft2_dep
     libvips_deps += fontconfig_dep
     cfg_var.set('HAVE_FONTCONFIG', '1')
@@ -354,7 +360,8 @@ endif
 # 2.40.3 so we get the UNLIMITED open flag
 librsvg_dep = dependency('librsvg-2.0', version: '>=2.40.3', required: get_option('rsvg'))
 cairo_dep = dependency('cairo', version: '>=1.2', required: get_option('rsvg'))
-if librsvg_dep.found() and cairo_dep.found()
+librsvg_found = librsvg_dep.found() and cairo_dep.found()
+if librsvg_found
     libvips_deps += librsvg_dep
     libvips_deps += cairo_dep
     cfg_var.set('HAVE_RSVG', '1')
@@ -612,3 +619,55 @@ subdir('po')
 subdir('tools')
 subdir('test')
 subdir('fuzz')
+
+build_summary = {
+  'Build options':
+    {'enable debug': get_option('debug'),
+     'enable deprecated': get_option('deprecated'),
+     'enable modules': modules_enabled,
+     'enable gtk-doc': get_option('gtk_doc'),
+     'enable doxygen': get_option('doxygen'),
+     'enable introspection': get_option('introspection'),
+     'enable RAD load/save': get_option('radiance'),
+     'enable Analyze7 load/save': get_option('analyze'),
+     'enable PPM load/save': get_option('ppm'),
+     'enable GIF load': get_option('nsgif'),
+    },
+  'Optional external packages':
+    {'use fftw for FFTs': fftw_dep.found(),
+     'accelerate loops with ORC': orc_dep.found(),
+     'ICC profile support with lcms': lcms_dep.found(),
+     'zlib': zlib_dep.found(),
+     'text rendering with pangocairo': pangocairo_dep.found(),
+     'font file support with fontconfig': fontconfig_found,
+     'EXIF metadata support with libexif ': libexif_dep.found(),
+    },
+  'External image format libraries':
+    {'JPEG load/save with libjpeg': libjpeg_dep.found(),
+     'JXL load/save with libjxl': [libjxl_dep.found(), (modules_enabled and not get_option('jpeg-xl-module').disabled()) ? ' (dynamic module)' : ''],
+     'JPEG2000 load/save with OpenJPEG': libopenjp2_dep.found(),
+     'PNG load/save with libspng': spng_dep.found(),
+     'PNG load/save with libpng': png_dep.found(),
+     'selected quantisation package': quantisation_package.found() ? quantisation_package.name() : 'none',
+     'TIFF load/save with libtiff': libtiff_dep.found(),
+     'image pyramid save with libgsf': gsf_dep.found(),
+     'HEIC/AVIF load/save with libheif': [libheif_dep.found(), (modules_enabled and not get_option('heif-module').disabled()) ? ' (dynamic module)' : ''],
+     'WebP load/save with libwebp': libwebp_dep.found(),
+     'PDF load with PDFium': pdfium_dep.found(),
+     'PDF load with poppler-glib': [libpoppler_dep.found(), (modules_enabled and not get_option('poppler-module').disabled()) ? ' (dynamic module)' : ''],
+     'SVG load with librsvg': librsvg_found,
+     'EXR load with OpenEXR': openexr_dep.found(),
+     'OpenSlide load': [openslide_dep.found(), (modules_enabled and not get_option('openslide-module').disabled()) ? ' (dynamic module)' : ''],
+     'Matlab load with libmatio': matio_dep.found(),
+     'NIfTI load/save with niftiio': libnifti_dep.found(),
+     'FITS load/save with cfitsio': cfitsio_dep.found(),
+     'GIF save with cgif': cgif_dep.found(),
+     'selected Magick package': [get_option('magick-package'), (modules_enabled and not get_option('magick-module').disabled()) ? ' (dynamic module)' : ''],
+     'Magick load': magick_dep.found() and 'load' in get_option('magick-features'),
+     'Magick save': magick_dep.found() and 'save' in get_option('magick-features'),
+    },
+}
+
+foreach section_title, section : build_summary
+    summary(section, bool_yn: true, list_sep: '', section: section_title)
+endforeach
