@@ -26,6 +26,8 @@
  * 	- allow utf-8 headers for svg detection
  * 28/4/22
  * 	- support rsvg_handle_get_intrinsic_size_in_pixels()
+ * 5/6/22
+ * 	- allow random access
  */
 
 /*
@@ -78,6 +80,11 @@
 
 #include <cairo.h>
 #include <librsvg/rsvg.h>
+
+/* Render SVGs with tiles this size. They need to be pretty big to limit 
+ * overcomputation.
+ */
+#define TILE_SIZE (2000)
 
 /* The <svg tag must appear within this many bytes of the start of the file.
  */
@@ -314,13 +321,15 @@ vips_foreign_load_svg_dispose( GObject *gobject )
 static VipsForeignFlags
 vips_foreign_load_svg_get_flags_filename( const char *filename )
 {
-	return( VIPS_FOREIGN_SEQUENTIAL );
+	/* We can render any part of the page on demand.
+	 */
+	return( VIPS_FOREIGN_PARTIAL );
 }
 
 static VipsForeignFlags
 vips_foreign_load_svg_get_flags( VipsForeignLoad *load )
 {
-	return( VIPS_FOREIGN_SEQUENTIAL );
+	return( VIPS_FOREIGN_PARTIAL );
 }
 
 #if LIBRSVG_CHECK_VERSION( 2, 52, 0 )
@@ -372,8 +381,8 @@ svg_css_length_to_pixels( RsvgLength length, double dpi )
 			value = dpi * value / 6;
 			break;
 		default:
-			/* Probably RSVG_UNIT_PERCENT. We can't know what the pixel
-			 * value is without more information.
+			/* Probably RSVG_UNIT_PERCENT. We can't know what the 
+			 * pixel value is without more information.
 			 */
 			value = 0;
 	}
@@ -392,6 +401,7 @@ vips_foreign_load_svg_get_natural_size( VipsForeignLoadSvg *svg,
 	double height;
 
 #if LIBRSVG_CHECK_VERSION( 2, 52, 0 )
+
 	if( !rsvg_handle_get_intrinsic_size_in_pixels( svg->page, 
 		&width, &height ) ) {
 		RsvgRectangle zero_rect, viewbox;
@@ -407,11 +417,11 @@ vips_foreign_load_svg_get_natural_size( VipsForeignLoadSvg *svg,
 			&has_height, &iheight,
 			&has_viewbox, &viewbox );
 
-		/* After librsvg 2.54.0, the `has_width` and `has_height` arguments
-		 * always returns `TRUE`, since with SVG2 all documents *have* a
-		 * default width and height of `100%`.
-		 */
 #if LIBRSVG_CHECK_VERSION( 2, 54, 0 )
+		/* After librsvg 2.54.0, the `has_width` and `has_height` 
+		 * arguments always returns `TRUE`, since with SVG2 all 
+		 * documents *have* a default width and height of `100%`.
+		 */
 		width = svg_css_length_to_pixels( iwidth, svg->dpi );
 		height = svg_css_length_to_pixels( iheight, svg->dpi );
 
@@ -419,7 +429,8 @@ vips_foreign_load_svg_get_natural_size( VipsForeignLoadSvg *svg,
 		has_height = height > 0.0;
 
 		if( has_width && has_height ) {
-			/* Success! Taking the viewbox into account is not needed.
+			/* Success! Taking the viewbox into account is not 
+			 * needed.
 			 */
 		}
 		else if( has_width && has_viewbox ) {
@@ -455,8 +466,8 @@ vips_foreign_load_svg_get_natural_size( VipsForeignLoadSvg *svg,
 
 		if( width <= 0.0 ||
 			height <= 0.0 ) {
-			/* We haven't found a usable set of sizes, so try working out
-			 * the visible area.
+			/* We haven't found a usable set of sizes, so try 
+			 * working out the visible area.
 			 */
 			rsvg_handle_get_geometry_for_layer( svg->page, NULL,
 				&zero_rect, &viewbox, NULL, NULL );
@@ -464,7 +475,9 @@ vips_foreign_load_svg_get_natural_size( VipsForeignLoadSvg *svg,
 			height = viewbox.y + viewbox.height;
 		}
 	}
+
 #else /*!LIBRSVG_CHECK_VERSION( 2, 52, 0 )*/
+
 {
 	RsvgDimensionData dimensions;
 
@@ -472,6 +485,7 @@ vips_foreign_load_svg_get_natural_size( VipsForeignLoadSvg *svg,
 	width = dimensions.width;
 	height = dimensions.height;
 }
+
 #endif /*LIBRSVG_CHECK_VERSION( 2, 52, 0 )*/
 
 	/* width or height below 0.5 can't be rounded to 1.
@@ -494,7 +508,6 @@ vips_foreign_load_svg_get_scaled_size( VipsForeignLoadSvg *svg,
 {
 	double width;
 	double height;
-	double scale;
 
 	/* Get dimensions with the default dpi.
 	 */
@@ -502,36 +515,12 @@ vips_foreign_load_svg_get_scaled_size( VipsForeignLoadSvg *svg,
 	if( vips_foreign_load_svg_get_natural_size( svg, &width, &height ) )
 		return( -1 );
 
-	/* Calculate dimensions at required dpi/scale.
+	/* We scale up with cairo --- scaling with rsvg_handle_set_dpi() will
+	 * fail for SVGs with absolute sizes.
 	 */
-	scale = svg->scale * svg->dpi / 72.0;
-	if( scale != 1.0 ) {
-		double scaled_width;
-		double scaled_height;
-
-		rsvg_handle_set_dpi( svg->page, scale * 72.0 );
-		if( vips_foreign_load_svg_get_natural_size( svg, 
-			&scaled_width, &scaled_height ) )
-			return( -1 );
-
-		if( scaled_width == width &&
-			scaled_height == height ) {
-			/* SVG without width and height always reports the same 
-			 * dimensions regardless of dpi. Apply dpi/scale using 
-			 * cairo instead.
-			 */
-			svg->cairo_scale = scale;
-			width *= scale;
-			height *= scale;
-		} 
-		else {
-			/* SVG with width and height reports correctly scaled 
-			 * dimensions.
-			 */
-			width = scaled_width;
-			height = scaled_height;
-		}
-	}
+	svg->cairo_scale = svg->scale * svg->dpi / 72.0;
+	width *= svg->cairo_scale;
+	height *= svg->cairo_scale;
 
 	*out_width = VIPS_ROUND_UINT( width );
 	*out_height = VIPS_ROUND_UINT( height );
@@ -558,7 +547,8 @@ vips_foreign_load_svg_parse( VipsForeignLoadSvg *svg, VipsImage *out )
 		4, VIPS_FORMAT_UCHAR,
 		VIPS_CODING_NONE, VIPS_INTERPRETATION_sRGB, res, res );
 
-	/* We render to a linecache, so fat strips work well.
+	/* We render to a cache with a couple of rows of tiles, so fat strips 
+	 * work well.
 	 */
         if( vips_image_pipelinev( out, VIPS_DEMAND_STYLE_FATSTRIP, NULL ) )
 		return( -1 );
@@ -608,10 +598,14 @@ vips_foreign_load_svg_generate( VipsRegion *or,
 	 * running inside a non-threaded tilecache.
 	 */
 #if LIBRSVG_CHECK_VERSION( 2, 46, 0 )
+
 {
 	RsvgRectangle viewport;
 	GError *error = NULL;
 
+	/* No need to scale -- we always set the viewport to the
+	 * whole image, and set the region to draw on the surface.
+	 */
 	cairo_translate( cr, -r->left, -r->top );
 	viewport.x = 0;
 	viewport.y = 0;
@@ -629,7 +623,9 @@ vips_foreign_load_svg_generate( VipsRegion *or,
 
 	cairo_destroy( cr );
 }
+
 #else /*!LIBRSVG_CHECK_VERSION( 2, 46, 0 )*/
+
 	cairo_scale( cr, svg->cairo_scale, svg->cairo_scale );
 	cairo_translate( cr, -r->left / svg->cairo_scale,
 		-r->top / svg->cairo_scale );
@@ -643,6 +639,7 @@ vips_foreign_load_svg_generate( VipsRegion *or,
 	}
 
 	cairo_destroy( cr );
+
 #endif /*LIBRSVG_CHECK_VERSION( 2, 46, 0 )*/
 
 	/* Cairo makes pre-multipled BRGA -- we must byteswap and unpremultiply.
@@ -662,21 +659,18 @@ vips_foreign_load_svg_load( VipsForeignLoad *load )
 	VipsImage **t = (VipsImage **) 
 		vips_object_local_array( (VipsObject *) load, 3 );
 
-	/* Make tiles 2000 pixels high to limit overcomputation. 
+	/* Enough tiles for two complete rows.
 	 */
 	t[0] = vips_image_new(); 
 	if( vips_foreign_load_svg_parse( svg, t[0] ) ||
 		vips_image_generate( t[0], NULL,
 			vips_foreign_load_svg_generate, NULL, svg, NULL ) ||
 		vips_tilecache( t[0], &t[1],
-			"tile_width", t[0]->Xsize,
-			"tile_height", 2000,
-			"max_tiles", 1,
+			"tile_width", TILE_SIZE,
+			"tile_height", TILE_SIZE,
+			"max_tiles", 2 * (1 + t[0]->Xsize / TILE_SIZE),
 			NULL ) ||
-		vips_sequential( t[1], &t[2], 
-			"tile_height", 2000, 
-			NULL ) ||
-		vips_image_write( t[2], load->real ) ) 
+		vips_image_write( t[1], load->real ) ) 
 		return( -1 );
 
 	return( 0 );
