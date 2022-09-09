@@ -38,7 +38,9 @@
 
 /* Define VIPS_CPLUSPLUS_EXPORTS to build a DLL using MSVC.
  */
-#if defined(_MSC_VER) && !defined(VIPS_STATICLIB)
+#ifdef _VIPS_PUBLIC
+#  define VIPS_CPLUSPLUS_API _VIPS_PUBLIC
+#elif defined(_MSC_VER) && !defined(VIPS_STATICLIB)
 #  ifdef VIPS_CPLUSPLUS_EXPORTS
 #    define VIPS_CPLUSPLUS_API __declspec(dllexport)
 #  else
