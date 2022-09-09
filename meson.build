@@ -267,6 +267,14 @@ if libexif_dep.found()
         # libexif includes don't need libexif prefix
         cfg_var.set('UNTAGGED_EXIF', '1')
     endif
+    # 0.6.22 adds a couple of EXIF 2.3 ASCII tags
+    if libexif_dep.version().version_compare('>=0.6.22')
+        cfg_var.set('HAVE_EXIF_0_6_22', '1')
+    endif
+    # 0.6.23 adds some OffsetTime* ASCII tags
+    if libexif_dep.version().version_compare('>=0.6.23')
+        cfg_var.set('HAVE_EXIF_0_6_23', '1')
+    endif
 endif
 
 

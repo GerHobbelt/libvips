@@ -1467,6 +1467,22 @@ if test x"$with_libexif" != x"no"; then
     [AC_DEFINE(HAVE_EXIF,1,[define if you have libexif >= 0.6 installed.])
      with_libexif=yes
      PACKAGES_USED="$PACKAGES_USED libexif"
+
+     # 0.6.22 adds a couple of EXIF 2.3 ASCII tags
+     PKG_CHECK_MODULES(EXIF_0_6_22, libexif >= 0.6.22,
+       [AC_DEFINE(HAVE_EXIF_0_6_22,1,[define if you have libexif >= 0.6.22])
+       ],
+       [:
+       ]
+     )
+
+     # 0.6.23 adds some OffsetTime* ASCII tags
+     PKG_CHECK_MODULES(EXIF_0_6_23, libexif >= 0.6.23,
+       [AC_DEFINE(HAVE_EXIF_0_6_23,1,[define if you have libexif >= 0.6.23])
+       ],
+       [:
+       ]
+     )
     ],
     [AC_MSG_WARN([libexif >= 0.6 not found; disabling exif support])
      with_libexif=no
