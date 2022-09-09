@@ -1901,7 +1901,6 @@ public:
 	 */
 
 // headers for vips operations
-// Mon Nov  1 03:31:09 PM CET 2021
 // this file is generated automatically, do not edit!
 
 /**
@@ -2128,7 +2127,7 @@ double avg( VOption *options = 0 ) const;
 
 /**
  * Boolean operation across image bands.
- * @param boolean boolean to perform.
+ * @param boolean Boolean to perform.
  * @param options Set of options.
  * @return Output image.
  */
@@ -2207,7 +2206,7 @@ static VImage black( int width, int height, VOption *options = 0 );
 /**
  * Boolean operation on two images.
  * @param right Right-hand image argument.
- * @param boolean boolean to perform.
+ * @param boolean Boolean to perform.
  * @param options Set of options.
  * @return Output image.
  */
@@ -2215,7 +2214,7 @@ VImage boolean( VImage right, VipsOperationBoolean boolean, VOption *options = 0
 
 /**
  * Boolean operations against a constant.
- * @param boolean boolean to perform.
+ * @param boolean Boolean to perform.
  * @param c Array of constants.
  * @param options Set of options.
  * @return Output image.
@@ -2312,7 +2311,7 @@ VImage compass( VImage mask, VOption *options = 0 ) const;
 
 /**
  * Perform a complex operation on an image.
- * @param cmplx complex to perform.
+ * @param cmplx Complex to perform.
  * @param options Set of options.
  * @return Output image.
  */
@@ -2321,7 +2320,7 @@ VImage complex( VipsOperationComplex cmplx, VOption *options = 0 ) const;
 /**
  * Complex binary operations on two images.
  * @param right Right-hand image argument.
- * @param cmplx binary complex operation to perform.
+ * @param cmplx Binary complex operation to perform.
  * @param options Set of options.
  * @return Output image.
  */
@@ -2337,7 +2336,7 @@ VImage complexform( VImage right, VOption *options = 0 ) const;
 
 /**
  * Get a component from a complex image.
- * @param get complex to perform.
+ * @param get Complex to perform.
  * @param options Set of options.
  * @return Output image.
  */
@@ -2686,7 +2685,6 @@ void draw_smudge( int left, int top, int width, int height, VOption *options = 0
  *   - **depth** -- Pyramid depth, VipsForeignDzDepth.
  *   - **angle** -- Rotate image during save, VipsAngle.
  *   - **container** -- Pyramid container type, VipsForeignDzContainer.
- *   - **properties** -- Write a properties file to the output directory, bool.
  *   - **compression** -- ZIP deflate compression level, int.
  *   - **region_shrink** -- Method to shrink regions, VipsRegionShrink.
  *   - **skip_blanks** -- Skip tiles which are nearly equal to the background, int.
@@ -2714,7 +2712,6 @@ void dzsave( const char *filename, VOption *options = 0 ) const;
  *   - **depth** -- Pyramid depth, VipsForeignDzDepth.
  *   - **angle** -- Rotate image during save, VipsAngle.
  *   - **container** -- Pyramid container type, VipsForeignDzContainer.
- *   - **properties** -- Write a properties file to the output directory, bool.
  *   - **compression** -- ZIP deflate compression level, int.
  *   - **region_shrink** -- Method to shrink regions, VipsRegionShrink.
  *   - **skip_blanks** -- Skip tiles which are nearly equal to the background, int.
@@ -2728,6 +2725,33 @@ void dzsave( const char *filename, VOption *options = 0 ) const;
  * @return Buffer to save to.
  */
 VipsBlob *dzsave_buffer( VOption *options = 0 ) const;
+
+/**
+ * Save image to deepzoom target.
+ *
+ * **Optional parameters**
+ *   - **basename** -- Base name to save to, const char *.
+ *   - **layout** -- Directory layout, VipsForeignDzLayout.
+ *   - **suffix** -- Filename suffix for tiles, const char *.
+ *   - **overlap** -- Tile overlap in pixels, int.
+ *   - **tile_size** -- Tile size in pixels, int.
+ *   - **centre** -- Center image in tile, bool.
+ *   - **depth** -- Pyramid depth, VipsForeignDzDepth.
+ *   - **angle** -- Rotate image during save, VipsAngle.
+ *   - **container** -- Pyramid container type, VipsForeignDzContainer.
+ *   - **compression** -- ZIP deflate compression level, int.
+ *   - **region_shrink** -- Method to shrink regions, VipsRegionShrink.
+ *   - **skip_blanks** -- Skip tiles which are nearly equal to the background, int.
+ *   - **no_strip** -- Don't strip tile metadata, bool.
+ *   - **id** -- Resource ID, const char *.
+ *   - **strip** -- Strip all metadata from image, bool.
+ *   - **background** -- Background value, std::vector<double>.
+ *   - **page_height** -- Set page height for multipage save, int.
+ *
+ * @param target Target to save to.
+ * @param options Set of options.
+ */
+void dzsave_target( VTarget target, VOption *options = 0 ) const;
 
 /**
  * Embed an image in a larger image.
@@ -3029,6 +3053,9 @@ static VImage gifload_source( VSource source, VOption *options = 0 );
  *   - **dither** -- Amount of dithering, double.
  *   - **effort** -- Quantisation effort, int.
  *   - **bitdepth** -- Number of bits per pixel, int.
+ *   - **interframe_maxerror** -- Maximum inter-frame error for transparency, double.
+ *   - **reoptimise** -- Reoptimise colour palettes, bool.
+ *   - **interpalette_maxerror** -- Maximum inter-palette error for palette reusage, double.
  *   - **strip** -- Strip all metadata from image, bool.
  *   - **background** -- Background value, std::vector<double>.
  *   - **page_height** -- Set page height for multipage save, int.
@@ -3045,6 +3072,9 @@ void gifsave( const char *filename, VOption *options = 0 ) const;
  *   - **dither** -- Amount of dithering, double.
  *   - **effort** -- Quantisation effort, int.
  *   - **bitdepth** -- Number of bits per pixel, int.
+ *   - **interframe_maxerror** -- Maximum inter-frame error for transparency, double.
+ *   - **reoptimise** -- Reoptimise colour palettes, bool.
+ *   - **interpalette_maxerror** -- Maximum inter-palette error for palette reusage, double.
  *   - **strip** -- Strip all metadata from image, bool.
  *   - **background** -- Background value, std::vector<double>.
  *   - **page_height** -- Set page height for multipage save, int.
@@ -3061,6 +3091,9 @@ VipsBlob *gifsave_buffer( VOption *options = 0 ) const;
  *   - **dither** -- Amount of dithering, double.
  *   - **effort** -- Quantisation effort, int.
  *   - **bitdepth** -- Number of bits per pixel, int.
+ *   - **interframe_maxerror** -- Maximum inter-frame error for transparency, double.
+ *   - **reoptimise** -- Reoptimise colour palettes, bool.
+ *   - **interpalette_maxerror** -- Maximum inter-palette error for palette reusage, double.
  *   - **strip** -- Strip all metadata from image, bool.
  *   - **background** -- Background value, std::vector<double>.
  *   - **page_height** -- Set page height for multipage save, int.
@@ -3089,7 +3122,7 @@ VImage globalbalance( VOption *options = 0 ) const;
  *   - **extend** -- How to generate the extra pixels, VipsExtend.
  *   - **background** -- Color for background pixels, std::vector<double>.
  *
- * @param direction direction to place image within width/height.
+ * @param direction Direction to place image within width/height.
  * @param width Image width in pixels.
  * @param height Image height in pixels.
  * @param options Set of options.
@@ -3112,9 +3145,9 @@ static VImage grey( int width, int height, VOption *options = 0 );
 
 /**
  * Grid an image.
- * @param tile_height chop into tiles this high.
- * @param across number of tiles across.
- * @param down number of tiles down.
+ * @param tile_height Chop into tiles this high.
+ * @param across Number of tiles across.
+ * @param down Number of tiles down.
  * @param options Set of options.
  * @return Output image.
  */
@@ -3127,6 +3160,7 @@ VImage grid( int tile_height, int across, int down, VOption *options = 0 ) const
  *   - **page** -- Load this page from the file, int.
  *   - **n** -- Load this many pages, int.
  *   - **thumbnail** -- Fetch thumbnail image, bool.
+ *   - **unlimited** -- Remove all denial of service limits, bool.
  *   - **memory** -- Force open via memory, bool.
  *   - **access** -- Required access pattern for this file, VipsAccess.
  *   - **fail_on** -- Error level to fail on, VipsFailOn.
@@ -3144,6 +3178,7 @@ static VImage heifload( const char *filename, VOption *options = 0 );
  *   - **page** -- Load this page from the file, int.
  *   - **n** -- Load this many pages, int.
  *   - **thumbnail** -- Fetch thumbnail image, bool.
+ *   - **unlimited** -- Remove all denial of service limits, bool.
  *   - **memory** -- Force open via memory, bool.
  *   - **access** -- Required access pattern for this file, VipsAccess.
  *   - **fail_on** -- Error level to fail on, VipsFailOn.
@@ -3161,6 +3196,7 @@ static VImage heifload_buffer( VipsBlob *buffer, VOption *options = 0 );
  *   - **page** -- Load this page from the file, int.
  *   - **n** -- Load this many pages, int.
  *   - **thumbnail** -- Fetch thumbnail image, bool.
+ *   - **unlimited** -- Remove all denial of service limits, bool.
  *   - **memory** -- Force open via memory, bool.
  *   - **access** -- Required access pattern for this file, VipsAccess.
  *   - **fail_on** -- Error level to fail on, VipsFailOn.
@@ -3176,6 +3212,7 @@ static VImage heifload_source( VSource source, VOption *options = 0 );
  *
  * **Optional parameters**
  *   - **Q** -- Q factor, int.
+ *   - **bitdepth** -- Number of bits per pixel, int.
  *   - **lossless** -- Enable lossless compression, bool.
  *   - **compression** -- Compression format, VipsForeignHeifCompression.
  *   - **effort** -- CPU effort, int.
@@ -3194,6 +3231,7 @@ void heifsave( const char *filename, VOption *options = 0 ) const;
  *
  * **Optional parameters**
  *   - **Q** -- Q factor, int.
+ *   - **bitdepth** -- Number of bits per pixel, int.
  *   - **lossless** -- Enable lossless compression, bool.
  *   - **compression** -- Compression format, VipsForeignHeifCompression.
  *   - **effort** -- CPU effort, int.
@@ -3212,6 +3250,7 @@ VipsBlob *heifsave_buffer( VOption *options = 0 ) const;
  *
  * **Optional parameters**
  *   - **Q** -- Q factor, int.
+ *   - **bitdepth** -- Number of bits per pixel, int.
  *   - **lossless** -- Enable lossless compression, bool.
  *   - **compression** -- Compression format, VipsForeignHeifCompression.
  *   - **effort** -- CPU effort, int.
@@ -3343,7 +3382,7 @@ VImage hough_circle( VOption *options = 0 ) const;
  * Find hough line transform.
  *
  * **Optional parameters**
- *   - **width** -- horizontal size of parameter space, int.
+ *   - **width** -- Horizontal size of parameter space, int.
  *   - **height** -- Vertical size of parameter space, int.
  *
  * @param options Set of options.
@@ -3856,11 +3895,11 @@ VImage linecache( VOption *options = 0 ) const;
  * Make a laplacian of gaussian image.
  *
  * **Optional parameters**
- *   - **separable** -- Generate separable Logmatian, bool.
+ *   - **separable** -- Generate separable Gaussian, bool.
  *   - **precision** -- Generate with this precision, VipsPrecision.
  *
- * @param sigma Radius of Logmatian.
- * @param min_ampl Minimum amplitude of Logmatian.
+ * @param sigma Radius of Gaussian.
+ * @param min_ampl Minimum amplitude of Gaussian.
  * @param options Set of options.
  * @return Output image.
  */
@@ -3908,6 +3947,7 @@ static VImage magickload_buffer( VipsBlob *buffer, VOption *options = 0 );
  *   - **quality** -- Quality to use, int.
  *   - **optimize_gif_frames** -- Apply GIF frames optimization, bool.
  *   - **optimize_gif_transparency** -- Apply GIF transparency optimization, bool.
+ *   - **bitdepth** -- Number of bits per pixel, int.
  *   - **strip** -- Strip all metadata from image, bool.
  *   - **background** -- Background value, std::vector<double>.
  *   - **page_height** -- Set page height for multipage save, int.
@@ -3925,6 +3965,7 @@ void magicksave( const char *filename, VOption *options = 0 ) const;
  *   - **quality** -- Quality to use, int.
  *   - **optimize_gif_frames** -- Apply GIF frames optimization, bool.
  *   - **optimize_gif_transparency** -- Apply GIF transparency optimization, bool.
+ *   - **bitdepth** -- Number of bits per pixel, int.
  *   - **strip** -- Strip all metadata from image, bool.
  *   - **background** -- Background value, std::vector<double>.
  *   - **page_height** -- Set page height for multipage save, int.
@@ -3939,6 +3980,9 @@ VipsBlob *magicksave_buffer( VOption *options = 0 ) const;
  *
  * **Optional parameters**
  *   - **interpolate** -- Interpolate pixels with this, VInterpolate.
+ *   - **background** -- Background value, std::vector<double>.
+ *   - **premultiplied** -- Images have premultiplied alpha, bool.
+ *   - **extend** -- How to generate the extra pixels, VipsExtend.
  *
  * @param index Index pixels with this.
  * @param options Set of options.
@@ -3950,7 +3994,7 @@ VImage mapim( VImage index, VOption *options = 0 ) const;
  * Map an image though a lut.
  *
  * **Optional parameters**
- *   - **band** -- apply one-band lut to this band of in, int.
+ *   - **band** -- Apply one-band lut to this band of in, int.
  *
  * @param lut Look-up table image.
  * @param options Set of options.
@@ -3991,7 +4035,7 @@ static VImage mask_butterworth( int width, int height, double order, double freq
  * @param order Filter order.
  * @param frequency_cutoff_x Frequency cutoff x.
  * @param frequency_cutoff_y Frequency cutoff y.
- * @param radius radius of circle.
+ * @param radius Radius of circle.
  * @param amplitude_cutoff Amplitude cutoff.
  * @param options Set of options.
  * @return Output image.
@@ -4066,7 +4110,7 @@ static VImage mask_gaussian( int width, int height, double frequency_cutoff, dou
  * @param height Image height in pixels.
  * @param frequency_cutoff_x Frequency cutoff x.
  * @param frequency_cutoff_y Frequency cutoff y.
- * @param radius radius of circle.
+ * @param radius Radius of circle.
  * @param amplitude_cutoff Amplitude cutoff.
  * @param options Set of options.
  * @return Output image.
@@ -4122,7 +4166,7 @@ static VImage mask_ideal( int width, int height, double frequency_cutoff, VOptio
  * @param height Image height in pixels.
  * @param frequency_cutoff_x Frequency cutoff x.
  * @param frequency_cutoff_y Frequency cutoff y.
- * @param radius radius of circle.
+ * @param radius Radius of circle.
  * @param options Set of options.
  * @return Output image.
  */
@@ -4171,7 +4215,7 @@ VImage match( VImage sec, int xr1, int yr1, int xs1, int ys1, int xr2, int yr2, 
 
 /**
  * Apply a math operation to an image.
- * @param math math to perform.
+ * @param math Math to perform.
  * @param options Set of options.
  * @return Output image.
  */
@@ -4180,7 +4224,7 @@ VImage math( VipsOperationMath math, VOption *options = 0 ) const;
 /**
  * Binary math operations.
  * @param right Right-hand image argument.
- * @param math2 math to perform.
+ * @param math2 Math to perform.
  * @param options Set of options.
  * @return Output image.
  */
@@ -4188,7 +4232,7 @@ VImage math2( VImage right, VipsOperationMath2 math2, VOption *options = 0 ) con
 
 /**
  * Binary math operations with a constant.
- * @param math2 math to perform.
+ * @param math2 Math to perform.
  * @param c Array of constants.
  * @param options Set of options.
  * @return Output image.
@@ -4508,6 +4552,7 @@ static VImage openslideload_source( VSource source, VOption *options = 0 );
  *   - **dpi** -- Render at this DPI, double.
  *   - **scale** -- Scale output by this factor, double.
  *   - **background** -- Background value, std::vector<double>.
+ *   - **password** -- Decrypt with this password, const char *.
  *   - **memory** -- Force open via memory, bool.
  *   - **access** -- Required access pattern for this file, VipsAccess.
  *   - **fail_on** -- Error level to fail on, VipsFailOn.
@@ -4527,6 +4572,7 @@ static VImage pdfload( const char *filename, VOption *options = 0 );
  *   - **dpi** -- Render at this DPI, double.
  *   - **scale** -- Scale output by this factor, double.
  *   - **background** -- Background value, std::vector<double>.
+ *   - **password** -- Decrypt with this password, const char *.
  *   - **memory** -- Force open via memory, bool.
  *   - **access** -- Required access pattern for this file, VipsAccess.
  *   - **fail_on** -- Error level to fail on, VipsFailOn.
@@ -4546,6 +4592,7 @@ static VImage pdfload_buffer( VipsBlob *buffer, VOption *options = 0 );
  *   - **dpi** -- Render at this DPI, double.
  *   - **scale** -- Scale output by this factor, double.
  *   - **background** -- Background value, std::vector<double>.
+ *   - **password** -- Decrypt with this password, const char *.
  *   - **memory** -- Force open via memory, bool.
  *   - **access** -- Required access pattern for this file, VipsAccess.
  *   - **fail_on** -- Error level to fail on, VipsFailOn.
@@ -4633,17 +4680,17 @@ static VImage pngload_buffer( VipsBlob *buffer, VOption *options = 0 );
 static VImage pngload_source( VSource source, VOption *options = 0 );
 
 /**
- * Save image to png file.
+ * Save image to file as png.
  *
  * **Optional parameters**
  *   - **compression** -- Compression factor, int.
  *   - **interlace** -- Interlace image, bool.
  *   - **profile** -- ICC profile to embed, const char *.
- *   - **filter** -- libpng row filter flag(s), int.
+ *   - **filter** -- libspng row filter flag(s), int.
  *   - **palette** -- Quantise to 8bpp palette, bool.
  *   - **Q** -- Quantisation quality, int.
  *   - **dither** -- Amount of dithering, double.
- *   - **bitdepth** -- Write as a 1, 2, 4 or 8 bit image, int.
+ *   - **bitdepth** -- Write as a 1, 2, 4, 8 or 16 bit image, int.
  *   - **effort** -- Quantisation CPU effort, int.
  *   - **strip** -- Strip all metadata from image, bool.
  *   - **background** -- Background value, std::vector<double>.
@@ -4655,17 +4702,17 @@ static VImage pngload_source( VSource source, VOption *options = 0 );
 void pngsave( const char *filename, VOption *options = 0 ) const;
 
 /**
- * Save image to png buffer.
+ * Save image to buffer as png.
  *
  * **Optional parameters**
  *   - **compression** -- Compression factor, int.
  *   - **interlace** -- Interlace image, bool.
  *   - **profile** -- ICC profile to embed, const char *.
- *   - **filter** -- libpng row filter flag(s), int.
+ *   - **filter** -- libspng row filter flag(s), int.
  *   - **palette** -- Quantise to 8bpp palette, bool.
  *   - **Q** -- Quantisation quality, int.
  *   - **dither** -- Amount of dithering, double.
- *   - **bitdepth** -- Write as a 1, 2, 4 or 8 bit image, int.
+ *   - **bitdepth** -- Write as a 1, 2, 4, 8 or 16 bit image, int.
  *   - **effort** -- Quantisation CPU effort, int.
  *   - **strip** -- Strip all metadata from image, bool.
  *   - **background** -- Background value, std::vector<double>.
@@ -4683,11 +4730,11 @@ VipsBlob *pngsave_buffer( VOption *options = 0 ) const;
  *   - **compression** -- Compression factor, int.
  *   - **interlace** -- Interlace image, bool.
  *   - **profile** -- ICC profile to embed, const char *.
- *   - **filter** -- libpng row filter flag(s), int.
+ *   - **filter** -- libspng row filter flag(s), int.
  *   - **palette** -- Quantise to 8bpp palette, bool.
  *   - **Q** -- Quantisation quality, int.
  *   - **dither** -- Amount of dithering, double.
- *   - **bitdepth** -- Write as a 1, 2, 4 or 8 bit image, int.
+ *   - **bitdepth** -- Write as a 1, 2, 4, 8 or 16 bit image, int.
  *   - **effort** -- Quantisation CPU effort, int.
  *   - **strip** -- Strip all metadata from image, bool.
  *   - **background** -- Background value, std::vector<double>.
@@ -4731,8 +4778,8 @@ static VImage ppmload_source( VSource source, VOption *options = 0 );
  *
  * **Optional parameters**
  *   - **format** -- Format to save in, VipsForeignPpmFormat.
- *   - **ascii** -- save as ascii, bool.
- *   - **bitdepth** -- set to 1 to write as a 1 bit image, int.
+ *   - **ascii** -- Save as ascii, bool.
+ *   - **bitdepth** -- Set to 1 to write as a 1 bit image, int.
  *   - **strip** -- Strip all metadata from image, bool.
  *   - **background** -- Background value, std::vector<double>.
  *   - **page_height** -- Set page height for multipage save, int.
@@ -4747,8 +4794,8 @@ void ppmsave( const char *filename, VOption *options = 0 ) const;
  *
  * **Optional parameters**
  *   - **format** -- Format to save in, VipsForeignPpmFormat.
- *   - **ascii** -- save as ascii, bool.
- *   - **bitdepth** -- set to 1 to write as a 1 bit image, int.
+ *   - **ascii** -- Save as ascii, bool.
+ *   - **bitdepth** -- Set to 1 to write as a 1 bit image, int.
  *   - **strip** -- Strip all metadata from image, bool.
  *   - **background** -- Background value, std::vector<double>.
  *   - **page_height** -- Set page height for multipage save, int.
@@ -4951,7 +4998,7 @@ void rawsave_fd( int fd, VOption *options = 0 ) const;
 
 /**
  * Linear recombination with matrix.
- * @param m matrix of coefficients.
+ * @param m Matrix of coefficients.
  * @param options Set of options.
  * @return Output image.
  */
@@ -4962,6 +5009,7 @@ VImage recomb( VImage m, VOption *options = 0 ) const;
  *
  * **Optional parameters**
  *   - **kernel** -- Resampling kernel, VipsKernel.
+ *   - **gap** -- Reducing gap, double.
  *
  * @param hshrink Horizontal shrink factor.
  * @param vshrink Vertical shrink factor.
@@ -4975,6 +5023,7 @@ VImage reduce( double hshrink, double vshrink, VOption *options = 0 ) const;
  *
  * **Optional parameters**
  *   - **kernel** -- Resampling kernel, VipsKernel.
+ *   - **gap** -- Reducing gap, double.
  *
  * @param hshrink Horizontal shrink factor.
  * @param options Set of options.
@@ -4987,6 +5036,7 @@ VImage reduceh( double hshrink, VOption *options = 0 ) const;
  *
  * **Optional parameters**
  *   - **kernel** -- Resampling kernel, VipsKernel.
+ *   - **gap** -- Reducing gap, double.
  *
  * @param vshrink Vertical shrink factor.
  * @param options Set of options.
@@ -4997,7 +5047,7 @@ VImage reducev( double vshrink, VOption *options = 0 ) const;
 /**
  * Relational operation on two images.
  * @param right Right-hand image argument.
- * @param relational relational to perform.
+ * @param relational Relational to perform.
  * @param options Set of options.
  * @return Output image.
  */
@@ -5005,7 +5055,7 @@ VImage relational( VImage right, VipsOperationRelational relational, VOption *op
 
 /**
  * Relational operations against a constant.
- * @param relational relational to perform.
+ * @param relational Relational to perform.
  * @param c Array of constants.
  * @param options Set of options.
  * @return Output image.
@@ -5042,6 +5092,7 @@ VImage replicate( int across, int down, VOption *options = 0 ) const;
  *
  * **Optional parameters**
  *   - **kernel** -- Resampling kernel, VipsKernel.
+ *   - **gap** -- Reducing gap, double.
  *   - **vscale** -- Vertical scale image by this factor, double.
  *
  * @param scale Scale image by this factor.
@@ -5088,7 +5139,7 @@ VImage rotate( double angle, VOption *options = 0 ) const;
 
 /**
  * Perform a round function on an image.
- * @param round rounding operation to perform.
+ * @param round Rounding operation to perform.
  * @param options Set of options.
  * @return Output image.
  */
@@ -5178,6 +5229,10 @@ VImage sharpen( VOption *options = 0 ) const;
 
 /**
  * Shrink an image.
+ *
+ * **Optional parameters**
+ *   - **ceil** -- Round-up output dimensions, bool.
+ *
  * @param hshrink Horizontal shrink factor.
  * @param vshrink Vertical shrink factor.
  * @param options Set of options.
@@ -5187,6 +5242,10 @@ VImage shrink( double hshrink, double vshrink, VOption *options = 0 ) const;
 
 /**
  * Shrink an image horizontally.
+ *
+ * **Optional parameters**
+ *   - **ceil** -- Round-up output dimensions, bool.
+ *
  * @param hshrink Horizontal shrink factor.
  * @param options Set of options.
  * @return Output image.
@@ -5195,6 +5254,10 @@ VImage shrinkh( int hshrink, VOption *options = 0 ) const;
 
 /**
  * Shrink an image vertically.
+ *
+ * **Optional parameters**
+ *   - **ceil** -- Round-up output dimensions, bool.
+ *
  * @param vshrink Vertical shrink factor.
  * @param options Set of options.
  * @return Output image.
@@ -5432,6 +5495,7 @@ static VImage text( const char *text, VOption *options = 0 );
  *   - **import_profile** -- Fallback import profile, const char *.
  *   - **export_profile** -- Fallback export profile, const char *.
  *   - **intent** -- Rendering intent, VipsIntent.
+ *   - **fail_on** -- Error level to fail on, VipsFailOn.
  *
  * @param filename Filename to read from.
  * @param width Size to this width.
@@ -5453,6 +5517,7 @@ static VImage thumbnail( const char *filename, int width, VOption *options = 0 )
  *   - **import_profile** -- Fallback import profile, const char *.
  *   - **export_profile** -- Fallback export profile, const char *.
  *   - **intent** -- Rendering intent, VipsIntent.
+ *   - **fail_on** -- Error level to fail on, VipsFailOn.
  *
  * @param buffer Buffer to load from.
  * @param width Size to this width.
@@ -5473,6 +5538,7 @@ static VImage thumbnail_buffer( VipsBlob *buffer, int width, VOption *options = 
  *   - **import_profile** -- Fallback import profile, const char *.
  *   - **export_profile** -- Fallback export profile, const char *.
  *   - **intent** -- Rendering intent, VipsIntent.
+ *   - **fail_on** -- Error level to fail on, VipsFailOn.
  *
  * @param width Size to this width.
  * @param options Set of options.
@@ -5493,6 +5559,7 @@ VImage thumbnail_image( int width, VOption *options = 0 ) const;
  *   - **import_profile** -- Fallback import profile, const char *.
  *   - **export_profile** -- Fallback export profile, const char *.
  *   - **intent** -- Rendering intent, VipsIntent.
+ *   - **fail_on** -- Error level to fail on, VipsFailOn.
  *
  * @param source Source to load from.
  * @param width Size to this width.
@@ -5622,6 +5689,40 @@ void tiffsave( const char *filename, VOption *options = 0 ) const;
  * @return Buffer to save to.
  */
 VipsBlob *tiffsave_buffer( VOption *options = 0 ) const;
+
+/**
+ * Save image to tiff target.
+ *
+ * **Optional parameters**
+ *   - **compression** -- Compression for this file, VipsForeignTiffCompression.
+ *   - **Q** -- Q factor, int.
+ *   - **predictor** -- Compression prediction, VipsForeignTiffPredictor.
+ *   - **profile** -- ICC profile to embed, const char *.
+ *   - **tile** -- Write a tiled tiff, bool.
+ *   - **tile_width** -- Tile width in pixels, int.
+ *   - **tile_height** -- Tile height in pixels, int.
+ *   - **pyramid** -- Write a pyramidal tiff, bool.
+ *   - **miniswhite** -- Use 0 for white in 1-bit images, bool.
+ *   - **bitdepth** -- Write as a 1, 2, 4 or 8 bit image, int.
+ *   - **resunit** -- Resolution unit, VipsForeignTiffResunit.
+ *   - **xres** -- Horizontal resolution in pixels/mm, double.
+ *   - **yres** -- Vertical resolution in pixels/mm, double.
+ *   - **bigtiff** -- Write a bigtiff image, bool.
+ *   - **properties** -- Write a properties document to IMAGEDESCRIPTION, bool.
+ *   - **region_shrink** -- Method to shrink regions, VipsRegionShrink.
+ *   - **level** -- ZSTD compression level, int.
+ *   - **lossless** -- Enable WEBP lossless mode, bool.
+ *   - **depth** -- Pyramid depth, VipsForeignDzDepth.
+ *   - **subifd** -- Save pyr layers as sub-IFDs, bool.
+ *   - **premultiply** -- Save with premultiplied alpha, bool.
+ *   - **strip** -- Strip all metadata from image, bool.
+ *   - **background** -- Background value, std::vector<double>.
+ *   - **page_height** -- Set page height for multipage save, int.
+ *
+ * @param target Target to save to.
+ * @param options Set of options.
+ */
+void tiffsave_target( VTarget target, VOption *options = 0 ) const;
 
 /**
  * Cache an image as a set of tiles.
@@ -5792,7 +5893,7 @@ static VImage webpload_source( VSource source, VOption *options = 0 );
  *
  * **Optional parameters**
  *   - **Q** -- Q factor, int.
- *   - **lossless** -- enable lossless compression, bool.
+ *   - **lossless** -- Enable lossless compression, bool.
  *   - **preset** -- Preset for lossy compression, VipsForeignWebpPreset.
  *   - **smart_subsample** -- Enable high quality chroma subsampling, bool.
  *   - **near_lossless** -- Enable preprocessing in lossless mode (uses Q), bool.
@@ -5817,7 +5918,7 @@ void webpsave( const char *filename, VOption *options = 0 ) const;
  *
  * **Optional parameters**
  *   - **Q** -- Q factor, int.
- *   - **lossless** -- enable lossless compression, bool.
+ *   - **lossless** -- Enable lossless compression, bool.
  *   - **preset** -- Preset for lossy compression, VipsForeignWebpPreset.
  *   - **smart_subsample** -- Enable high quality chroma subsampling, bool.
  *   - **near_lossless** -- Enable preprocessing in lossless mode (uses Q), bool.
@@ -5842,7 +5943,7 @@ VipsBlob *webpsave_buffer( VOption *options = 0 ) const;
  *
  * **Optional parameters**
  *   - **Q** -- Q factor, int.
- *   - **lossless** -- enable lossless compression, bool.
+ *   - **lossless** -- Enable lossless compression, bool.
  *   - **preset** -- Preset for lossy compression, VipsForeignWebpPreset.
  *   - **smart_subsample** -- Enable high quality chroma subsampling, bool.
  *   - **near_lossless** -- Enable preprocessing in lossless mode (uses Q), bool.
