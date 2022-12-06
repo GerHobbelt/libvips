@@ -329,10 +329,10 @@ vips_convi_compile_section( VipsConvi *convi, VipsImage *in, Pass *pass )
 	 * of the previous pass. 
 	 */
 	if( pass->first == 0 ) {
-		char c0[256];
+		char rnd[256];
 
-		CONST( c0, 0, 2 );
-		ASM2( "loadpw", "sum", c0 );
+		CONST( rnd, 1 << (convi->exp - 1), 2 );
+		ASM2( "loadpw", "sum", rnd );
 	}
 	else 
 		ASM2( "loadw", "sum", "r" );
@@ -419,10 +419,7 @@ vips_convi_compile_clip( VipsConvi *convi )
 	int offset = VIPS_RINT( vips_image_get_offset( M ) );
 
 	VipsVector *v;
-	char rnd[256];
 	char exp[256];
-	char c0[256];
-	char c255[256];
 	char off[256];
 
 	convi->vector = v = vips_vector_new( "convi", 1 );
@@ -435,24 +432,13 @@ vips_convi_compile_clip( VipsConvi *convi )
 	 */
 	TEMP( "value", 2 );
 
-	CONST( rnd, 1 << (convi->exp - 1), 2 );
-	ASM3( "addw", "value", "r", rnd );
 	CONST( exp, convi->exp, 2 );
-	ASM3( "shrsw", "value", "value", exp );
+	ASM3( "shrsw", "value", "r", exp );
 
 	CONST( off, offset, 2 ); 
 	ASM3( "addw", "value", "value", off );
 
-	/* You'd think "convsuswb" (convert signed 16-bit to unsigned
-	 * 8-bit with saturation) would be quicker, but it's a lot
-	 * slower.
-	 */
-	CONST( c0, 0, 2 );
-	ASM3( "maxsw", "value", c0, "value" ); 
-	CONST( c255, 255, 2 );
-	ASM3( "minsw", "value", c255, "value" ); 
-
-	ASM2( "convwb", "d1", "value" );
+	ASM2( "convsuswb", "d1", "value" );
 
 	if( !vips_vector_compile( v ) ) 
 		return( -1 );
