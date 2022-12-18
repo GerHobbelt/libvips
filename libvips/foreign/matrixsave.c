@@ -154,8 +154,8 @@ vips_foreign_save_matrix_build( VipsObject *object )
 #define DX VIPS_FORMAT_DPCOMPLEX
 
 static VipsBandFormat bandfmt_matrix[10] = {
-/* UC  C   US  S   UI  I  F  X  D  DX */
-   D,  D,  D,  D,  D,  D, D, D, D, D
+	/* Band format:  UC  C  US S  UI I  F  X  D  DX */
+	/* Promotion: */ D,  D, D, D, D, D, D, D, D, D
 };
 
 static const char *vips_foreign_save_matrix_suffs[] = {

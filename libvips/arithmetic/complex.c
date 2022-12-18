@@ -234,8 +234,8 @@ vips_complex_buffer( VipsArithmetic *arithmetic,
 #define DX VIPS_FORMAT_DPCOMPLEX
 
 static const VipsBandFormat vips_complex_format_table[10] = {
-/* UC  C   US  S   UI  I   F   X   D   DX */
-   X,  X,  X,  X,  X,  X,  X,  X,  DX, DX 
+	/* Band format:  UC C  US S  UI I  F  X  D   DX */
+	/* Promotion: */ X, X, X, X, X, X, X, X, DX, DX
 };
 
 static void
@@ -527,8 +527,8 @@ vips_complex2_buffer( VipsArithmetic *arithmetic,
 #define DX VIPS_FORMAT_DPCOMPLEX
 
 static const VipsBandFormat vips_complex2_format_table[10] = {
-/* UC  C   US  S   UI  I   F   X   D   DX */
-   X,  X,  X,  X,  X,  X,  X,  X,  DX, DX 
+	/* Band format:  UC C  US S  UI I  F  X  D   DX */
+	/* Promotion: */ X, X, X, X, X, X, X, X, DX, DX
 };
 
 static void
@@ -741,8 +741,8 @@ vips_complexget_buffer( VipsArithmetic *arithmetic,
 #define DX VIPS_FORMAT_DPCOMPLEX
 
 static const VipsBandFormat vips_complexget_format_table[10] = {
-/* UC  C   US  S   UI  I   F   X   D   DX */
-   UC, C,  US, S,  UI, I,  F,  F,  D,  D
+	/* Band format:  UC  C  US  S  UI  I  F  X  D  DX */
+	/* Promotion: */ UC, C, US, S, UI, I, F, F, D, D
 };
 
 static void
@@ -952,8 +952,8 @@ vips_complexform_buffer( VipsArithmetic *arithmetic,
  * these match the case statement in complexform_buffer() above.
  */
 static VipsBandFormat vips_complexform_format_table[10] = {
-/* UC  C   US  S   UI  I  F  X  D  DX */
-   X,  X,  X,  X,  X,  X, X, X, DX,DX
+	/* Band format:  UC C  US S  UI I  F  X  D   DX */
+	/* Promotion: */ X, X, X, X, X, X, X, X, DX, DX
 };
 
 static void

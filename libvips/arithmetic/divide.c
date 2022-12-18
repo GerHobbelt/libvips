@@ -211,8 +211,8 @@ vips_divide_buffer( VipsArithmetic *arithmetic,
  * these match the case statement in divide_buffer() above.
  */
 static VipsBandFormat vips_divide_format_table[10] = {
-/* UC  C   US  S   UI  I  F  X  D  DX */
-   F,  F,  F,  F,  F,  F, F, X, D, DX
+	/* Band format:  UC C  US S  UI I  F  X  D  DX */
+	/* Promotion: */ F, F, F, F, F, F, F, X, D, DX
 };
 
 static void
