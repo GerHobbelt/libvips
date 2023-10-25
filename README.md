@@ -83,6 +83,10 @@ libvips must have `build-essential`, `pkg-config`, `libglib2.0-dev`,
 `libexpat1-dev`.  See the **Dependencies** section below for a full list
 of the libvips optional dependencies.
 
+libvips uses the GObject introspection mechanism by default, so you'll need
+packages like `libgirepository1.0-dev`. Use `-Dintrospection=false` to
+disable introspection support.
+
 There are basic bash completions in `completions/`, see the README in there.
 
 ## Cheatsheet 
@@ -298,15 +302,6 @@ This project exists thanks to all the people who contribute.
 
 ### Organizations
 
-Support this project with your organization. Your logo will show up here with a link to your website. 
+We've had generous financial support from our sponsors. Thank you very much!
 
-<a href="https://opencollective.com/libvips/organization/0/website"><img src="https://opencollective.com/libvips/organization/0/avatar.svg"></a>
-<a href="https://opencollective.com/libvips/organization/1/website"><img src="https://opencollective.com/libvips/organization/1/avatar.svg"></a>
-<a href="https://opencollective.com/libvips/organization/2/website"><img src="https://opencollective.com/libvips/organization/2/avatar.svg"></a>
-<a href="https://opencollective.com/libvips/organization/3/website"><img src="https://opencollective.com/libvips/organization/3/avatar.svg"></a>
-<a href="https://opencollective.com/libvips/organization/4/website"><img src="https://opencollective.com/libvips/organization/4/avatar.svg"></a>
-<a href="https://opencollective.com/libvips/organization/5/website"><img src="https://opencollective.com/libvips/organization/5/avatar.svg"></a>
-<a href="https://opencollective.com/libvips/organization/6/website"><img src="https://opencollective.com/libvips/organization/6/avatar.svg"></a>
-<a href="https://opencollective.com/libvips/organization/7/website"><img src="https://opencollective.com/libvips/organization/7/avatar.svg"></a>
-<a href="https://opencollective.com/libvips/organization/8/website"><img src="https://opencollective.com/libvips/organization/8/avatar.svg"></a>
-<a href="https://opencollective.com/libvips/organization/9/website"><img src="https://opencollective.com/libvips/organization/9/avatar.svg"></a>
+<img src="https://opencollective.com/libvips/sponsors.svg?width=890&button=false" />
