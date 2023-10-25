@@ -3054,7 +3054,7 @@ static VImage gifload_source( VSource source, VOption *options = 0 );
  *   - **effort** -- Quantisation effort, int.
  *   - **bitdepth** -- Number of bits per pixel, int.
  *   - **interframe_maxerror** -- Maximum inter-frame error for transparency, double.
- *   - **reoptimise** -- Reoptimise colour palettes, bool.
+ *   - **reuse** -- Reuse palette from input, bool.
  *   - **interpalette_maxerror** -- Maximum inter-palette error for palette reusage, double.
  *   - **interlace** -- Generate an interlaced (progressive) GIF, bool.
  *   - **strip** -- Strip all metadata from image, bool.
@@ -3074,7 +3074,7 @@ void gifsave( const char *filename, VOption *options = 0 ) const;
  *   - **effort** -- Quantisation effort, int.
  *   - **bitdepth** -- Number of bits per pixel, int.
  *   - **interframe_maxerror** -- Maximum inter-frame error for transparency, double.
- *   - **reoptimise** -- Reoptimise colour palettes, bool.
+ *   - **reuse** -- Reuse palette from input, bool.
  *   - **interpalette_maxerror** -- Maximum inter-palette error for palette reusage, double.
  *   - **interlace** -- Generate an interlaced (progressive) GIF, bool.
  *   - **strip** -- Strip all metadata from image, bool.
@@ -3094,7 +3094,7 @@ VipsBlob *gifsave_buffer( VOption *options = 0 ) const;
  *   - **effort** -- Quantisation effort, int.
  *   - **bitdepth** -- Number of bits per pixel, int.
  *   - **interframe_maxerror** -- Maximum inter-frame error for transparency, double.
- *   - **reoptimise** -- Reoptimise colour palettes, bool.
+ *   - **reuse** -- Reuse palette from input, bool.
  *   - **interpalette_maxerror** -- Maximum inter-palette error for palette reusage, double.
  *   - **interlace** -- Generate an interlaced (progressive) GIF, bool.
  *   - **strip** -- Strip all metadata from image, bool.
@@ -3220,6 +3220,7 @@ static VImage heifload_source( VSource source, VOption *options = 0 );
  *   - **compression** -- Compression format, VipsForeignHeifCompression.
  *   - **effort** -- CPU effort, int.
  *   - **subsample_mode** -- Select chroma subsample operation mode, VipsForeignSubsample.
+ *   - **encoder** -- Select encoder to use, VipsForeignHeifEncoder.
  *   - **strip** -- Strip all metadata from image, bool.
  *   - **background** -- Background value, std::vector<double>.
  *   - **page_height** -- Set page height for multipage save, int.
@@ -3239,6 +3240,7 @@ void heifsave( const char *filename, VOption *options = 0 ) const;
  *   - **compression** -- Compression format, VipsForeignHeifCompression.
  *   - **effort** -- CPU effort, int.
  *   - **subsample_mode** -- Select chroma subsample operation mode, VipsForeignSubsample.
+ *   - **encoder** -- Select encoder to use, VipsForeignHeifEncoder.
  *   - **strip** -- Strip all metadata from image, bool.
  *   - **background** -- Background value, std::vector<double>.
  *   - **page_height** -- Set page height for multipage save, int.
@@ -3258,6 +3260,7 @@ VipsBlob *heifsave_buffer( VOption *options = 0 ) const;
  *   - **compression** -- Compression format, VipsForeignHeifCompression.
  *   - **effort** -- CPU effort, int.
  *   - **subsample_mode** -- Select chroma subsample operation mode, VipsForeignSubsample.
+ *   - **encoder** -- Select encoder to use, VipsForeignHeifEncoder.
  *   - **strip** -- Strip all metadata from image, bool.
  *   - **background** -- Background value, std::vector<double>.
  *   - **page_height** -- Set page height for multipage save, int.
