@@ -1,3 +1,7 @@
+xx/1/23 8.14.1
+
+- add vips_thread_isworker() compatibility function [remicollet]
+
 22/12/22 8.14.0
 
 - remove autotools
@@ -28,6 +32,7 @@
 - deprecate gifsave `reoptimise`, add `reuse`
 - add `encoder` to heifsave [dloebl]
 - add `cplusplus` meson build option [jcupitt]
+- make arrayjoin much faster with large arrays
 
 9/11/22 started 8.13.4
 - missing include in mosaic_fuzzer [ServOKio]
