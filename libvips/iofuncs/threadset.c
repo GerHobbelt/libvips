@@ -43,6 +43,10 @@
 #endif /*HAVE_UNISTD_H*/
 #include <errno.h>
 
+/*
+#define VIPS_DEBUG
+ */
+
 #include <vips/vips.h>
 #include <vips/internal.h>
 #include <vips/thread.h>
@@ -92,6 +96,11 @@ struct _VipsThreadset {
 	int max_threads;
 };
 
+/* The maximum relative time (in microseconds) that a thread waits
+ * for work before being stopped.
+ */
+static const gint64 max_idle_time = 15 * G_TIME_SPAN_SECOND;
+
 /* The thread work function.
  */
 static void *
@@ -100,10 +109,17 @@ vips_threadset_work( void *pointer )
 	VipsThreadsetMember *member = (VipsThreadsetMember *) pointer;
 	VipsThreadset *set = member->set;
 
+	VIPS_DEBUG_MSG( "vips_threadset_work: starting %p\n", member );
+
 	for(;;) {
-		/* Wait to be given work.
+		/* Wait for at least 15 seconds to be given work.
 		 */
-		vips_semaphore_down( &member->idle );
+		if( vips_semaphore_down_timeout( &member->idle, 
+			max_idle_time ) == -1 )
+			break;
+
+		/* Killed or no task available? Leave this thread.
+		 */
 		if( member->kill ||
 			!member->func ) 
 			break;
@@ -134,9 +150,20 @@ vips_threadset_work( void *pointer )
 		g_mutex_unlock( set->lock );
 	}
 
-	/* Kill has been requested. We leave this thread on the members 
-	 * list so it can be found and joined.
+	/* Timed-out or kill has been requested ... remove from both free
+	 * and member list.
 	 */
+	g_mutex_lock( set->lock );
+	set->free = g_slist_remove( set->free, member );
+	set->members = g_slist_remove( set->members, member );
+	set->n_threads -= 1;
+	VIPS_DEBUG_MSG( "vips_threadset_work: stopping %p (%d remaining)\n", 
+		member, set->n_threads );
+	g_mutex_unlock( set->lock );
+
+	vips_semaphore_destroy( &member->idle );
+
+	VIPS_FREE( member );
 
 	return( NULL );
 }
@@ -168,11 +195,16 @@ vips_threadset_add( VipsThreadset *set )
 		return( NULL );
 	}
 
+	/* Ensure idle threads are freed on exit, this
+	 * ref is increased before the thread is joined.
+	 */
+	g_thread_unref( member->thread );
+
 	g_mutex_lock( set->lock );
 	set->members = g_slist_prepend( set->members, member );
 	set->n_threads += 1;
 	set->n_threads_highwater = 
-		VIPS_MAX( set->n_threads_highwater, set->n_threads );;
+		VIPS_MAX( set->n_threads_highwater, set->n_threads );
 	g_mutex_unlock( set->lock );
 
 	return( member );
@@ -274,20 +306,17 @@ vips_threadset_run( VipsThreadset *set,
 static void
 vips_threadset_kill_member( VipsThreadsetMember *member )
 {
-	VipsThreadset *set = member->set;
+	GThread *thread;
 
+	thread = g_thread_ref( member->thread );
 	member->kill = TRUE;
+
 	vips_semaphore_up( &member->idle );
-	g_thread_join( member->thread );
 
-	vips_semaphore_destroy( &member->idle );
+	(void) g_thread_join( thread );
 
-	g_mutex_lock( set->lock );
-	set->free = g_slist_remove( set->free, member );
-	set->n_threads -= 1;
-	g_mutex_unlock( set->lock );
-
-	VIPS_FREE( member );
+	/* member is freed on thread exit.
+	 */
 }
 
 /** 
@@ -309,10 +338,8 @@ vips_threadset_free( VipsThreadset *set )
 
 		member = NULL;
 		g_mutex_lock( set->lock );
-		if( set->members ) {
+		if( set->members )
 			member = (VipsThreadsetMember *) set->members->data;
-			set->members = g_slist_remove( set->members, member );
-		}
 		g_mutex_unlock( set->lock );
 
 		if( !member )

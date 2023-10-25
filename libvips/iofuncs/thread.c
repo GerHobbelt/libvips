@@ -87,14 +87,6 @@ vips_thread_isvips( void )
 	return( g_private_get( is_vips_thread_key ) != NULL );
 }
 
-/* Deprecated compatibility function.
- */
-gboolean
-vips_thread_isworker( void )
-{
-	return( vips_thread_isvips() );
-}
-
 /* Glib 2.32 revised the thread API. We need some compat functions.
  */
 
@@ -188,19 +180,6 @@ vips_g_thread_new( const char *domain, GThreadFunc func, gpointer data )
 	}
 
 	return( thread );
-}
-
-void *
-vips_g_thread_join( GThread *thread )
-{
-	void *result;
-
-	result = g_thread_join( thread );
-
-	VIPS_DEBUG_MSG_RED( "vips_g_thread_join: g_thread_join( %p )\n", 
-		thread );
-
-	return( result ); 
 }
 
 static int
