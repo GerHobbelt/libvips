@@ -1029,7 +1029,7 @@ vips_foreign_load_start(VipsImage *out, void *a, void *b)
 		 * Some versions of ImageMagick give different results between
 		 * Ping and Load for some formats, for example.
 		 *
-		 * If the load fails, we need to stop
+		 * If the load fails, we need to stop.
 		 */
 		if (class->load(load) ||
 			vips_image_pio_input(load->real) ||
@@ -1801,8 +1801,7 @@ vips_foreign_save_build(VipsObject *object)
 		save->keep |= VIPS_FOREIGN_KEEP_ICC;
 
 	if (save->in) {
-		VipsForeignSaveClass *class =
-			VIPS_FOREIGN_SAVE_GET_CLASS(save);
+		VipsForeignSaveClass *class = VIPS_FOREIGN_SAVE_GET_CLASS(save);
 		VipsImage *ready;
 		VipsImage *x;
 
