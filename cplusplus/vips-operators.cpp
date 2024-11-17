@@ -1,6 +1,8 @@
 // bodies for vips operations
 // this file is generated automatically, do not edit!
 
+#ifdef VIPS_NAMESPACE_START
+
 VImage VImage::CMC2LCh( VOption *options ) const
 {
     VImage out;
@@ -3758,3 +3760,5 @@ VImage VImage::zoom( int xfac, int yfac, VOption *options ) const
 
     return( out );
 }
+
+#endif // VIPS_NAMESPACE_START
