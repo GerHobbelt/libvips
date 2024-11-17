@@ -169,11 +169,29 @@ int main(void) {
     return func();
 }
 '''
-if cc.links(target_clones_check, args: '-Werror', name: 'Has target_clones attribute')
+if meson.can_run_host_binaries()
+    rres = cc.run(target_clones_check, args: '-Werror', name: 'Has target_clones attribute')
+    have_target_clones = rres.compiled() and rres.returncode() == 0
+else
+    have_target_clones = cc.links(target_clones_check, args: '-Werror', name: 'Has target_clones attribute')
+endif
+if have_target_clones
     cfg_var.set('HAVE_TARGET_CLONES', '1')
 endif
 
-func_names = [ 'vsnprintf', '_aligned_malloc', 'posix_memalign', 'memalign', 'cbrt', 'hypot', 'atan2', 'asinh' ]
+# windows needs to include stdio.h to find vsnprintf()
+if cc.has_function('vsnprintf', prefix: '#include <stdio.h>')
+    cfg_var.set('HAVE_VSNPRINTF', '1')
+endif
+
+func_names = [ '_aligned_malloc', 'posix_memalign', 'memalign' ]
+foreach func_name : func_names
+    if cc.has_function(func_name)
+        cfg_var.set('HAVE_' + func_name.to_upper(), '1')
+    endif
+endforeach
+
+func_names = [ 'cbrt', 'hypot', 'atan2', 'asinh' ]
 foreach func_name : func_names
     if cc.has_function(func_name, dependencies: m_dep)
         cfg_var.set('HAVE_' + func_name.to_upper(), '1')
@@ -542,8 +560,12 @@ if libheif_dep.found()
     if libheif_dep.version().version_compare('>=1.7.0')
         cfg_var.set('HAVE_HEIF_AVIF', '1')
     endif
+    # added in 1.11.0
+    if cpp.has_member('struct heif_encoding_options', 'output_nclx_profile', prefix: '#include <libheif/heif.h>', dependencies: libheif_dep)
+        cfg_var.set('HAVE_HEIF_ENCODING_OPTIONS_OUTPUT_NCLX_PROFILE', '1')
+    endif
 
-    # heif_init in 1.13
+    # heif_init added in 1.13.0
     if libheif_dep.version().version_compare('>=1.13.0')
         cfg_var.set('HAVE_HEIF_INIT', '1')
     endif

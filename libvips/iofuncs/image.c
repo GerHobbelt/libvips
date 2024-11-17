@@ -2201,8 +2201,7 @@ VipsImage *
 vips_image_new_from_source(VipsSource *source,
 	const char *option_string, ...)
 {
-	const char *filename =
-		vips_connection_filename(VIPS_CONNECTION(source));
+	const char *filename = vips_connection_filename(VIPS_CONNECTION(source));
 
 	const char *operation_name;
 	va_list ap;
@@ -2257,8 +2256,7 @@ vips_image_new_from_source(VipsSource *source,
 		vips_area_unref(VIPS_AREA(blob));
 	}
 	else {
-		vips_error("VipsImage",
-			"%s", _("unable to load source"));
+		vips_error("VipsImage", "%s", _("unable to load source"));
 		result = -1;
 	}
 
@@ -3203,7 +3201,7 @@ vips_image_write_prepare(VipsImage *image)
 int
 vips_image_write_line(VipsImage *image, int ypos, VipsPel *linebuffer)
 {
-	int linesize = VIPS_IMAGE_SIZEOF_LINE(image);
+	guint64 linesize = VIPS_IMAGE_SIZEOF_LINE(image);
 
 	/* Is this the start of eval?
 	 */
@@ -3224,8 +3222,7 @@ vips_image_write_line(VipsImage *image, int ypos, VipsPel *linebuffer)
 	switch (image->dtype) {
 	case VIPS_IMAGE_SETBUF:
 	case VIPS_IMAGE_SETBUF_FOREIGN:
-		memcpy(VIPS_IMAGE_ADDR(image, 0, ypos),
-			linebuffer, linesize);
+		memcpy(VIPS_IMAGE_ADDR(image, 0, ypos), linebuffer, linesize);
 		break;
 
 	case VIPS_IMAGE_OPENOUT:
@@ -3236,10 +3233,8 @@ vips_image_write_line(VipsImage *image, int ypos, VipsPel *linebuffer)
 		break;
 
 	default:
-		vips_error("VipsImage",
-			_("unable to output to a %s image"),
-			vips_enum_string(VIPS_TYPE_IMAGE_TYPE,
-				image->dtype));
+		vips_error("VipsImage", _("unable to output to a %s image"),
+			vips_enum_string(VIPS_TYPE_IMAGE_TYPE, image->dtype));
 		return -1;
 	}
 
