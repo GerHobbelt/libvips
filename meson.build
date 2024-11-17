@@ -4,6 +4,10 @@ project('vips', 'c', 'cpp',
     default_options: [
         # this is what glib uses (one of our required deps), so we use it too
         'c_std=gnu99',
+	# we use some C++11 features 
+	'cpp_std=c++11',
+        # do a release (optimised) build by default
+        'buildtype=release',
         # turn off asserts etc. in release mode
         'b_ndebug=if-release'
     ]
@@ -30,8 +34,6 @@ pymod = import('python')
 pkg = import('pkgconfig')
 i18n = import('i18n')
 
-add_project_arguments('-Drestrict=__restrict', language: 'cpp')
-
 # if we're optimising (eg. release mode) we turn off cast checks and g_asserts
 if get_option('optimization') in ['2', '3', 's']
     add_project_arguments('-DG_DISABLE_CAST_CHECKS', language : ['cpp', 'c'])
@@ -48,6 +50,9 @@ endif
 host_os = host_machine.system()
 cc = meson.get_compiler('c')
 cpp = meson.get_compiler('cpp')
+
+# Prevent use of void* pointer arithmetic to support MSVC
+add_project_arguments(cc.get_supported_arguments('-Werror=pointer-arith'), language : ['cpp', 'c'])
 
 glib_dep = dependency('glib-2.0', version: '>=2.40')
 gio_dep = dependency('gio-2.0')
@@ -163,14 +168,10 @@ if zlib_dep.found()
     cfg_var.set('HAVE_ZLIB', '1')
 endif
 
-gsf_dep = dependency('libgsf-1', version: '>=1.14.26', required: get_option('gsf'))
-if gsf_dep.found()
-    libvips_deps += gsf_dep
-    cfg_var.set('HAVE_GSF', '1')
-    if gsf_dep.version().version_compare('>=1.14.31')
-        cfg_var.set('HAVE_GSF_ZIP64', '1')
-        cfg_var.set('HAVE_GSF_DEFLATE_LEVEL', '1')
-    endif
+libarchive_dep = dependency('libarchive', version: '>=3.0.0', required: get_option('archive'))
+if libarchive_dep.found()
+    libvips_deps += libarchive_dep
+    cfg_var.set('HAVE_LIBARCHIVE', '1')
 endif
 
 fftw_dep = dependency('fftw3', required: get_option('fftw'))
@@ -454,7 +455,7 @@ if pdfium_dep.found()
     cfg_var.set('HAVE_PDFIUM', '1')
 endif
 
-libheif_dep = dependency('libheif', version: '>=1.3.0', required: get_option('heif'))
+libheif_dep = dependency('libheif', version: '>=1.4.0', required: get_option('heif'))
 libheif_module = false
 if libheif_dep.found()
     libheif_module = modules_enabled and not get_option('heif-module').disabled()
@@ -639,6 +640,9 @@ config_dep = declare_dependency(
 
 libvips_deps += config_dep
 
+gir = find_program('g-ir-scanner', required: get_option('introspection'))
+enable_introspection = gir.found() and (not meson.is_cross_build() or get_option('introspection').enabled())
+
 build_summary = {
   'Build options':
     {'enable debug': [get_option('debug')],
@@ -646,7 +650,7 @@ build_summary = {
      'enable modules': [modules_enabled],
      'enable gtk-doc': [get_option('gtk_doc')],
      'enable doxygen': [get_option('doxygen')],
-     'enable introspection': [get_option('introspection')],
+     'enable introspection': [enable_introspection],
      'enable examples': [get_option('examples')],
      'enable cplusplus': [get_option('cplusplus')],
      'enable RAD load/save': [get_option('radiance')],
@@ -671,7 +675,7 @@ build_summary = {
      'PNG load/save with libpng': [png_dep.found()],
      'selected quantisation package': [quantisation_package.found() ? quantisation_package.name() : 'none'],
      'TIFF load/save with libtiff': [libtiff_dep.found()],
-     'image pyramid save with libgsf': [gsf_dep.found()],
+     'image pyramid save with libarchive': [libarchive_dep.found()],
      'HEIC/AVIF load/save with libheif': [libheif_dep.found(), ' (dynamic module: ', libheif_module, ')'],
      'WebP load/save with libwebp': [libwebp_dep.found()],
      'PDF load with PDFium': [pdfium_dep.found()],

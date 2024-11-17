@@ -67,14 +67,15 @@ popd
 pushd $SRC/libheif
 # Ensure libvips finds heif_image_handle_get_raw_color_profile
 sed -i '/^Libs.private:/s/-lstdc++/-lc++/' libheif.pc.in
-autoreconf -fi
-./configure \
-  --disable-shared \
-  --enable-static \
-  --disable-examples \
-  --disable-go \
-  --prefix=$WORK
-make clean
+# Suppress leak warnings from ColorConversionPipeline::init_ops()
+sed -i '/void ColorConversionPipeline::init_ops()/i __attribute__((no_sanitize_address))' libheif/color-conversion/colorconversion.cc
+cmake \
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+  -DCMAKE_INSTALL_PREFIX=$WORK \
+  -DBUILD_SHARED_LIBS=FALSE \
+  -DWITH_EXAMPLES=FALSE \
+  -DENABLE_PLUGIN_LOADING=FALSE \
+  .
 make -j$(nproc)
 make install
 popd
@@ -182,8 +183,8 @@ EOF
 # Disable building man pages, gettext po files, tools, and tests
 sed -i "/subdir('man')/{N;N;N;d;}" meson.build
 meson setup build --prefix=$WORK --libdir=lib --prefer-static --default-library=static \
-  -Ddeprecated=false -Dexamples=false -Dcplusplus=false -Dintrospection=false \
-  -Dmodules=disabled -Dcpp_link_args="$LDFLAGS -Wl,-rpath=\$ORIGIN/lib"
+  -Ddeprecated=false -Dexamples=false -Dcplusplus=false -Dmodules=disabled \
+  -Dcpp_link_args="$LDFLAGS -Wl,-rpath=\$ORIGIN/lib"
 ninja -C build
 ninja -C build install
 

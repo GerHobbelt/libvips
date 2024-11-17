@@ -83,10 +83,6 @@ libvips must have `build-essential`, `pkg-config`, `libglib2.0-dev`,
 `libexpat1-dev`.  See the **Dependencies** section below for a full list
 of the libvips optional dependencies.
 
-libvips uses the GObject introspection mechanism by default, so you'll need
-packages like `libgirepository1.0-dev`. Use `-Dintrospection=false` to
-disable introspection support.
-
 There are basic bash completions in `completions/`, see the README in there.
 
 ## Cheatsheet 
@@ -110,9 +106,6 @@ configuration.
 - Add flags like `-Dmagick=disabled` to turn libvips dependencies on and off, 
   see `meson_options.txt` and the list below for a summary of all the libvips
   dependencies.
-
-- Meson will do a debug build by default. Add `--buildtype release` for a 
-  release (optimised) build.
 
 - You might need to add `--libdir lib` on Debian if you don't want the arch 
   name in the library path.
@@ -188,9 +181,9 @@ If available, libvips will save GIFs with
 [cgif](https://github.com/dloebl/cgif). If this is not present, vips will
 try to save gifs via imagemagick instead.
 
-### libgsf-1
+### libarchive
 
-If available, libvips adds support for creating image pyramids with `dzsave`. 
+If available, libvips adds support for creating image pyramids with `dzsave`.
 
 ### libtiff
 
