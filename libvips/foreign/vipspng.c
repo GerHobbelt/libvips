@@ -305,20 +305,18 @@ read_new(VipsSource *source, VipsImage *out,
 		PNG_SKIP_sRGB_CHECK_PROFILE, PNG_OPTION_ON);
 #endif /*PNG_SKIP_sRGB_CHECK_PROFILE*/
 
-	/* Don't verify ADLER32 checksums (this can produce a lot of
-	 * warnings).
+	/* In non-fail mode, ignore CRC errors.
 	 */
+	if (read->fail_on < VIPS_FAIL_ON_ERROR) {
 #ifdef PNG_IGNORE_ADLER32
-	png_set_option(read->pPng, PNG_IGNORE_ADLER32, PNG_OPTION_ON);
+		png_set_option(read->pPng, PNG_IGNORE_ADLER32, PNG_OPTION_ON);
 #endif /*PNG_IGNORE_ADLER32*/
 
-	/* Disable CRC checking in fuzzing mode. Most fuzzed images will have
-	 * bad CRCs so this check would break fuzzing.
-	 */
-#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
-	png_set_crc_action(read->pPng,
-		PNG_CRC_QUIET_USE, PNG_CRC_QUIET_USE);
-#endif /*FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION*/
+		/* Ignore and don't calculate checksums.
+		 */
+		png_set_crc_action(read->pPng,
+			PNG_CRC_QUIET_USE, PNG_CRC_QUIET_USE);
+	}
 
 	/* libpng has a default soft limit of 1m pixels per axis.
 	 */
@@ -596,10 +594,13 @@ png2vips_header(Read *read, VipsImage *out)
 
 	vips_image_set_int(out, VIPS_META_BITS_PER_SAMPLE, bitdepth);
 
-	/* Deprecated "palette-bit-depth" use "bits-per-sample" instead.
-	 */
-	if (color_type == PNG_COLOR_TYPE_PALETTE)
+	if (color_type == PNG_COLOR_TYPE_PALETTE) {
+		/* Deprecated "palette-bit-depth" use "bits-per-sample" instead.
+		 */
 		vips_image_set_int(out, "palette-bit-depth", bitdepth);
+
+		vips_image_set_int(out, VIPS_META_PALETTE, 1);
+	}
 
 		/* Note the PNG background colour, if any.
 		 */

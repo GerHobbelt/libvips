@@ -1,6 +1,31 @@
+master 8.16
+
+- allow small offsets for the PDF magic string [project0]
+- add support for OJPEG tiffs [DarthSim]
+- add "palette" metadata item to flag palette images [DarthSim]
+- jxl load and save now support exif, xmp, animation [DarthSim]
+- improved configure output
+- add a filetype blocker for imagemagick
+- add basic g_auto support
+- support for long EXIF values [MarcosAndre]
+- better system error messages on windows [kleisauke]
+- add configurable max coordinate and vips_max_coord_get()
+- improve kill handling
+- PFM save and load now uses scRGB (ie. linear 0-1) [NiHoel]
+- turn `vips_addalpha` into a VipsOperation [RiskoZoSlovenska]
+- add vips_rawsave_target(), vips_rawsave_buffer() [akash-akya]
+- vipsheader supports multiple "-f field" arguments [sergeevabc]
+- webpsave has @target_size parameter to set desired size
+  in bytes [john-parton]
+- webpsave has @passes parameter to set number of passes to achieve
+  desired target_size [john-parton]
+
 26/3/24 8.15.3
 
 - fix dzsave of >8-bit images to JPEG
+- jpegsave: fix chrominance subsampling mode with jpegli [kleisauke]
+- pngload: disable ADLER32/CRC checking in non-fail mode [kleisauke]
+- improve target_clones support check [kleisauke]
 
 12/3/24 8.15.2
 
@@ -1689,7 +1714,7 @@ _ add vips_foreign_get_suffixes()
   im_vips2raw(), im_magick2vips(), im_png2vips(), im_png2*(), im_ppm2vips(),
   im_vips2ppm(), im_mat2vips(), im_rad2vips(), im_vips2rad()
   redone as classes
-- added argument priorites to help control arg ordering
+- added argument priorities to help control arg ordering
 - generate has a 'stop' param to signal successful early termination
 - added optional output args, eg. x/y for min
 - CLI supports optional output args

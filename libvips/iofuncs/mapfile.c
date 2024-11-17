@@ -191,7 +191,6 @@ vips__mmap(int fd, int writeable, size_t length, gint64 offset)
 				  NULL, flProtect, 0, 0, NULL))) {
 			vips_error_system(GetLastError(), "vips_mapfile",
 				"%s", _("unable to CreateFileMapping"));
-			printf("CreateFileMapping failed: %s\n", vips_error_buffer());
 			return NULL;
 		}
 
@@ -199,7 +198,6 @@ vips__mmap(int fd, int writeable, size_t length, gint64 offset)
 				  dwFileOffsetHigh, dwFileOffsetLow, length))) {
 			vips_error_system(GetLastError(), "vips_mapfile",
 				"%s", _("unable to MapViewOfFile"));
-			printf("MapViewOfFile failed: %s\n", vips_error_buffer());
 			CloseHandle(hMMFile);
 			return NULL;
 		}
@@ -239,10 +237,6 @@ vips__mmap(int fd, int writeable, size_t length, gint64 offset)
 		if (baseaddr == MAP_FAILED) {
 			vips_error_system(errno, "vips_mapfile",
 				"%s", _("unable to mmap"));
-			g_warning(_("map failed (%s), "
-						"running very low on system resources, "
-						"expect a crash soon"),
-				strerror(errno));
 			return NULL;
 		}
 	}
@@ -395,7 +389,7 @@ vips_remapfilerw(VipsImage *image)
 			image->fd, 0);
 		if (baseaddr == (void *) -1) {
 			vips_error("vips_mapfile", _("unable to mmap: \"%s\" - %s"),
-				image->filename, strerror(errno));
+				image->filename, g_strerror(errno));
 			return -1;
 		}
 	}

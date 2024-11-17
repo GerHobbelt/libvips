@@ -274,11 +274,14 @@ vips_foreign_load_png_set_header(VipsForeignLoadPng *png, VipsImage *image)
 	vips_image_set_int(image, VIPS_META_BITS_PER_SAMPLE,
 		png->ihdr.bit_depth);
 
-	/* Deprecated "palette-bit-depth" use "bits-per-sample" instead.
-	 */
-	if (png->ihdr.color_type == SPNG_COLOR_TYPE_INDEXED)
+	if (png->ihdr.color_type == SPNG_COLOR_TYPE_INDEXED) {
+		/* Deprecated "palette-bit-depth" use "bits-per-sample" instead.
+		 */
 		vips_image_set_int(image,
 			"palette-bit-depth", png->ihdr.bit_depth);
+
+		vips_image_set_int(image, VIPS_META_PALETTE, 1);
+	}
 
 	/* Let our caller know. These are very expensive to decode.
 	 */
@@ -337,10 +340,10 @@ vips_foreign_load_png_header(VipsForeignLoad *load)
 	/* In non-fail mode, ignore CRC errors.
 	 */
 	flags = 0;
-	if (load->fail_on >= VIPS_FAIL_ON_ERROR)
+	if (load->fail_on < VIPS_FAIL_ON_ERROR)
 		flags |= SPNG_CTX_IGNORE_ADLER32;
 	png->ctx = spng_ctx_new(flags);
-	if (load->fail_on >= VIPS_FAIL_ON_ERROR)
+	if (load->fail_on < VIPS_FAIL_ON_ERROR)
 		/* Ignore and don't calculate checksums.
 		 */
 		spng_set_crc_action(png->ctx, SPNG_CRC_USE, SPNG_CRC_USE);
