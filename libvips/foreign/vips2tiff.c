@@ -660,9 +660,8 @@ wtiff_compress_jpeg_header(Wtiff *wtiff,
 	cinfo->input_components = image->Bands;
 
 	if (image->Bands == 4 &&
-		image->Type == VIPS_INTERPRETATION_CMYK) {
+		image->Type == VIPS_INTERPRETATION_CMYK)
 		space = JCS_CMYK;
-	}
 	else if (image->Bands == 3)
 		space = JCS_RGB;
 	else if (image->Bands == 1)
@@ -683,8 +682,9 @@ wtiff_compress_jpeg_header(Wtiff *wtiff,
 
 	jpeg_set_defaults(cinfo);
 
-	// use RGB mode (no chroma subsample) for high Q
-	if (wtiff->Q >= 90)
+	// use RGB mode (no chroma subsample) for high Q RGB images
+	if (wtiff->Q >= 90 &&
+		image->Bands == 3)
 		jpeg_set_colorspace(cinfo, JCS_RGB);
 
 	/* Set compression quality. Must be called after setting params above.
@@ -2319,6 +2319,7 @@ wtiff_copy_tiff(Wtiff *wtiff, TIFF *out, TIFF *in)
 	CopyField(TIFFTAG_TILELENGTH, ui32);
 	CopyField(TIFFTAG_ROWSPERSTRIP, ui32);
 	CopyField(TIFFTAG_SUBFILETYPE, ui32);
+	CopyField(TIFFTAG_PREDICTOR, ui16);
 
 	if (TIFFGetField(in, TIFFTAG_EXTRASAMPLES, &ui16, &a))
 		TIFFSetField(out, TIFFTAG_EXTRASAMPLES, ui16, a);
@@ -2331,8 +2332,8 @@ wtiff_copy_tiff(Wtiff *wtiff, TIFF *out, TIFF *in)
 	if (TIFFGetField(in, TIFFTAG_JPEGTABLES, &length, &buffer))
 		TIFFSetField(out, TIFFTAG_JPEGTABLES, length, buffer);
 
-	/* No need to set any of the pseudo tags that control compression since
-	 * we copy raw tiles.
+	/* Other compression tags are just pseudotags and don't need to be set
+	 * because we copy raw tiles.
 	 */
 
 	/* We can't copy profiles or xmp :( Set again from wtiff.
@@ -2372,8 +2373,7 @@ wtiff_gather(Wtiff *wtiff)
 			printf("appending layer sub = %d ...\n", layer->sub);
 #endif /*DEBUG*/
 
-			if (!(source =
-						vips_source_new_from_target(layer->target)))
+			if (!(source = vips_source_new_from_target(layer->target)))
 				return -1;
 
 			if (!(in = vips__tiff_openin_source(source))) {
