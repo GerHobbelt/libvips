@@ -31,8 +31,8 @@
 #ifndef VIPS_OBJECT_H
 #define VIPS_OBJECT_H
 
-#include <glib.h>
-#include <glib-object.h>
+//#include <glib.h>
+//#include <glib-object.h>
 #include <vips/buf.h>
 #include <vips/basic.h>
 
@@ -284,7 +284,7 @@ typedef struct _VipsArgumentInstance {
 
 	/* Has been set.
 	 */
-	gboolean assigned;
+	bool assigned;
 
 	/* If this is an output argument, keep the id of our "close" handler
 	 * here.
@@ -322,14 +322,14 @@ VIPS_API
 void *vips_argument_class_map( VipsObjectClass *object_class, 
 	VipsArgumentClassMapFn fn, void *a, void *b );
 VIPS_API
-gboolean vips_argument_class_needsstring( VipsArgumentClass *argument_class );
+bool vips_argument_class_needsstring( VipsArgumentClass *argument_class );
 VIPS_API
 int vips_object_get_argument( VipsObject *object, const char *name,
 	GParamSpec **pspec,
 	VipsArgumentClass **argument_class,
 	VipsArgumentInstance **argument_instance );
 VIPS_API
-gboolean vips_object_argument_isset( VipsObject *object, const char *name );
+bool vips_object_argument_isset( VipsObject *object, const char *name );
 VIPS_API
 VipsArgumentFlags vips_object_get_argument_flags( VipsObject *object, 
 	const char *name );
@@ -429,12 +429,12 @@ struct _VipsObject {
 	/* Set after ->build() has run succesfully: construct is fully done
 	 * and checked.
 	 */
-	gboolean constructed;
+	bool constructed;
 
 	/* Set for static objects which are allocated at startup and never
 	 * freed. These objects are ommitted from leak reports.
 	 */
-	gboolean static_object;
+	bool static_object;
 
 	/* Table of argument instances for this class and any derived classes.
 	 */
@@ -448,9 +448,9 @@ struct _VipsObject {
 
 	/* The pre/post/close callbacks are all fire-once. 
 	 */
-	gboolean preclose;
-	gboolean close;
-	gboolean postclose;
+	bool preclose;
+	bool close;
+	bool postclose;
 
 	/* Total memory allocated relative to this object, handy for
 	 * profiling.
@@ -528,7 +528,7 @@ struct _VipsObjectClass {
 	/* Does this output arg need an arg from the command line? Image
 	 * output, for example, needs a filename to write to.
 	 */
-	gboolean output_needs_arg;
+	bool output_needs_arg;
 
 	/* Write the object to the string. Return 0 for success, or -1 on
 	 * error, setting vips_error(). string is NULL if output_needs_arg()
@@ -567,7 +567,7 @@ struct _VipsObjectClass {
 	 * VipsOperation has a deprecated flag, use that in preference to this
 	 * if you can. 
 	 */
-	gboolean deprecated;
+	bool deprecated;
 
 	/* Reserved for future expansion.
 	 */
@@ -578,7 +578,7 @@ struct _VipsObjectClass {
 };
 
 VIPS_API
-gboolean vips_value_is_null( GParamSpec *psoec, const GValue *value );
+bool vips_value_is_null( GParamSpec *psoec, const GValue *value );
 VIPS_API
 void vips_object_set_property( GObject *gobject, 
 	guint property_id, const GValue *value, GParamSpec *pspec );
@@ -608,7 +608,7 @@ VIPS_API
 void vips_object_print_name( VipsObject *object );
 
 VIPS_API
-gboolean vips_object_sanity( VipsObject *object );
+bool vips_object_sanity( VipsObject *object );
 
 /* Don't put spaces around void here, it breaks gtk-doc.
  */
@@ -623,7 +623,7 @@ VIPS_API
 int vips_object_set_argument_from_string( VipsObject *object, 
 	const char *name, const char *value );
 VIPS_API
-gboolean vips_object_argument_needsstring( VipsObject *object, 
+bool vips_object_argument_needsstring( VipsObject *object, 
 	const char *name );
 VIPS_API
 int vips_object_get_argument_to_string( VipsObject *object, 
@@ -682,7 +682,7 @@ void vips_object_local_cb( VipsObject *vobject, GObject *gobject );
 	(g_signal_connect( V, "close", G_CALLBACK( vips_object_local_cb ), G ))
 
 VIPS_API
-void vips_object_set_static( VipsObject *object, gboolean static_object );
+void vips_object_set_static( VipsObject *object, bool static_object );
 VIPS_API
 void vips_object_print_all( void );
 VIPS_API

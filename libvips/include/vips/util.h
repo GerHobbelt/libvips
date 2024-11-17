@@ -235,7 +235,7 @@ VIPS_API
 int vips_flags_from_nick( const char *domain, GType type, const char *nick );
 
 VIPS_API
-gboolean vips_slist_equal( GSList *l1, GSList *l2 );
+bool vips_slist_equal( GSList *l1, GSList *l2 );
 VIPS_API
 void *vips_slist_map2( GSList *list, VipsSListMap2Fn fn, const void *a, void *b );
 VIPS_API
@@ -262,11 +262,11 @@ char *vips_strncpy( char *dest, const char *src, int n );
 VIPS_API
 char *vips_strrstr( const char *haystack, const char *needle );
 VIPS_API
-gboolean vips_ispostfix( const char *a, const char *b );
+bool vips_ispostfix( const char *a, const char *b );
 VIPS_API
-gboolean vips_iscasepostfix( const char *a, const char *b );
+bool vips_iscasepostfix( const char *a, const char *b );
 VIPS_API
-gboolean vips_isprefix( const char *a, const char *b );
+bool vips_isprefix( const char *a, const char *b );
 VIPS_API
 char *vips_break_token( char *str, const char *brk );
 
@@ -296,9 +296,9 @@ int vips__open_read( const char *filename );
 FILE *vips__fopen( const char *filename, const char *mode );
 
 FILE *vips__file_open_read( const char *filename, 
-	const char *fallback_dir, gboolean text_mode );
+	const char *fallback_dir, bool text_mode );
 FILE *vips__file_open_write( const char *filename, 
-	gboolean text_mode );
+	bool text_mode );
 /* TODO(kleisauke): VIPS_API is required by vipsedit.
  */
 VIPS_API

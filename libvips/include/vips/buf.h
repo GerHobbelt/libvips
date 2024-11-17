@@ -31,9 +31,13 @@
 #ifndef VIPS_BUF_H
 #define VIPS_BUF_H
 
-#include <glib.h>
-#include <glib-object.h>
+//#include <glib.h>
+//#include <glib-object.h>
 #include <vips/basic.h>
+
+#ifndef G_GNUC_PRINTF
+#define G_GNUC_PRINTF(a, b) /**/
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,9 +55,9 @@ struct _VipsBuf {
 	char *base;		/* String base */
 	int mx;			/* Maximum length */
 	int i;			/* Current write point */
-	gboolean full;		/* String has filled, block writes */
+	bool full;		/* String has filled, block writes */
 	int lasti;		/* For read-recent */
-	gboolean dynamic;	/* We own the string with malloc() */
+	bool dynamic;		/* We own the string with malloc() */
 }; 
 
 #define VIPS_BUF_STATIC( TEXT ) \
@@ -76,38 +80,38 @@ void vips_buf_init_static( VipsBuf *buf, char *base, int mx );
 VIPS_API
 void vips_buf_init_dynamic( VipsBuf *buf, int mx );
 VIPS_API
-gboolean vips_buf_appendns( VipsBuf *buf, const char *str, int sz );
+bool vips_buf_appendns( VipsBuf *buf, const char *str, int sz );
 VIPS_API
-gboolean vips_buf_appends( VipsBuf *buf, const char *str );
+bool vips_buf_appends( VipsBuf *buf, const char *str );
 VIPS_API
-gboolean vips_buf_appendf( VipsBuf *buf, const char *fmt, ... )
+bool vips_buf_appendf( VipsBuf *buf, const char *fmt, ... )
 	G_GNUC_PRINTF( 2, 3 );
 VIPS_API
-gboolean vips_buf_vappendf( VipsBuf *buf, const char *fmt, va_list ap );
+bool vips_buf_vappendf( VipsBuf *buf, const char *fmt, va_list ap );
 VIPS_API
-gboolean vips_buf_appendc( VipsBuf *buf, char ch );
+bool vips_buf_appendc( VipsBuf *buf, char ch );
 VIPS_API
-gboolean vips_buf_appendsc( VipsBuf *buf, gboolean quote, const char *str );
+bool vips_buf_appendsc( VipsBuf *buf, bool quote, const char *str );
 VIPS_API
-gboolean vips_buf_appendgv( VipsBuf *buf, GValue *value );
+bool vips_buf_appendgv( VipsBuf *buf, GValue *value );
 VIPS_API
-gboolean vips_buf_append_size( VipsBuf *buf, size_t n );
+bool vips_buf_append_size( VipsBuf *buf, size_t n );
 VIPS_API
-gboolean vips_buf_removec( VipsBuf *buf, char ch );
+bool vips_buf_removec( VipsBuf *buf, char ch );
 VIPS_API
-gboolean vips_buf_change( VipsBuf *buf, const char *o, const char *n );
+bool vips_buf_change( VipsBuf *buf, const char *o, const char *n );
 VIPS_API
-gboolean vips_buf_is_empty( VipsBuf *buf );
+bool vips_buf_is_empty( VipsBuf *buf );
 VIPS_API
-gboolean vips_buf_is_full( VipsBuf *buf );
+bool vips_buf_is_full( VipsBuf *buf );
 VIPS_API
 const char *vips_buf_all( VipsBuf *buf );
 VIPS_API
 const char *vips_buf_firstline( VipsBuf *buf );
 VIPS_API
-gboolean vips_buf_appendg( VipsBuf *buf, double g );
+bool vips_buf_appendg( VipsBuf *buf, double g );
 VIPS_API
-gboolean vips_buf_appendd( VipsBuf *buf, int d );
+bool vips_buf_appendd( VipsBuf *buf, int d );
 VIPS_API
 int vips_buf_len( VipsBuf *buf );
 
