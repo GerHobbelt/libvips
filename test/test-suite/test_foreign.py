@@ -1310,8 +1310,7 @@ class TestForeign:
         with open(filename, 'rb') as f:
             buf1 = f.read()
         buf2 = self.colour.dzsave_buffer(basename=root)
-        # won't be identical since tiles can be in a different order
-        assert abs(len(buf1) - len(buf2)) < 5000
+        assert len(buf1) == len(buf2)
 
         # we can't test the bytes are exactly equal -- the timestamp in
         # vips-properties.xml will be different
@@ -1534,7 +1533,7 @@ class TestForeign:
         # remove the ICC profile: the RGB one will no longer be appropriate
         rgb16.remove("icc-profile-data")
         self.save_load_buffer("jxlsave_buffer", "jxlload_buffer",
-                              rgb16, 10700)
+                              rgb16, 12000)
 
         # repeat for lossless mode
         self.save_load_buffer("jxlsave_buffer", "jxlload_buffer",

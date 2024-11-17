@@ -1,5 +1,5 @@
 project('vips', 'c', 'cpp',
-    version: '8.15.0',
+    version: '8.15.1',
     meson_version: '>=0.55',
     default_options: [
         # this is what glib uses (one of our required deps), so we use it too
@@ -23,7 +23,7 @@ version_patch = version_parts[2]
 # binary interface changed: increment current, reset revision to 0
 #   binary interface changes backwards compatible?: increment age
 #   binary interface changes not backwards compatible?: reset age to 0
-library_revision = 0
+library_revision = 1
 library_current = 59
 library_age = 17
 library_version = '@0@.@1@.@2@'.format(library_current - library_age, library_age, library_revision)
@@ -208,7 +208,7 @@ if magick_found
         if cc.has_member('struct _ImageInfo', 'number_scenes', prefix: magick_include, dependencies: magick_dep)
             cfg_var.set('HAVE_NUMBER_SCENES', '1')
         endif
-        func_names = [ 'InheritException', 'AcquireExceptionInfo', 'SetImageProperty', 'SetImageExtent', 'AcquireImage', 'GetVirtualPixels', 'ResetImageProfileIterator', 'ResetImageAttributeIterator', 'ResetImagePropertyIterator', 'MagickCoreGenesis', 'SetImageOption', 'BlobToStringInfo', 'OptimizePlusImageLayers', 'OptimizeImageTransparency' ]
+        func_names = [ 'InheritException', 'AcquireExceptionInfo', 'SetImageProperty', 'SetImageExtent', 'AcquireImage', 'GetVirtualPixels', 'ResetImageProfileIterator', 'ResetImageAttributeIterator', 'ResetImagePropertyIterator', 'MagickCoreGenesis', 'SetImageOption', 'BlobToStringInfo', 'OptimizePlusImageLayers', 'OptimizeImageTransparency', 'GetMagicInfo' ]
         foreach func_name : func_names
             if cc.has_function(func_name, prefix: magick_include, dependencies: magick_dep)
                 cfg_var.set('HAVE_' + func_name.to_upper(), '1')
@@ -379,8 +379,8 @@ if libtiff_dep.found()
     endif
 endif
 
-# 2.48 is the first version to not use libcroco, an unmaintained CSS parser
-librsvg_dep = dependency('librsvg-2.0', version: '>=2.48.0', required: get_option('rsvg'))
+# 2.40.3 so we get the UNLIMITED open flag
+librsvg_dep = dependency('librsvg-2.0', version: '>=2.40.3', required: get_option('rsvg'))
 cairo_dep = dependency('cairo', version: '>=1.2', required: get_option('rsvg'))
 librsvg_found = librsvg_dep.found() and cairo_dep.found()
 if librsvg_found
@@ -485,14 +485,14 @@ if libheif_dep.found()
     endif
     cfg_var.set('HAVE_HEIF', '1')
     # added in 1.6.0
-    if cc.has_function('heif_image_handle_get_raw_color_profile', prefix: '#include <libheif/heif.h>', dependencies: libheif_dep)
+    if cpp.has_function('heif_image_handle_get_raw_color_profile', prefix: '#include <libheif/heif.h>', dependencies: libheif_dep)
         cfg_var.set('HAVE_HEIF_COLOR_PROFILE', '1')
     endif
-    if cc.has_function('heif_context_set_maximum_image_size_limit', prefix: '#include <libheif/heif.h>', dependencies: libheif_dep)
+    if cpp.has_function('heif_context_set_maximum_image_size_limit', prefix: '#include <libheif/heif.h>', dependencies: libheif_dep)
         cfg_var.set('HAVE_HEIF_SET_MAX_IMAGE_SIZE_LIMIT', '1')
     endif
     # added in 1.7.0
-    if cc.has_member('struct heif_decoding_options', 'convert_hdr_to_8bit', prefix: '#include <libheif/heif.h>', dependencies: libheif_dep)
+    if cpp.has_member('struct heif_decoding_options', 'convert_hdr_to_8bit', prefix: '#include <libheif/heif.h>', dependencies: libheif_dep)
         cfg_var.set('HAVE_HEIF_DECODING_OPTIONS_CONVERT_HDR_TO_8BIT', '1')
     endif
     # heif_main_brand added in 1.4.0, but heif_avif appeared in 1.7 ... just check
@@ -504,6 +504,10 @@ if libheif_dep.found()
     # heif_init in 1.13
     if libheif_dep.version().version_compare('>=1.13.0')
         cfg_var.set('HAVE_HEIF_INIT', '1')
+    endif
+    # heif_error_success added in 1.17.0
+    if libheif_dep.version().version_compare('>=1.17.0')
+        cfg_var.set('HAVE_HEIF_ERROR_SUCCESS', '1')
     endif
 endif
 
@@ -522,6 +526,9 @@ if libjxl_found
     cfg_var.set('HAVE_LIBJXL', '1')
     if libjxl_dep.version().version_compare('>=0.7')
         cfg_var.set('HAVE_LIBJXL_0_7', '1')
+    endif
+    if libjxl_dep.version().version_compare('>=0.9')
+        cfg_var.set('HAVE_LIBJXL_0_9', '1')
     endif
 endif
 
