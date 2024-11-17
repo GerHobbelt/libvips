@@ -1712,12 +1712,10 @@ traverse_find_required_priority( void *data, const void *a, void *b )
 	return NULL;
 }
 
-static gint
-traverse_sort(gconstpointer a, gconstpointer b, void *user_data)
+static int
+traverse_sort(VipsArgumentClass *class1, VipsArgumentClass *class2,
+	void *user_data)
 {
-	VipsArgumentClass *class1 = (VipsArgumentClass *) a;
-	VipsArgumentClass *class2 = (VipsArgumentClass *) b;
-
 	return class1->priority - class2->priority;
 }
 
@@ -1880,7 +1878,7 @@ vips_object_set_argument_from_string(VipsObject *object,
 	VipsObjectClass *oclass;
 	GType otype;
 
-	GValue gvalue = { 0 };
+	GValue gvalue = G_VALUE_INIT;
 
 	VIPS_DEBUG_MSG("vips_object_set_argument_from_string: %s = %s\n",
 		name, value);
@@ -2104,16 +2102,14 @@ vips_object_set_argument_from_string(VipsObject *object,
 			return -1;
 		}
 
-		if ((i = vips_enum_from_nick(class->nickname,
-				 otype, value)) < 0)
+		if ((i = vips_enum_from_nick(class->nickname, otype, value)) < 0)
 			return -1;
 
 		g_value_init(&gvalue, otype);
 		g_value_set_enum(&gvalue, i);
 	}
+
 	else if (G_IS_PARAM_SPEC_FLAGS(pspec)) {
-		/* Allow a symbolic name, or an int.
-		 */
 		int i;
 
 		if (!value) {
@@ -2121,17 +2117,13 @@ vips_object_set_argument_from_string(VipsObject *object,
 			return -1;
 		}
 
-		if (sscanf(value, "%d", &i) != 1 &&
-			(i = vips_flags_from_nick(class->nickname,
-				 otype, value)) < 0) {
-			vips_error(class->nickname,
-				_("'%s' is not an integer"), value);
+		if ((i = vips_flags_from_nick(class->nickname, otype, value)) < 0)
 			return -1;
-		}
 
 		g_value_init(&gvalue, otype);
 		g_value_set_flags(&gvalue, i);
 	}
+
 	else {
 		if (!value) {
 			vips_object_no_value(object, name);
@@ -2174,7 +2166,7 @@ vips_object_print_arg(VipsObject *object, GParamSpec *pspec, VipsBuf *buf)
 {
 	GType type = G_PARAM_SPEC_VALUE_TYPE(pspec);
 	const char *name = g_param_spec_get_name(pspec);
-	GValue value = { 0 };
+	GValue value = G_VALUE_INIT;
 	char *str_value;
 
 	g_value_init(&value, type);
