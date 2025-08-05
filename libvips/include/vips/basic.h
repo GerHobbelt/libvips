@@ -56,6 +56,7 @@
 #define VIPS_DEPRECATED_FOR(f) G_DEPRECATED_FOR(f) VIPS_API
 #endif
 
+#if defined(G_GNUC_CHECK_VERSION)
 #if !defined(VIPS_DISABLE_DEPRECATION_WARNINGS) && \
 	(G_GNUC_CHECK_VERSION(4, 6) || \
 		__clang_major__ > 3 || (__clang_major__ == 3 && __clang_minor__ >= 4))
@@ -63,6 +64,10 @@
 #define VIPS_DEPRECATED_MACRO _VIPS_GNUC_DO_PRAGMA(GCC warning "Deprecated pre-processor symbol")
 #define VIPS_DEPRECATED_MACRO_FOR(f) \
 	_VIPS_GNUC_DO_PRAGMA(GCC warning G_STRINGIFY(Deprecated pre-processor symbol: replace with #f))
+#else
+#define VIPS_DEPRECATED_MACRO
+#define VIPS_DEPRECATED_MACRO_FOR(f)
+#endif
 #else
 #define VIPS_DEPRECATED_MACRO
 #define VIPS_DEPRECATED_MACRO_FOR(f)

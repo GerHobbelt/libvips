@@ -3,7 +3,7 @@
  *  g++ -g -Wall tomemory.cpp `pkg-config vips-cpp --cflags --libs`
  */
 
-#include <vips/vips8>
+#include <vips/vips8.h>
 #include <iostream>
 
 int

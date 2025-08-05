@@ -31,8 +31,15 @@
 #ifndef VIPS_BUF_H
 #define VIPS_BUF_H
 
+#if defined(HAVE_GLIB_H)
 #include <glib.h>
+#else
+typedef bool gboolean;
+#define G_GNUC_PRINTF(...)
+#endif
+#if defined(HAVE_GLIB_OBJECT_H)
 #include <glib-object.h>
+#endif
 #include <vips/basic.h>
 
 #ifdef __cplusplus

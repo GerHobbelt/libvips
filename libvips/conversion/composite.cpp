@@ -51,7 +51,9 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif /*HAVE_CONFIG_H*/
+#ifdef HAVE_GLIB_GI18N_LIB_H
 #include <glib/gi18n-lib.h>
+#endif
 
 #include <stdio.h>
 #include <string.h>
