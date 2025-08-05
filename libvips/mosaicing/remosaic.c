@@ -94,12 +94,12 @@ remosaic_fn(JoinNode *node, VipsRemosaic *remosaic)
 	/* Remove substring remosaic->old_str from in->filename, replace with
 	 * remosaic->new_str.
 	 */
-	vips_strncpy(filename, im->filename, FILENAME_MAX);
-	if ((p = vips_strrstr(filename, remosaic->old_str))) {
+	g_strlcpy(filename, im->filename, FILENAME_MAX);
+	if ((p = g_strrstr(filename, remosaic->old_str))) {
 		int offset = p - &filename[0];
 
-		vips_strncpy(p, remosaic->new_str, FILENAME_MAX - offset);
-		vips_strncpy(p + remosaic->new_len,
+		g_strlcpy(p, remosaic->new_str, FILENAME_MAX - offset);
+		g_strlcpy(p + remosaic->new_len,
 			im->filename + offset + remosaic->old_len,
 			FILENAME_MAX - offset - remosaic->new_len);
 	}
@@ -198,20 +198,21 @@ vips_remosaic_init(VipsRemosaic *remosaic)
  * @out: (out): output image
  * @old_str: gamma of source images
  * @new_str: gamma of source images
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * vips_remosaic() works rather as vips_globalbalance(). It takes apart the
- * mosaiced image @in and rebuilds it, substituting images.
+ * [method@Image.remosaic] works rather as [method@Image.globalbalance]. It
+ * takes apart the mosaiced image @in and rebuilds it, substituting images.
  *
- * Unlike vips_globalbalance(), images are substituted based on their file‐
- * names.  The  rightmost  occurrence  of the string @old_str is swapped
- * for @new_str, that file is opened, and that image substituted  for
+ * Unlike [method@Image.globalbalance], images are substituted based on their
+ * filenames. The rightmost occurrence of the string @old_str is swapped
+ * for @new_str, that file is opened, and that image substituted for
  * the old image.
  *
  * It's convenient for multispectral images. You can mosaic one band, then
  * use that mosaic as a template for mosaicing the others automatically.
  *
- * See also: vips_globalbalance().
+ * ::: seealso
+ *     [method@Image.globalbalance].
  *
  * Returns: 0 on success, -1 on error
  */

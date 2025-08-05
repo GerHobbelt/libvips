@@ -250,11 +250,12 @@ vips_byteswap_init(VipsByteswap *byteswap)
  * vips_byteswap: (method)
  * @in: input image
  * @out: (out): output image
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Swap the byte order in an image.
  *
- * See also: vips_rawload().
+ * ::: seealso
+ *     [ctor@Image.rawload].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -271,7 +272,7 @@ vips_byteswap(VipsImage *in, VipsImage **out, ...)
 	return result;
 }
 
-/* Convenience function: swap if @swap is %TRUE, otherwise copy.
+/* Convenience function: swap if @swap is `TRUE`, otherwise copy.
  */
 int
 vips__byteswap_bool(VipsImage *in, VipsImage **out, gboolean swap)

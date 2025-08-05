@@ -120,16 +120,17 @@ vips_phasecor_init(VipsPhasecor *phasecor)
 }
 
 /**
- * vips_phasecor:
+ * vips_phasecor: (method)
  * @in1: first input image
  * @in2: second input image
  * @out: (out): output image
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Convert the two input images to Fourier space, calculate phase-correlation,
  * back to real space.
  *
- * See also: vips_fwfft(), vips_cross_phase(),
+ * ::: seealso
+ *     [method@Image.fwfft], [method@Image.cross_phase],
  *
  * Returns: 0 on success, -1 on error.
  */

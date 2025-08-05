@@ -72,8 +72,14 @@ vips_XYZ2Yxy_line(VipsColour *colour, VipsPel *out, VipsPel **in, int width)
 
 		p += 3;
 
-		x = X / total;
-		y = Y / total;
+		if (total == 0.0) {
+			x = 0;
+			y = 0;
+		}
+		else {
+			x = X / total;
+			y = Y / total;
+		}
 
 		q[0] = Y;
 		q[1] = x;
@@ -106,7 +112,7 @@ vips_XYZ2Yxy_init(VipsXYZ2Yxy *XYZ2Yxy)
  * vips_XYZ2Yxy: (method)
  * @in: input image
  * @out: (out): output image
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Turn XYZ to Yxy.
  *

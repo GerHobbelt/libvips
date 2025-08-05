@@ -74,94 +74,97 @@
 #include "pforeign.h"
 
 /**
- * SECTION: foreign
- * @short_description: load and save images in a variety of formats
- * @stability: Stable
- * @see_also: <link linkend="libvips-image">image</link>
- * @include: vips/vips.h
- * @title: VipsForeign
+ * VipsForeign:
  *
- * This set of operations load and save images in a variety of formats.
+ * An abstract base class to load and save images in a variety of formats.
  *
- * # Load and save
+ * ## Load and save
  *
  * You can load and save from and to files, memory areas, and the libvips IO
- * abstractions, #VipsSource and #VipsTarget.
+ * abstractions, [class@Source] and [class@Target].
  *
- * Use vips_foreign_find_load(), vips_foreign_find_load_buffer() and
- * vips_foreign_find_load_source() to find a loader for an object. Use
- * vips_foreign_find_save(), vips_foreign_find_save_buffer() and
- * vips_foreign_find_save_target() to find a saver for a format. You can then
- * run these operations using vips_call() and friends to perform the load or
+ * Use [func@Foreign.find_load] [func@Foreign.find_load_buffer] and
+ * [func@Foreign.find_load_source] to find a loader for an object. Use
+ * [func@Foreign.find_save], [func@Foreign.find_save_buffer] and
+ * [func@Foreign.find_save_target] to find a saver for a format. You can then
+ * run these operations using [func@call] and friends to perform the load or
  * save.
  *
- * vips_image_write_to_file() and vips_image_new_from_file() and friends use
+ * [method@Image.write_to_file] and [ctor@Image.new_from_file] and friends use
  * these functions to automate file load and save.
  *
  * You can also invoke the operations directly, for example:
  *
- * |[
+ * ```c
  * vips_tiffsave(my_image, "frank.anything",
  *     "compression", VIPS_FOREIGN_TIFF_COMPRESSION_JPEG,
  *     NULL);
- * ]|
+ * ```
  *
- * # Image metadata
+ * ## Image metadata
  *
  * All loaders attach all image metadata as libvips properties on load.
  *
- * You can change metadata with vips_image_set_int() and friends.
+ * You can change metadata with [method@Image.set_int] and friends.
  *
- * During save, you can use @keep to specify which metadata to retain,
- * defaults to all, see #VipsForeignKeep. Setting @profile will
+ * During save, you can use `keep` to specify which metadata to retain,
+ * defaults to all, see [flags@ForeignKeep]. Setting `profile` will
  * automatically keep the ICC profile.
  *
- * # Many page images
+ * ## Many page images
  *
  * By default, libvips will only load the first page of many page or animated
- * images. Use @page and @n to set the start page and the number of pages to
- * load. Set @n to -1 to load all pages.
+ * images. Use `page` and `n` to set the start page and the number of pages to
+ * load. Set `n` to -1 to load all pages.
  *
  * Many page images are loaded as a tall, thin strip of pages.
  *
- * Use vips_image_get_page_height() and vips_image_get_n_pages() to find the
- * page height and number of pages of a loaded image.
+ * Use [method@Image.get_page_height] and [method@Image.get_n_pages] to find
+ * the page height and number of pages of a loaded image.
  *
- * Use @page_height to set the page height for image save.
+ * Use `page_height` to set the page height for image save.
  *
- * # Alpha save
+ * ## Alpha save
  *
  * Not all image formats support alpha. If you try to save an image with an
  * alpha channel to a format that does not support it, the alpha will be
- * automatically flattened out. Use @background (default 0) to set the colour
+ * automatically flattened out. Use `background` (default 0) to set the colour
  * that alpha should be flattened against.
  *
- * # Adding new formats
+ * ## Adding new formats
  *
  * To add support for a new file format to vips, simply define a new subclass
- * of #VipsForeignLoad or #VipsForeignSave.
+ * of [class@ForeignLoad] or [class@ForeignSave].
  *
- * If you define a new operation which is a subclass of #VipsForeign, support
- * for it automatically appears in all VIPS user-interfaces. It will also be
- * transparently supported by vips_image_new_from_file() and friends.
+ * If you define a new operation which is a subclass of [class@Foreign],
+ * support for it automatically appears in all libvips user-interfaces. It
+ * will also be transparently supported by [ctor@Image.new_from_file] and
+ * friends.
+ */
+
+/**
+ * VipsForeignLoad:
+ *
+ * An abstract base class to load images in a variety of formats.
  *
  * ## Writing a new loader
  *
- * Add a new loader to VIPS by subclassing #VipsForeignLoad. Subclasses need to
- * implement at least @header().
+ * Add a new loader to libvips by subclassing [class@ForeignLoad]. Subclasses
+ * need to implement at least [vfunc@ForeignLoad.header].
  *
- * @header() must set at least the header fields of @out. @load(), if defined,
- * must load the pixels to @real.
+ * [vfunc@ForeignLoad.header] must set at least the header fields of `out`.
+ * [vfunc@ForeignLoad.load], if defined, must load the pixels to `real`.
  *
  * The suffix list is used to select a format to save a file in, and to pick a
- * loader if you don't define is_a().
+ * loader if you don't define [func@Foreign.is_a].
  *
- * You should also define @nickname and @description in #VipsObject.
+ * You should also define [property@Object:nickname] and
+ * [property@Object:description] in [class@Object].
  *
  * As a complete example, here's code for a PNG loader, minus the actual
  * calls to libpng.
  *
- * |[
+ * ```c
  * typedef struct _VipsForeignLoadPng {
  *     VipsForeignLoad parent_object;
  *
@@ -252,17 +255,23 @@
  * vips_foreign_load_png_init(VipsForeignLoadPng *png)
  * {
  * }
- * ]|
+ * ```
+ */
+
+/**
+ * VipsForeignSave:
+ *
+ * An abstract base class to save images in a variety of formats.
  *
  * ## Writing a new saver
  *
- * Call your saver in the class' @build() method after chaining up. The
- * prepared image should be ready for you to save in @ready.
+ * Call your saver in the class' [vfunc@Object.build] method after chaining up.
+ * The prepared image should be ready for you to save in `ready`.
  *
  * As a complete example, here's the code for the CSV saver, minus the calls
  * to the actual save routines.
  *
- * |[
+ * ```c
  * typedef struct _VipsForeignSaveCsv {
  *     VipsForeignSave parent_object;
  *
@@ -308,7 +317,7 @@
  *
  *     foreign_class->suffs = vips__foreign_csv_suffs;
  *
- *     save_class->saveable = VIPS_SAVEABLE_MONO;
+ *     save_class->saveable = VIPS_FOREIGN_SAVEABLE_MONO;
  *     // no need to define ->format_table, we don't want the input
  *     // cast for us
  *
@@ -332,7 +341,7 @@
  * {
  *     csv->separator = g_strdup("\t");
  * }
- * ]|
+ * ```
  */
 
 /* Use this to link images to the load operation that made them.
@@ -348,19 +357,19 @@ static GQuark vips__foreign_load_operation = 0;
  *
  * Some hints about the image loader.
  *
- * #VIPS_FOREIGN_PARTIAL means that the image can be read directly from the
- * file without needing to be unpacked to a temporary image first.
+ * [flags@Vips.ForeignFlags.PARTIAL] means that the image can be read directly
+ * from the file without needing to be unpacked to a temporary image first.
  *
- * #VIPS_FOREIGN_SEQUENTIAL means that the loader supports lazy reading, but
- * only top-to-bottom (sequential) access. Formats like PNG can read sets of
- * scanlines, for example, but only in order.
+ * [flags@Vips.ForeignFlags.SEQUENTIAL] means that the loader supports lazy
+ * reading, but only top-to-bottom (sequential) access. Formats like PNG can
+ * read sets of scanlines, for example, but only in order.
  *
  * If neither PARTIAL or SEQUENTIAL is set, the loader only supports whole
  * image read. Setting both PARTIAL and SEQUENTIAL is an error.
  *
- * #VIPS_FOREIGN_BIGENDIAN means that image pixels are most-significant byte
- * first. Depending on the native byte order of the host machine, you may
- * need to swap bytes. See vips_copy().
+ * [flags@Vips.ForeignFlags.BIGENDIAN] means that image pixels are
+ * most-significant byte first. Depending on the native byte order of the
+ * host machine, you may need to swap bytes. See [method@Image.copy].
  */
 
 G_DEFINE_ABSTRACT_TYPE(VipsForeign, vips_foreign, VIPS_TYPE_OPERATION);
@@ -448,18 +457,19 @@ file_compare(VipsForeignClass *a, VipsForeignClass *b, void *user_data)
 /**
  * vips_foreign_map:
  * @base: base class to search below (eg. "VipsForeignLoad")
- * @fn: (scope call): function to apply to each #VipsForeignClass
+ * @fn: (scope call): function to apply to each [class@Foreign]
  * @a: user data
  * @b: user data
  *
- * Apply a function to every #VipsForeignClass that VIPS knows about. Foreigns
+ * Apply a function to every [class@Foreign] that VIPS knows about. Foreigns
  * are presented to the function in priority order.
  *
- * Like all VIPS map functions, if @fn returns %NULL, iteration continues. If
- * it returns non-%NULL, iteration terminates and that value is returned. The
- * map function returns %NULL if all calls return %NULL.
+ * Like all VIPS map functions, if @fn returns `NULL`, iteration continues. If
+ * it returns non-`NULL`, iteration terminates and that value is returned. The
+ * map function returns `NULL` if all calls return `NULL`.
  *
- * See also: vips_slist_map().
+ * ::: seealso
+ *     [func@slist_map2].
  *
  * Returns: (transfer none): the result of iteration
  */
@@ -549,8 +559,8 @@ vips_foreign_find_load_sub(VipsForeignLoadClass *load_class,
 
 	/* Ignore the buffer and source loaders.
 	 */
-	if (vips_ispostfix(object_class->nickname, "_buffer") ||
-		vips_ispostfix(object_class->nickname, "_source"))
+	if (g_str_has_suffix(object_class->nickname, "_buffer") ||
+		g_str_has_suffix(object_class->nickname, "_source"))
 		return NULL;
 
 #ifdef DEBUG
@@ -587,9 +597,10 @@ vips_foreign_find_load_sub(VipsForeignLoadClass *load_class,
  * Searches for an operation you could use to load @filename. Any trailing
  * options on @filename are stripped and ignored.
  *
- * See also: vips_foreign_find_load_buffer(), vips_image_new_from_file().
+ * ::: seealso
+ *     [func@Foreign.find_load_buffer], [ctor@Image.new_from_file].
  *
- * Returns: the name of an operation on success, %NULL on error
+ * Returns: the name of an operation on success, `NULL` on error
  */
 const char *
 vips_foreign_find_load(const char *name)
@@ -665,7 +676,7 @@ vips_foreign_find_load_buffer_sub(VipsForeignLoadClass *load_class,
 
 	/* Skip non-buffer loaders.
 	 */
-	if (!vips_ispostfix(object_class->nickname, "_buffer"))
+	if (!g_str_has_suffix(object_class->nickname, "_buffer"))
 		return NULL;
 
 	if (load_class->is_a_buffer) {
@@ -690,9 +701,10 @@ vips_foreign_find_load_buffer_sub(VipsForeignLoadClass *load_class,
  *
  * 	vips -l | grep load_buffer
  *
- * See also: vips_image_new_from_buffer().
+ * ::: seealso
+ *     [ctor@Image.new_from_buffer].
  *
- * Returns: (transfer none): the name of an operation on success, %NULL on
+ * Returns: (transfer none): the name of an operation on success, `NULL` on
  * error.
  */
 const char *
@@ -723,7 +735,7 @@ vips_foreign_find_load_source_sub( void *item, const void *a, void *b )
 
 	/* Skip non-source loaders.
 	 */
-	if (!vips_ispostfix(object_class->nickname, "_source"))
+	if (!g_str_has_suffix(object_class->nickname, "_source"))
 		return NULL;
 
 	if (load_class->is_a_source) {
@@ -751,9 +763,10 @@ vips_foreign_find_load_source_sub( void *item, const void *a, void *b )
  *
  * 	vips -l | grep load_source
  *
- * See also: vips_image_new_from_source().
+ * ::: seealso
+ *     [ctor@Image.new_from_source].
  *
- * Returns: (transfer none): the name of an operation on success, %NULL on
+ * Returns: (transfer none): the name of an operation on success, `NULL` on
  * error.
  */
 const char *
@@ -770,11 +783,6 @@ vips_foreign_find_load_source(VipsSource *source)
 		return NULL;
 	}
 
-	/* All source loaders should be NOCACHE.
-	 */
-	g_assert(VIPS_OPERATION_CLASS(load_class)->flags &
-		VIPS_OPERATION_NOCACHE);
-
 	return G_OBJECT_CLASS_NAME(load_class);
 }
 
@@ -783,10 +791,10 @@ vips_foreign_find_load_source(VipsSource *source)
  * @loader: name of loader to use for test
  * @filename: file to test
  *
- * Return %TRUE if @filename can be loaded by @loader. @loader is something
+ * Return `TRUE` if @filename can be loaded by @loader. @loader is something
  * like "tiffload" or "VipsForeignLoadTiff".
  *
- * Returns: %TRUE if @filename can be loaded by @loader.
+ * Returns: `TRUE` if @filename can be loaded by @loader.
  */
 gboolean
 vips_foreign_is_a(const char *loader, const char *filename)
@@ -810,10 +818,10 @@ vips_foreign_is_a(const char *loader, const char *filename)
  * @data: (array length=size) (element-type guint8): pointer to the buffer to test
  * @size: (type gsize): size of the buffer to test
  *
- * Return %TRUE if @data can be loaded by @loader. @loader is something
+ * Return `TRUE` if @data can be loaded by @loader. @loader is something
  * like "tiffload_buffer" or "VipsForeignLoadTiffBuffer".
  *
- * Returns: %TRUE if @data can be loaded by @loader.
+ * Returns: `TRUE` if @data can be loaded by @loader.
  */
 gboolean
 vips_foreign_is_a_buffer(const char *loader, const void *data, size_t size)
@@ -836,10 +844,10 @@ vips_foreign_is_a_buffer(const char *loader, const void *data, size_t size)
  * @loader: name of loader to use for test
  * @source: source to test
  *
- * Return %TRUE if @source can be loaded by @loader. @loader is something
+ * Return `TRUE` if @source can be loaded by @loader. @loader is something
  * like "tiffload_source" or "VipsForeignLoadTiffSource".
  *
- * Returns: %TRUE if @data can be loaded by @source.
+ * Returns: `TRUE` if @data can be loaded by @source.
  */
 gboolean
 vips_foreign_is_a_source(const char *loader, VipsSource *source)
@@ -946,7 +954,7 @@ vips_foreign_load_temp(VipsForeignLoad *load)
 	}
 
 	/* We open via disc if the uncompressed image will be larger than
-	 * vips_get_disc_threshold()
+	 * vips_get_disc_threshold().
 	 */
 	if (image_size > disc_threshold) {
 #ifdef DEBUG
@@ -1002,7 +1010,7 @@ vips_foreign_load_start(VipsImage *out, void *a, void *b)
 			return NULL;
 
 #ifdef DEBUG
-		printf("vips_foreign_load_start: triggering ->load()\n");
+		printf("vips_foreign_load_start: triggering ->load\n");
 #endif /*DEBUG*/
 
 		/* Read the image in. This may involve a long computation and
@@ -1093,9 +1101,8 @@ vips_foreign_load_build(VipsObject *object)
 
 	if ((flags & VIPS_FOREIGN_PARTIAL) &&
 		(flags & VIPS_FOREIGN_SEQUENTIAL)) {
-		g_warning("%s",
-			_("VIPS_FOREIGN_PARTIAL and VIPS_FOREIGN_SEQUENTIAL "
-			  "both set -- using SEQUENTIAL"));
+		g_warning("VIPS_FOREIGN_PARTIAL and VIPS_FOREIGN_SEQUENTIAL "
+				  "both set -- using SEQUENTIAL");
 		flags ^= VIPS_FOREIGN_PARTIAL;
 	}
 
@@ -1121,9 +1128,8 @@ vips_foreign_load_build(VipsObject *object)
 		return -1;
 
 	if (load->sequential)
-		g_warning("%s",
-			_("ignoring deprecated \"sequential\" mode -- "
-			  "please use \"access\" instead"));
+		g_warning("ignoring deprecated \"sequential\" mode -- "
+				  "please use \"access\" instead");
 
 	g_object_set(object, "out", vips_image_new(), NULL);
 
@@ -1131,7 +1137,7 @@ vips_foreign_load_build(VipsObject *object)
 		VIPS_META_LOADER, class->nickname);
 
 #ifdef DEBUG
-	printf("vips_foreign_load_build: triggering ->header()\n");
+	printf("vips_foreign_load_build: triggering ->header\n");
 #endif /*DEBUG*/
 
 	/* Read the header into @out.
@@ -1339,8 +1345,12 @@ vips_foreign_save_summary_class(VipsObjectClass *object_class, VipsBuf *buf)
 	VIPS_OBJECT_CLASS(vips_foreign_save_parent_class)
 		->summary_class(object_class, buf);
 
-	vips_buf_appendf(buf, ", %s",
-		vips_enum_nick(VIPS_TYPE_SAVEABLE, class->saveable));
+	GValue value = { 0 };
+	g_value_init(&value, VIPS_TYPE_FOREIGN_SAVEABLE);
+	g_value_set_flags(&value, class->saveable);
+	vips_buf_appends(buf, ", ");
+	vips_buf_appendgv(buf, &value);
+	g_value_unset(&value);
 }
 
 static VipsObject *
@@ -1363,95 +1373,83 @@ vips_foreign_save_new_from_string(const char *string)
 	return VIPS_OBJECT(save);
 }
 
-/* Convert an image for saving.
+/* Apply a set of saveable flags.
+ *
+ *  - unpack rad and labq
+ *	- if the saver supports mono and we have a mono-looking image, we are done
+ *	- if the saver supports CMYK and we have a CMYK-looking image, we are done
+ *	- if this is a CMYK-looking image, import to XYZ
+ *	- if the saver supports rgb, go to rgb
+ *	- if the saver supports cmyk, go to cmyk
+ *	- if the saver supports mono, go to mono
+ *
+ * we output 16 bit images if the source is 16 bits ... a later stage
+ * uses the format[] table to cut this down to the size the saver wants
  */
-int
-vips__foreign_convert_saveable(VipsImage *in, VipsImage **ready,
-	VipsSaveable saveable, VipsBandFormat *format, VipsCoding *coding,
-	VipsArrayDouble *background)
+static int
+vips_foreign_apply_saveable(VipsImage *in, VipsImage **ready,
+	VipsForeignSaveable saveable)
 {
+	// is this a 16-bit source image
+	gboolean sixteenbit = in->BandFmt == VIPS_FORMAT_USHORT;
+
+	VipsImage *out;
+	VipsInterpretation interpretation;
+
 	/* in holds a reference to the output of our chain as we build it.
 	 */
 	g_object_ref(in);
 
-	/* For coded images, can this class save the coding we are in now?
-	 * Nothing to do.
+	/* ANY? we are done.
 	 */
-	if (in->Coding != VIPS_CODING_NONE &&
-		coding[in->Coding]) {
+	if (saveable == VIPS_FOREIGN_SAVEABLE_ANY) {
 		*ready = in;
 		return 0;
 	}
 
-	/* For uncoded images, if this saver supports ANY bands and this
-	 * format we have nothing to do.
-	 */
-	if (in->Coding == VIPS_CODING_NONE &&
-		saveable == VIPS_SAVEABLE_ANY &&
-		format[in->BandFmt] == in->BandFmt) {
-		*ready = in;
-		return 0;
-	}
-
-	/* Otherwise ... we need to decode and then (possibly) recode at the
-	 * end.
-	 */
-
-	/* If this is an VIPS_CODING_LABQ, we can go straight to RGB.
+	/* If this is VIPS_CODING_LABQ, we can go straight to RGB.
 	 */
 	if (in->Coding == VIPS_CODING_LABQ) {
-		VipsImage *out;
-
 		if (vips_LabQ2sRGB(in, &out, NULL)) {
 			g_object_unref(in);
 			return -1;
 		}
 		g_object_unref(in);
-
 		in = out;
 	}
 
-	/* If this is an VIPS_CODING_RAD, we unpack to float. This could be
+	/* If this is VIPS_CODING_RAD, we unpack to float. This could be
 	 * scRGB or XYZ.
 	 */
 	if (in->Coding == VIPS_CODING_RAD) {
-		VipsImage *out;
-
 		if (vips_rad2float(in, &out, NULL)) {
 			g_object_unref(in);
 			return -1;
 		}
 		g_object_unref(in);
-
 		in = out;
 	}
 
-	/* If the saver supports RAD, we need to go to scRGB or XYZ.
+	/* If this is a mono-ish looking image and our saver supports mono, we
+	 * are done. We are not too strict about what a mono image is! We need to
+	 * work for things like "extract_band 1" on an RGB image.
 	 */
-	if (coding[VIPS_CODING_RAD]) {
-		if (in->Type != VIPS_INTERPRETATION_scRGB &&
-			in->Type != VIPS_INTERPRETATION_XYZ) {
-			VipsImage *out;
-
-			if (vips_colourspace(in, &out, VIPS_INTERPRETATION_scRGB, NULL)) {
-				g_object_unref(in);
-				return -1;
-			}
-			g_object_unref(in);
-
-			in = out;
-		}
+	if ((saveable & VIPS_FOREIGN_SAVEABLE_MONO) &&
+		in->Bands < 3) {
+		*ready = in;
+		return 0;
 	}
 
-	/* If this image is CMYK and the saver is RGB-only, use lcms to try to
-	 * import to XYZ.
+	/* CMYK image? Use the sanity-checked interpretation value.
 	 */
-	if (in->Type == VIPS_INTERPRETATION_CMYK &&
-		in->Bands >= 4 &&
-		(saveable == VIPS_SAVEABLE_RGB ||
-			saveable == VIPS_SAVEABLE_RGBA ||
-			saveable == VIPS_SAVEABLE_RGBA_ONLY)) {
-		VipsImage *out;
+	if (vips_image_guess_interpretation(in) == VIPS_INTERPRETATION_CMYK &&
+		in->Bands >= 4) {
+		/* If our saver supports CMYK we are done, otherwise import to XYZ.
+		 */
+		if (saveable & VIPS_FOREIGN_SAVEABLE_CMYK) {
+			*ready = in;
+			return 0;
+		}
 
 		if (vips_icc_import(in, &out,
 				"pcs", VIPS_PCS_XYZ,
@@ -1462,251 +1460,240 @@ vips__foreign_convert_saveable(VipsImage *in, VipsImage **ready,
 			return -1;
 		}
 		g_object_unref(in);
-
 		in = out;
 	}
 
-	/* If this is something other than CMYK or RAD, and it's not already
-	 * an RGB image, eg. maybe a LAB image, we need to transform
-	 * to RGB.
+	/* If the saver supports RGB, go to RGB, or RGB16 if this is a ushort
+	 * source.
 	 */
-	if (!coding[VIPS_CODING_RAD] &&
-		in->Bands >= 3 &&
-		in->Type != VIPS_INTERPRETATION_CMYK &&
-		in->Type != VIPS_INTERPRETATION_sRGB &&
-		in->Type != VIPS_INTERPRETATION_RGB16 &&
-		vips_colourspace_issupported(in) &&
-		(saveable == VIPS_SAVEABLE_RGB ||
-			saveable == VIPS_SAVEABLE_RGBA ||
-			saveable == VIPS_SAVEABLE_RGBA_ONLY ||
-			saveable == VIPS_SAVEABLE_RGB_CMYK)) {
-		VipsImage *out;
-		VipsInterpretation interpretation;
-
-		/* Do we make RGB or RGB16? We don't want to squash a 16-bit
-		 * RGB down to 8 bits if the saver supports 16.
-		 */
-		if (vips_band_format_is8bit(format[in->BandFmt]))
-			interpretation = VIPS_INTERPRETATION_sRGB;
-		else
-			interpretation = VIPS_INTERPRETATION_RGB16;
+	if (saveable & VIPS_FOREIGN_SAVEABLE_RGB) {
+		interpretation = sixteenbit ?
+			VIPS_INTERPRETATION_RGB16 : VIPS_INTERPRETATION_sRGB;
 
 		if (vips_colourspace(in, &out, interpretation, NULL)) {
 			g_object_unref(in);
 			return -1;
 		}
 		g_object_unref(in);
-
 		in = out;
+
+		*ready = in;
+		return 0;
 	}
 
-	/* VIPS_SAVEABLE_RGBA_ONLY does not support mono types ... convert
-	 * to sRGB.
+	/* If the saver supports CMYK, go to CMYK, 16 bits if this is a ushort
+	 * source.
 	 */
-	if (!coding[VIPS_CODING_RAD] &&
-		in->Bands < 3 &&
-		saveable == VIPS_SAVEABLE_RGBA_ONLY) {
-		VipsImage *out;
-		VipsInterpretation interpretation;
+	if (saveable & VIPS_FOREIGN_SAVEABLE_CMYK) {
+		if (vips_icc_export(in, &out,
+			"output-profile", "cmyk",
+			"depth", sixteenbit ? 16 : 8,
+			NULL)) {
+			g_object_unref(in);
+			return -1;
+		}
+		g_object_unref(in);
+		in = out;
 
-		/* Do we make RGB or RGB16? We don't want to squash a 16-bit
-		 * RGB down to 8 bits if the saver supports 16.
-		 */
-		if (vips_band_format_is8bit(format[in->BandFmt]))
-			interpretation = VIPS_INTERPRETATION_sRGB;
-		else
-			interpretation = VIPS_INTERPRETATION_RGB16;
+		*ready = in;
+		return 0;
+	}
+
+	/* If the saver supports mono, go to B_W, or GREY16 if this is a ushort
+	 * source.
+	 */
+	if (saveable & VIPS_FOREIGN_SAVEABLE_MONO) {
+		interpretation = sixteenbit ?
+			VIPS_INTERPRETATION_GREY16 : VIPS_INTERPRETATION_B_W;
 
 		if (vips_colourspace(in, &out, interpretation, NULL)) {
 			g_object_unref(in);
 			return -1;
 		}
 		g_object_unref(in);
+		in = out;
 
+		*ready = in;
+		return 0;
+	}
+
+	vips_error("VipsForeignSave", _("saver does not support any output type"));
+	return -1;
+}
+
+/* Do all the colourspace conversions to get an image ready for saving. Don't
+ * finalize alpha or numeric format.
+ */
+int
+vips__foreign_convert_saveable(VipsImage *in, VipsImage **ready,
+	VipsForeignSaveable saveable, VipsBandFormat *format, VipsForeignCoding coding,
+	VipsArrayDouble *background)
+{
+	VipsImage *out;
+
+	/* in holds a reference to the output of our chain as we build it.
+	 */
+	g_object_ref(in);
+
+	g_assert(format);
+
+	/* For coded images, can this class save the coding we are in now?
+	 * Nothing to do.
+	 */
+	if ((in->Coding == VIPS_CODING_LABQ &&
+			(coding & VIPS_FOREIGN_CODING_LABQ)) ||
+		(in->Coding == VIPS_CODING_RAD &&
+			(coding & VIPS_FOREIGN_CODING_RAD))) {
+		*ready = in;
+		return 0;
+	}
+
+	/* For uncoded images, if this saver supports ANY and this
+	 * format, we have nothing to do.
+	 */
+	if (in->Coding == VIPS_CODING_NONE &&
+		(saveable == VIPS_FOREIGN_SAVEABLE_ANY) &&
+		format[in->BandFmt] == in->BandFmt) {
+		*ready = in;
+		return 0;
+	}
+
+	/* Otherwise ... we need to decode and then (possibly) recode at the
+	 * end.
+	 */
+
+	/* Apply saveable conversions to get mono/rgb/cmyk.
+	 */
+	if (vips_foreign_apply_saveable(in, &out, saveable)) {
+		g_object_unref(in);
+		return -1;
+	}
+	g_object_unref(in);
+	in = out;
+
+	/* Flatten alpha, if the saver does not support it.
+	 */
+	if (in->Coding == VIPS_CODING_NONE &&
+		vips_image_hasalpha(in) &&
+		!(saveable & VIPS_FOREIGN_SAVEABLE_ALPHA)) {
+		if (vips_flatten(in, &out,
+				"background", background,
+				NULL)) {
+			g_object_unref(in);
+			return -1;
+		}
+		g_object_unref(in);
 		in = out;
 	}
 
-	/* Get the bands right. We must do this after all colourspace
-	 * transforms, since they can change the number of bands.
+	/* There might be more than one alpha ... drop any remaining excess
+	 * bands.
 	 */
 	if (in->Coding == VIPS_CODING_NONE) {
-		/* Do we need to flatten out an alpha channel? There needs to
-		 * be an alpha there now, and this writer needs to not support
-		 * alpha.
-		 */
-		if ((in->Bands == 2 ||
-				(in->Bands == 4 &&
-					in->Type != VIPS_INTERPRETATION_CMYK)) &&
-			(saveable == VIPS_SAVEABLE_MONO ||
-				saveable == VIPS_SAVEABLE_RGB ||
-				saveable == VIPS_SAVEABLE_RGB_CMYK)) {
-			VipsImage *out;
+		int max_bands;
 
-			if (vips_flatten(in, &out,
-					"background", background,
-					NULL)) {
-				g_object_unref(in);
-				return -1;
-			}
-			g_object_unref(in);
+		// use a sanity-checked interpretation
+		switch (vips_image_guess_interpretation(in)) {
+		case VIPS_INTERPRETATION_B_W:
+		case VIPS_INTERPRETATION_GREY16:
+			max_bands = 1;
+			break;
 
-			in = out;
+		case VIPS_INTERPRETATION_RGB:
+		case VIPS_INTERPRETATION_CMC:
+		case VIPS_INTERPRETATION_LCH:
+		case VIPS_INTERPRETATION_LABS:
+		case VIPS_INTERPRETATION_sRGB:
+		case VIPS_INTERPRETATION_YXY:
+		case VIPS_INTERPRETATION_XYZ:
+		case VIPS_INTERPRETATION_LAB:
+		case VIPS_INTERPRETATION_RGB16:
+		case VIPS_INTERPRETATION_scRGB:
+		case VIPS_INTERPRETATION_HSV:
+			max_bands = 3;
+			break;
+
+		case VIPS_INTERPRETATION_CMYK:
+			max_bands = 4;
+			break;
+
+		default:
+			max_bands = 0;
+			break;
 		}
 
-		/* Other alpha removal strategies ... just drop the extra
-		 * bands.
-		 */
+		if (saveable == VIPS_FOREIGN_SAVEABLE_ANY)
+			max_bands = in->Bands;
+		else if (saveable & VIPS_FOREIGN_SAVEABLE_ALPHA)
+			max_bands += 1;
 
-		else if (in->Bands > 3 &&
-			(saveable == VIPS_SAVEABLE_RGB ||
-				(saveable == VIPS_SAVEABLE_RGB_CMYK &&
-					in->Type != VIPS_INTERPRETATION_CMYK))) {
-			VipsImage *out;
-
-			/* Don't let 4 bands though unless the image really is
-			 * a CMYK.
-			 *
-			 * Consider a RGBA png being saved as JPG. We can
-			 * write CMYK jpg, but we mustn't do that for RGBA
-			 * images.
-			 */
+		if (max_bands > 0 &&
+			in->Bands > max_bands) {
 			if (vips_extract_band(in, &out, 0,
-					"n", 3,
+					"n", max_bands,
 					NULL)) {
 				g_object_unref(in);
 				return -1;
 			}
 			g_object_unref(in);
-
-			in = out;
-		}
-		else if (in->Bands > 4 &&
-			((saveable == VIPS_SAVEABLE_RGB_CMYK &&
-				 in->Type == VIPS_INTERPRETATION_CMYK) ||
-				saveable == VIPS_SAVEABLE_RGBA ||
-				saveable == VIPS_SAVEABLE_RGBA_ONLY)) {
-			VipsImage *out;
-
-			if (vips_extract_band(in, &out, 0,
-					"n", 4,
-					NULL)) {
-				g_object_unref(in);
-				return -1;
-			}
-			g_object_unref(in);
-
-			in = out;
-		}
-		else if (in->Bands > 1 &&
-			saveable == VIPS_SAVEABLE_MONO) {
-			VipsImage *out;
-
-			if (vips_extract_band(in, &out, 0, NULL)) {
-				g_object_unref(in);
-				return -1;
-			}
-			g_object_unref(in);
-
-			in = out;
-		}
-
-		/* Else we have VIPS_SAVEABLE_ANY and we don't chop bands down.
-		 */
-	}
-
-	/* Handle the ushort interpretations.
-	 *
-	 * RGB16 and GREY16 use 0-65535 for black-white. If we have an image
-	 * tagged like this, and it has more than 8 bits (we leave crazy uchar
-	 * images tagged as RGB16 alone), we'll need to get it ready for the
-	 * saver.
-	 */
-	if ((in->Type == VIPS_INTERPRETATION_RGB16 ||
-			in->Type == VIPS_INTERPRETATION_GREY16) &&
-		!vips_band_format_is8bit(in->BandFmt)) {
-		/* If the saver supports ushort, cast to ushort. It may be
-		 * float at the moment, for example.
-		 *
-		 * If the saver does not support ushort, automatically shift
-		 * it down. This is the behaviour we want for saving an RGB16
-		 * image as JPG, for example.
-		 */
-		if (format[VIPS_FORMAT_USHORT] == VIPS_FORMAT_USHORT) {
-			VipsImage *out;
-
-			if (vips_cast(in, &out, VIPS_FORMAT_USHORT, NULL)) {
-				g_object_unref(in);
-				return -1;
-			}
-			g_object_unref(in);
-
-			in = out;
-		}
-		else {
-			VipsImage *out;
-
-			if (vips_rshift_const1(in, &out, 8, NULL)) {
-				g_object_unref(in);
-				return -1;
-			}
-			g_object_unref(in);
-
-			in = out;
-
-			/* That could have produced an int image ... make sure
-			 * we are now uchar.
-			 */
-			if (vips_cast(in, &out, VIPS_FORMAT_UCHAR, NULL)) {
-				g_object_unref(in);
-				return -1;
-			}
-			g_object_unref(in);
-
 			in = out;
 		}
 	}
 
-	/* Cast to the output format.
+	/* Convert to the format the saver likes.
 	 */
-	{
-		VipsImage *out;
+	if (in->Coding == VIPS_CODING_NONE) {
+		/* If the saver does not support 16-bit output, automatically
+		 * shift it down. This is the behaviour we want for saving an
+		 * RGB16 image as JPEG, for example.
+		 */
+		gboolean needs_shift =
+			!vips_band_format_is8bit(in->BandFmt) &&
+			vips_band_format_is8bit(format[in->BandFmt]);
 
-		if (vips_cast(in, &out, format[in->BandFmt], NULL)) {
+		if (vips_cast(in, &out, format[in->BandFmt],
+			"shift", needs_shift,
+			NULL)) {
 			g_object_unref(in);
 			return -1;
 		}
 		g_object_unref(in);
-
 		in = out;
 	}
 
-	/* Does this class want a coded image? Search the coding table for the
-	 * first one.
+	/* Does this class want a coded image?
 	 */
-	if (coding[VIPS_CODING_NONE]) {
-		/* Already NONE, nothing to do.
+	if ((in->Coding == VIPS_CODING_NONE &&
+			(coding & VIPS_FOREIGN_CODING_NONE)) ||
+		(in->Coding == VIPS_CODING_LABQ &&
+			(coding & VIPS_FOREIGN_CODING_LABQ)) ||
+		(in->Coding == VIPS_CODING_RAD &&
+			(coding & VIPS_FOREIGN_CODING_RAD))) {
+		/* Already there, nothing to do.
 		 */
 	}
-	else if (coding[VIPS_CODING_LABQ]) {
-		VipsImage *out;
-
+	else if (coding & VIPS_FOREIGN_CODING_LABQ) {
 		if (vips_Lab2LabQ(in, &out, NULL)) {
 			g_object_unref(in);
 			return -1;
 		}
 		g_object_unref(in);
-
 		in = out;
 	}
-	else if (coding[VIPS_CODING_RAD]) {
-		VipsImage *out;
-
+	else if (coding & VIPS_FOREIGN_CODING_RAD) {
 		if (vips_float2rad(in, &out, NULL)) {
 			g_object_unref(in);
 			return -1;
 		}
 		g_object_unref(in);
-
+		in = out;
+	}
+	else if (coding & VIPS_FOREIGN_CODING_NONE) {
+		if (vips_image_decode(in, &out)) {
+			g_object_unref(in);
+			return -1;
+		}
+		g_object_unref(in);
 		in = out;
 	}
 
@@ -1722,10 +1709,10 @@ vips_foreign_save_remove_metadata(VipsImage *image,
 	VipsForeignKeep keep = *((VipsForeignKeep *) user_data);
 
 	// we are only interested in metadata
-	if (!vips_isprefix(field, "png-comment-") &&
-		!vips_isprefix(field, "magickprofile-") &&
+	if (!vips_isprefix("png-comment-", field) &&
+		!vips_isprefix("magickprofile-", field) &&
 		strcmp(field, VIPS_META_IMAGEDESCRIPTION) != 0 &&
-		!vips_ispostfix(field, "-data"))
+		!g_str_has_suffix(field, "-data"))
 		return NULL;
 
 	if ((strcmp(field, VIPS_META_EXIF_NAME) == 0 &&
@@ -1831,10 +1818,7 @@ vips_foreign_save_build(VipsObject *object)
 		save->ready = ready;
 	}
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_save_parent_class)->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_save_parent_class)->build(object);
 }
 
 #define UC VIPS_FORMAT_UCHAR
@@ -1860,8 +1844,6 @@ vips_foreign_save_class_init(VipsForeignSaveClass *class)
 	VipsObjectClass *object_class = (VipsObjectClass *) class;
 	VipsOperationClass *operation_class = (VipsOperationClass *) class;
 
-	int i;
-
 	gobject_class->dispose = vips_foreign_save_dispose;
 	gobject_class->set_property = vips_object_set_property;
 	gobject_class->get_property = vips_object_get_property;
@@ -1884,9 +1866,7 @@ vips_foreign_save_class_init(VipsForeignSaveClass *class)
 
 	/* Default to no coding allowed.
 	 */
-	for (i = 0; i < VIPS_CODING_LAST; i++)
-		class->coding[i] = FALSE;
-	class->coding[VIPS_CODING_NONE] = TRUE;
+	class->coding = VIPS_FOREIGN_CODING_NONE;
 
 	/* Default to no cast on save.
 	 */
@@ -1956,13 +1936,15 @@ vips_foreign_find_save_sub(VipsForeignSaveClass *save_class,
 	/* All savers needs suffs defined since we use the suff to pick the
 	 * saver.
 	 */
-	if (!class->suffs)
+	if (!class->suffs) {
 		g_warning("no suffix defined for %s", object_class->nickname);
+		return NULL;
+	}
 
 	/* Skip non-file savers.
 	 */
-	if (vips_ispostfix(object_class->nickname, "_buffer") ||
-		vips_ispostfix(object_class->nickname, "_target"))
+	if (g_str_has_suffix(object_class->nickname, "_buffer") ||
+		g_str_has_suffix(object_class->nickname, "_target"))
 		return NULL;
 
 	/* vips_foreign_find_save() has already removed any options from the
@@ -1982,9 +1964,10 @@ vips_foreign_find_save_sub(VipsForeignSaveClass *save_class,
  * Searches for an operation you could use to write to @filename.
  * Any trailing options on @filename are stripped and ignored.
  *
- * See also: vips_foreign_find_save_buffer(), vips_image_write_to_file().
+ * ::: seealso
+ *     [func@Foreign.find_save_buffer], [method@Image.write_to_file].
  *
- * Returns: (nullable): the name of an operation on success, %NULL on error
+ * Returns: (nullable): the name of an operation on success, `NULL` on error
  */
 const char *
 vips_foreign_find_save(const char *name)
@@ -2045,17 +2028,17 @@ vips_foreign_get_suffixes_add_cb(VipsForeignSaveClass *save_class,
 /**
  * vips_foreign_get_suffixes:
  *
- * Get a %NULL-terminated array listing all the supported suffixes.
+ * Get a `NULL`-terminated array listing all the supported suffixes.
  *
  * This is not the same as all the supported file types, since libvips
  * detects image format for load by testing the first few bytes.
  *
- * Use vips_foreign_find_load() to detect type for a specific file.
+ * Use [func@Foreign.find_load] to detect type for a specific file.
  *
- * Free the return result with g_strfreev().
+ * Free the return result with [func@GLib.strfreev].
  *
  * Returns: (transfer full) (array): all supported file extensions, as a
- * %NULL-terminated array.
+ * `NULL`-terminated array.
  */
 gchar **
 vips_foreign_get_suffixes(void)
@@ -2123,7 +2106,7 @@ vips_foreign_find_save_target_sub(VipsForeignSaveClass *save_class,
 
 	if (!G_TYPE_IS_ABSTRACT(G_TYPE_FROM_CLASS(class)) &&
 		class->suffs &&
-		vips_ispostfix(object_class->nickname, "_target") &&
+		g_str_has_suffix(object_class->nickname, "_target") &&
 		vips_filename_suffix_match(suffix, class->suffs))
 		return save_class;
 
@@ -2137,9 +2120,10 @@ vips_foreign_find_save_target_sub(VipsForeignSaveClass *save_class,
  * Searches for an operation you could use to write to a target in @suffix
  * format.
  *
- * See also: vips_image_write_to_buffer().
+ * ::: seealso
+ *     [method@Image.write_to_buffer].
  *
- * Returns: (nullable): the name of an operation on success, %NULL on error
+ * Returns: (nullable): the name of an operation on success, `NULL` on error
  */
 const char *
 vips_foreign_find_save_target(const char *name)
@@ -2181,7 +2165,7 @@ vips_foreign_find_save_buffer_sub(VipsForeignSaveClass *save_class,
 
 	if (!G_TYPE_IS_ABSTRACT(G_TYPE_FROM_CLASS(class)) &&
 		class->suffs &&
-		vips_ispostfix(object_class->nickname, "_buffer") &&
+		g_str_has_suffix(object_class->nickname, "_buffer") &&
 		vips_filename_suffix_match(suffix, class->suffs))
 		return save_class;
 
@@ -2195,9 +2179,10 @@ vips_foreign_find_save_buffer_sub(VipsForeignSaveClass *save_class,
  * Searches for an operation you could use to write to a buffer in @suffix
  * format.
  *
- * See also: vips_image_write_to_buffer().
+ * ::: seealso
+ *     [method@Image.write_to_buffer].
  *
- * Returns: (nullable): the name of an operation on success, %NULL on error
+ * Returns: (nullable): the name of an operation on success, `NULL` on error
  */
 const char *
 vips_foreign_find_save_buffer(const char *name)
@@ -2228,14 +2213,7 @@ vips_foreign_find_save_buffer(const char *name)
  * vips_heifload:
  * @filename: file to load
  * @out: (out): decompressed image
- * @...: %NULL-terminated list of optional named arguments
- *
- * Optional arguments:
- *
- * * @page: %gint, page (top-level image number) to read
- * * @n: %gint, load this many pages
- * * @thumbnail: %gboolean, fetch thumbnail instead of image
- * * @unlimited: %gboolean, remove all denial of service limits
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Read a HEIF image file into a VIPS image.
  *
@@ -2244,21 +2222,28 @@ vips_foreign_find_save_buffer(const char *name)
  *
  * Use @n to select the number of pages to render. The default is 1. Pages are
  * rendered in a vertical column. Set to -1 to mean "until the end of the
- * document". Use vips_grid() to reorganise pages.
+ * document". Use [method@Image.grid] to reorganise pages.
  *
  * HEIF images have a primary image. The metadata item `heif-primary` gives
  * the page number of the primary.
  *
- * If @thumbnail is %TRUE, then fetch a stored thumbnail rather than the
+ * If @thumbnail is `TRUE`, then fetch a stored thumbnail rather than the
  * image.
  *
  * By default, input image dimensions are limited to 16384x16384.
- * If @unlimited is %TRUE, this increases to the maximum of 65535x65535.
+ * If @unlimited is `TRUE`, this increases to the maximum of 65535x65535.
  *
  * The bitdepth of the heic image is recorded in the metadata item
  * `heif-bitdepth`.
  *
- * See also: vips_image_new_from_file().
+ * ::: tip "Optional arguments"
+ *     * @page: `gint`, page (top-level image number) to read
+ *     * @n: `gint`, load this many pages
+ *     * @thumbnail: `gboolean`, fetch thumbnail instead of image
+ *     * @unlimited: `gboolean`, remove all denial of service limits
+ *
+ * ::: seealso
+ *     [ctor@Image.new_from_file].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -2280,22 +2265,22 @@ vips_heifload(const char *filename, VipsImage **out, ...)
  * @buf: (array length=len) (element-type guint8): memory area to load
  * @len: (type gsize): size of memory area
  * @out: (out): image to write
- * @...: %NULL-terminated list of optional named arguments
- *
- * Optional arguments:
- *
- * * @page: %gint, page (top-level image number) to read
- * * @n: %gint, load this many pages
- * * @thumbnail: %gboolean, fetch thumbnail instead of image
- * * @unlimited: %gboolean, remove all denial of service limits
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Read a HEIF image file into a VIPS image.
- * Exactly as vips_heifload(), but read from a memory buffer.
+ * Exactly as [ctor@Image.heifload], but read from a memory buffer.
  *
  * You must not free the buffer while @out is active. The
- * #VipsObject::postclose signal on @out is a good place to free.
+ * [signal@Object::postclose] signal on @out is a good place to free.
  *
- * See also: vips_heifload().
+ * ::: tip "Optional arguments"
+ *     * @page: `gint`, page (top-level image number) to read
+ *     * @n: `gint`, load this many pages
+ *     * @thumbnail: `gboolean`, fetch thumbnail instead of image
+ *     * @unlimited: `gboolean`, remove all denial of service limits
+ *
+ * ::: seealso
+ *     [ctor@Image.heifload].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -2323,18 +2308,18 @@ vips_heifload_buffer(void *buf, size_t len, VipsImage **out, ...)
  * vips_heifload_source:
  * @source: source to load from
  * @out: (out): image to write
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Optional arguments:
+ * Exactly as [ctor@Image.heifload], but read from a source.
  *
- * * @page: %gint, page (top-level image number) to read
- * * @n: %gint, load this many pages
- * * @thumbnail: %gboolean, fetch thumbnail instead of image
- * * @unlimited: %gboolean, remove all denial of service limits
+ * ::: tip "Optional arguments"
+ *     * @page: `gint`, page (top-level image number) to read
+ *     * @n: `gint`, load this many pages
+ *     * @thumbnail: `gboolean`, fetch thumbnail instead of image
+ *     * @unlimited: `gboolean`, remove all denial of service limits
  *
- * Exactly as vips_heifload(), but read from a source.
- *
- * See also: vips_heifload().
+ * ::: seealso
+ *     [ctor@Image.heifload].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -2355,24 +2340,14 @@ vips_heifload_source(VipsSource *source, VipsImage **out, ...)
  * vips_heifsave: (method)
  * @in: image to save
  * @filename: file to write to
- * @...: %NULL-terminated list of optional named arguments
- *
- * Optional arguments:
- *
- * * @Q: %gint, quality factor
- * * @bitdepth: %gint, set write bit depth to 8, 10, or 12 bits
- * * @lossless: %gboolean, enable lossless encoding
- * * @compression: #VipsForeignHeifCompression, write with this compression
- * * @effort: %gint, encoding effort
- * * @subsample_mode: #VipsForeignSubsample, chroma subsampling mode
- * * @encoder: #VipsForeignHeifEncoder, select encoder to use
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Write a VIPS image to a file in HEIF format.
  *
  * Use @Q to set the compression factor. Default 50, which seems to be roughly
  * what the iphone uses. Q 30 gives about the same quality as JPEG Q 75.
  *
- * Set @lossless %TRUE to switch to lossless compression.
+ * Set @lossless `TRUE` to switch to lossless compression.
  *
  * Use @compression to set the compression format e.g. HEVC, AVC, AV1 to use. It defaults to AV1
  * if the target filename ends with ".avif", otherwise HEVC.
@@ -2389,7 +2364,18 @@ vips_heifload_source(VipsSource *source, VipsImage **out, ...)
  *
  * Use @encoder to set the encode library to use, e.g. aom, SVT-AV1, rav1e etc.
  *
- * See also: vips_image_write_to_file(), vips_heifload().
+ * ::: tip "Optional arguments"
+ *     * @Q: `gint`, quality factor
+ *     * @bitdepth: `gint`, set write bit depth to 8, 10, or 12 bits
+ *     * @lossless: `gboolean`, enable lossless encoding
+ *     * @compression: [enum@ForeignHeifCompression], write with this
+ *       compression
+ *     * @effort: `gint`, encoding effort
+ *     * @subsample_mode: [class@Foreign]Subsample, chroma subsampling mode
+ *     * @encoder: [class@Foreign]HeifEncoder, select encoder to use
+ *
+ * ::: seealso
+ *     [method@Image.write_to_file], [ctor@Image.heifload].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -2411,25 +2397,26 @@ vips_heifsave(VipsImage *in, const char *filename, ...)
  * @in: image to save
  * @buf: (array length=len) (element-type guint8): return output buffer here
  * @len: (type gsize): return output length here
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Optional arguments:
- *
- * * @Q: %gint, quality factor
- * * @bitdepth: %gint, set write bit depth to 8, 10, or 12 bits
- * * @lossless: %gboolean, enable lossless encoding
- * * @compression: #VipsForeignHeifCompression, write with this compression
- * * @effort: %gint, encoding effort
- * * @subsample_mode: #VipsForeignSubsample, chroma subsampling mode
- * * @encoder: #VipsForeignHeifEncoder, select encoder to use
- *
- * As vips_heifsave(), but save to a memory buffer.
+ * As [method@Image.heifsave], but save to a memory buffer.
  *
  * The address of the buffer is returned in @obuf, the length of the buffer in
- * @olen. You are responsible for freeing the buffer with g_free() when you
- * are done with it.
+ * @olen. You are responsible for freeing the buffer with [func@GLib.free]
+ * when you are done with it.
  *
- * See also: vips_heifsave(), vips_image_write_to_file().
+ * ::: tip "Optional arguments"
+ *     * @Q: `gint`, quality factor
+ *     * @bitdepth: `gint`, set write bit depth to 8, 10, or 12 bits
+ *     * @lossless: `gboolean`, enable lossless encoding
+ *     * @compression: [enum@ForeignHeifCompression], write with this
+ *       compression
+ *     * @effort: `gint`, encoding effort
+ *     * @subsample_mode: [class@Foreign]Subsample, chroma subsampling mode
+ *     * @encoder: [class@Foreign]HeifEncoder, select encoder to use
+ *
+ * ::: seealso
+ *     [method@Image.heifsave], [method@Image.write_to_file].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -2465,21 +2452,22 @@ vips_heifsave_buffer(VipsImage *in, void **buf, size_t *len, ...)
  * vips_heifsave_target: (method)
  * @in: image to save
  * @target: save image to this target
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Optional arguments:
+ * As [method@Image.heifsave], but save to a target.
  *
- * * @Q: %gint, quality factor
- * * @bitdepth: %gint, set write bit depth to 8, 10, or 12 bits
- * * @lossless: %gboolean, enable lossless encoding
- * * @compression: #VipsForeignHeifCompression, write with this compression
- * * @effort: %gint, encoding effort
- * * @subsample_mode: #VipsForeignSubsample, chroma subsampling mode
- * * @encoder: #VipsForeignHeifEncoder, select encoder to use
+ * ::: tip "Optional arguments"
+ *     * @Q: `gint`, quality factor
+ *     * @bitdepth: `gint`, set write bit depth to 8, 10, or 12 bits
+ *     * @lossless: `gboolean`, enable lossless encoding
+ *     * @compression: [enum@ForeignHeifCompression], write with this
+ *       compression
+ *     * @effort: `gint`, encoding effort
+ *     * @subsample_mode: [class@Foreign]Subsample, chroma subsampling mode
+ *     * @encoder: [class@Foreign]HeifEncoder, select encoder to use
  *
- * As vips_heifsave(), but save to a target.
- *
- * See also: vips_heifsave(), vips_image_write_to_target().
+ * ::: seealso
+ *     [method@Image.heifsave], [method@Image.write_to_target].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -2500,14 +2488,15 @@ vips_heifsave_target(VipsImage *in, VipsTarget *target, ...)
  * vips_jxlload:
  * @filename: file to load
  * @out: (out): decompressed image
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Read a JPEG-XL image.
  *
  * The JPEG-XL loader and saver are experimental features and may change
  * in future libvips versions.
  *
- * See also: vips_image_new_from_file().
+ * ::: seealso
+ *     [ctor@Image.new_from_file].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -2529,9 +2518,9 @@ vips_jxlload(const char *filename, VipsImage **out, ...)
  * @buf: (array length=len) (element-type guint8): memory area to load
  * @len: (type gsize): size of memory area
  * @out: (out): image to write
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Exactly as vips_jxlload(), but read from a buffer.
+ * Exactly as [ctor@Image.jxlload], but read from a buffer.
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -2559,9 +2548,9 @@ vips_jxlload_buffer(void *buf, size_t len, VipsImage **out, ...)
  * vips_jxlload_source:
  * @source: source to load from
  * @out: (out): decompressed image
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Exactly as vips_jxlload(), but read from a source.
+ * Exactly as [ctor@Image.jxlload], but read from a source.
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -2582,15 +2571,7 @@ vips_jxlload_source(VipsSource *source, VipsImage **out, ...)
  * vips_jxlsave: (method)
  * @in: image to save
  * @filename: file to write to
- * @...: %NULL-terminated list of optional named arguments
- *
- * Optional arguments:
- *
- * * @tier: %gint, decode speed tier
- * * @distance: %gdouble, maximum encoding error
- * * @effort: %gint, encoding effort
- * * @lossless: %gboolean, enables lossless compression
- * * @Q: %gint, quality setting
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Write a VIPS image to a file in JPEG-XL format.
  *
@@ -2608,6 +2589,13 @@ vips_jxlload_source(VipsSource *source, VipsImage **out, ...)
  * approximately the same scale as regular JPEG.
  *
  * Set @lossless to enable lossless compression.
+ *
+ * ::: tip "Optional arguments"
+ *     * @tier: `gint`, decode speed tier
+ *     * @distance: `gdouble`, maximum encoding error
+ *     * @effort: `gint`, encoding effort
+ *     * @lossless: `gboolean`, enables lossless compression
+ *     * @Q: `gint`, quality setting
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -2629,19 +2617,19 @@ vips_jxlsave(VipsImage *in, const char *filename, ...)
  * @in: image to save
  * @buf: (array length=len) (element-type guint8): return output buffer here
  * @len: (type gsize): return output length here
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Optional arguments:
+ * As [method@Image.jxlsave], but save to a memory buffer.
  *
- * * @tier: %gint, decode speed tier
- * * @distance: %gdouble, maximum encoding error
- * * @effort: %gint, encoding effort
- * * @lossless: %gboolean, enables lossless compression
- * * @Q: %gint, quality setting
+ * ::: tip "Optional arguments"
+ *     * @tier: `gint`, decode speed tier
+ *     * @distance: `gdouble`, maximum encoding error
+ *     * @effort: `gint`, encoding effort
+ *     * @lossless: `gboolean`, enables lossless compression
+ *     * @Q: `gint`, quality setting
  *
- * As vips_jxlsave(), but save to a memory buffer.
- *
- * See also: vips_jxlsave(), vips_image_write_to_target().
+ * ::: seealso
+ *     [method@Image.jxlsave], [method@Image.write_to_target].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -2677,19 +2665,19 @@ vips_jxlsave_buffer(VipsImage *in, void **buf, size_t *len, ...)
  * vips_jxlsave_target: (method)
  * @in: image to save
  * @target: save image to this target
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Optional arguments:
+ * As [method@Image.jxlsave], but save to a target.
  *
- * * @tier: %gint, decode speed tier
- * * @distance: %gdouble, maximum encoding error
- * * @effort: %gint, encoding effort
- * * @lossless: %gboolean, enables lossless compression
- * * @Q: %gint, quality setting
+ * ::: tip "Optional arguments"
+ *     * @tier: `gint`, decode speed tier
+ *     * @distance: `gdouble`, maximum encoding error
+ *     * @effort: `gint`, encoding effort
+ *     * @lossless: `gboolean`, enables lossless compression
+ *     * @Q: `gint`, quality setting
  *
- * As vips_jxlsave(), but save to a target.
- *
- * See also: vips_jxlsave(), vips_image_write_to_target().
+ * ::: seealso
+ *     [method@Image.jxlsave], [method@Image.write_to_target].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -2710,29 +2698,20 @@ vips_jxlsave_target(VipsImage *in, VipsTarget *target, ...)
  * vips_pdfload:
  * @filename: file to load
  * @out: (out): output image
- * @...: %NULL-terminated list of optional named arguments
- *
- * Optional arguments:
- *
- * * @page: %gint, load this page, numbered from zero
- * * @n: %gint, load this many pages
- * * @dpi: %gdouble, render at this DPI
- * * @scale: %gdouble, scale render by this factor
- * * @background: #VipsArrayDouble background colour
- * * @password: %gchararray PDF password
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Render a PDF file into a VIPS image.
  *
- * The output image is always RGBA --- CMYK PDFs will be
- * converted. If you need CMYK bitmaps, you should use vips_magickload()
+ * The output image is always RGBA -- CMYK PDFs will be
+ * converted. If you need CMYK bitmaps, you should use [ctor@Image.magickload]
  * instead.
  *
  * Use @page to select a page to render, numbering from zero.
  *
  * Use @n to select the number of pages to render. The default is 1. Pages are
  * rendered in a vertical column, with each individual page aligned to the
- * left. Set to -1 to mean "until the end of the document". Use vips_grid()
- * to change page layout.
+ * left. Set to -1 to mean "until the end of the document". Use
+ * [method@Image.grid] to change page layout.
  *
  * Use @dpi to set the rendering resolution. The default is 72. Additionally,
  * you can scale by setting @scale. If you set both, they combine.
@@ -2742,13 +2721,25 @@ vips_jxlsave_target(VipsImage *in, VipsTarget *target, ...)
  *
  * Use @password to supply a decryption password.
  *
+ * When using pdfium, the region of a page to render can be selected with
+ * @page_box, defaulting to the crop box.
+ *
  * The operation fills a number of header fields with metadata, for example
  * "pdf-author". They may be useful.
  *
  * This function only reads the image header and does not render any pixel
  * data. Rendering occurs when pixels are accessed.
  *
- * See also: vips_image_new_from_file(), vips_magickload().
+ * ::: tip "Optional arguments"
+ *     * @page: `gint`, load this page, numbered from zero
+ *     * @n: `gint`, load this many pages
+ *     * @dpi: `gdouble`, render at this DPI
+ *     * @scale: `gdouble`, scale render by this factor
+ *     * @background: [struct@ArrayDouble], background colour
+ *     * @page_box: [enum@ForeignPdfPageBox], use this page box (pdfium only)
+ *
+ * ::: seealso
+ *     [ctor@Image.new_from_file], [ctor@Image.magickload].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -2770,23 +2761,24 @@ vips_pdfload(const char *filename, VipsImage **out, ...)
  * @buf: (array length=len) (element-type guint8): memory area to load
  * @len: (type gsize): size of memory area
  * @out: (out): image to write
- * @...: %NULL-terminated list of optional named arguments
- *
- * Optional arguments:
- *
- * * @page: %gint, load this page, numbered from zero
- * * @n: %gint, load this many pages
- * * @dpi: %gdouble, render at this DPI
- * * @scale: %gdouble, scale render by this factor
- * * @background: #VipsArrayDouble background colour
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Read a PDF-formatted memory buffer into a VIPS image. Exactly as
- * vips_pdfload(), but read from memory.
+ * [ctor@Image.pdfload], but read from memory.
  *
  * You must not free the buffer while @out is active. The
- * #VipsObject::postclose signal on @out is a good place to free.
+ * [signal@Object::postclose] signal on @out is a good place to free.
  *
- * See also: vips_pdfload().
+ * ::: tip "Optional arguments"
+ *     * @page: `gint`, load this page, numbered from zero
+ *     * @n: `gint`, load this many pages
+ *     * @dpi: `gdouble`, render at this DPI
+ *     * @scale: `gdouble`, scale render by this factor
+ *     * @background: [struct@ArrayDouble], background colour
+ *     * @page_box: [enum@ForeignPdfPageBox], use this page box (pdfium only)
+ *
+ * ::: seealso
+ *     [ctor@Image.pdfload].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -2814,19 +2806,20 @@ vips_pdfload_buffer(void *buf, size_t len, VipsImage **out, ...)
  * vips_pdfload_source:
  * @source: source to load from
  * @out: (out): image to write
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Optional arguments:
+ * Exactly as [ctor@Image.pdfload], but read from a source.
  *
- * * @page: %gint, load this page, numbered from zero
- * * @n: %gint, load this many pages
- * * @dpi: %gdouble, render at this DPI
- * * @scale: %gdouble, scale render by this factor
- * * @background: #VipsArrayDouble background colour
+ * ::: tip "Optional arguments"
+ *     * @page: `gint`, load this page, numbered from zero
+ *     * @n: `gint`, load this many pages
+ *     * @dpi: `gdouble`, render at this DPI
+ *     * @scale: `gdouble`, scale render by this factor
+ *     * @background: [struct@ArrayDouble], background colour
+ *     * @page_box: [enum@ForeignPdfPageBox], use this page box (pdfium only)
  *
- * Exactly as vips_pdfload(), but read from a source.
- *
- * See also: vips_pdfload()
+ * ::: seealso
+ *     [ctor@Image.pdfload]
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -2847,15 +2840,7 @@ vips_pdfload_source(VipsSource *source, VipsImage **out, ...)
  * vips_openslideload:
  * @filename: file to load
  * @out: (out): decompressed image
- * @...: %NULL-terminated list of optional named arguments
- *
- * Optional arguments:
- *
- * * @level: %gint, load this level
- * * @associated: %gchararray, load this associated image
- * * @attach_associated: %gboolean, attach all associated images as metadata
- * * @autocrop: %gboolean, crop to image bounds
- * * @rgb: %gboolean, output RGB (not RGBA) pixels
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Read a virtual slide supported by the OpenSlide library into a VIPS image.
  * OpenSlide supports images in Aperio, Hamamatsu, MIRAX, Sakura, Trestle,
@@ -2863,8 +2848,8 @@ vips_pdfload_source(VipsSource *source, VipsImage **out, ...)
  *
  * To facilitate zooming, virtual slide formats include multiple scaled-down
  * versions of the high-resolution image.  These are typically called
- * "levels".  By default, vips_openslideload() reads the highest-resolution
- * level (level 0).  Set @level to the level number you want.
+ * "levels".  By default, [ctor@Image.openslideload] reads the
+ * highest-resolution level (level 0).  Set @level to the level number you want.
  *
  * In addition to the slide image itself, virtual slide formats sometimes
  * include additional images, such as a scan of the slide's barcode.
@@ -2874,14 +2859,22 @@ vips_pdfload_source(VipsSource *source, VipsImage **out, ...)
  * "slide-associated-images" metadata item.
  *
  * If you set @attach_associated, then all associated images are attached as
- * metadata items. Use vips_image_get_image() on @out to retrieve them. Images
+ * metadata items. Use [method@Image.get_image] on @out to retrieve them. Images
  * are attached as "openslide-associated-XXXXX", where XXXXX is the name of the
  * associated image.
  *
  * By default, the output of this operator is RGBA. Set @rgb to enable RGB
  * output.
  *
- * See also: vips_image_new_from_file().
+ * ::: tip "Optional arguments"
+ *     * @level: `gint`, load this level
+ *     * @associated: `gchararray`, load this associated image
+ *     * @attach_associated: `gboolean`, attach all associated images as metadata
+ *     * @autocrop: `gboolean`, crop to image bounds
+ *     * @rgb: `gboolean`, output RGB (not RGBA) pixels
+ *
+ * ::: seealso
+ *     [ctor@Image.new_from_file].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -2902,17 +2895,16 @@ vips_openslideload(const char *filename, VipsImage **out, ...)
  * vips_openslideload_source:
  * @source: source to load from
  * @out: (out): decompressed image
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Optional arguments:
+ * Exactly as [ctor@Image.openslideload], but read from a source.
  *
- * * @level: %gint, load this level
- * * @associated: %gchararray, load this associated image
- * * @attach_associated: %gboolean, attach all associated images as metadata
- * * @autocrop: %gboolean, crop to image bounds
- * * @rgb: %gboolean, output RGB (not RGBA) pixels
- *
- * Exactly as vips_openslideload(), but read from a source.
+ * ::: tip "Optional arguments"
+ *     * @level: `gint`, load this level
+ *     * @associated: `gchararray`, load this associated image
+ *     * @attach_associated: `gboolean`, attach all associated images as metadata
+ *     * @autocrop: `gboolean`, crop to image bounds
+ *     * @rgb: `gboolean`, output RGB (not RGBA) pixels
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -2945,6 +2937,7 @@ vips_foreign_operation_init(void)
 	extern GType vips_foreign_load_mat_get_type(void);
 
 	extern GType vips_foreign_load_ppm_file_get_type(void);
+	extern GType vips_foreign_load_ppm_buffer_get_type(void);
 	extern GType vips_foreign_load_ppm_source_get_type(void);
 	extern GType vips_foreign_save_ppm_file_get_type(void);
 	extern GType vips_foreign_save_pbm_target_get_type(void);
@@ -3013,8 +3006,10 @@ vips_foreign_operation_init(void)
 
 	extern GType vips_foreign_load_magick_file_get_type(void);
 	extern GType vips_foreign_load_magick_buffer_get_type(void);
+	extern GType vips_foreign_load_magick_source_get_type(void);
 	extern GType vips_foreign_load_magick7_file_get_type(void);
 	extern GType vips_foreign_load_magick7_buffer_get_type(void);
+	extern GType vips_foreign_load_magick7_source_get_type(void);
 
 	extern GType vips_foreign_save_magick_file_get_type(void);
 	extern GType vips_foreign_save_magick_buffer_get_type(void);
@@ -3077,6 +3072,10 @@ vips_foreign_operation_init(void)
 	extern GType vips_foreign_save_cgif_buffer_get_type(void);
 	extern GType vips_foreign_save_cgif_target_get_type(void);
 
+	extern GType vips_foreign_load_dcraw_file_get_type(void);
+	extern GType vips_foreign_load_dcraw_buffer_get_type(void);
+	extern GType vips_foreign_load_dcraw_source_get_type(void);
+
 	vips_foreign_load_csv_file_get_type();
 	vips_foreign_load_csv_source_get_type();
 	vips_foreign_save_csv_file_get_type();
@@ -3104,6 +3103,7 @@ vips_foreign_operation_init(void)
 
 #ifdef HAVE_PPM
 	vips_foreign_load_ppm_file_get_type();
+	vips_foreign_load_ppm_buffer_get_type();
 	vips_foreign_load_ppm_source_get_type();
 	vips_foreign_save_ppm_file_get_type();
 	vips_foreign_save_pbm_target_get_type();
@@ -3163,6 +3163,12 @@ vips_foreign_operation_init(void)
 	vips_foreign_load_nsgif_buffer_get_type();
 	vips_foreign_load_nsgif_source_get_type();
 #endif /*HAVE_NSGIF*/
+
+#ifdef HAVE_LIBRAW
+	vips_foreign_load_dcraw_file_get_type();
+	vips_foreign_load_dcraw_buffer_get_type();
+	vips_foreign_load_dcraw_source_get_type();
+#endif /*HAVE_LIBRAW*/
 
 #ifdef HAVE_CGIF
 	vips_foreign_save_cgif_file_get_type();
@@ -3236,11 +3242,13 @@ vips_foreign_operation_init(void)
 #ifdef HAVE_MAGICK6
 	vips_foreign_load_magick_file_get_type();
 	vips_foreign_load_magick_buffer_get_type();
+	vips_foreign_load_magick_source_get_type();
 #endif /*HAVE_MAGICK6*/
 
 #ifdef HAVE_MAGICK7
 	vips_foreign_load_magick7_file_get_type();
 	vips_foreign_load_magick7_buffer_get_type();
+	vips_foreign_load_magick7_source_get_type();
 #endif /*HAVE_MAGICK7*/
 #endif /*defined(ENABLE_MAGICKLOAD) && !defined(MAGICK_MODULE)*/
 

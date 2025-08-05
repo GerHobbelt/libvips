@@ -93,10 +93,10 @@ vips_foreign_save_rad_class_init(VipsForeignSaveRadClass *class)
 
 	foreign_class->suffs = vips__rad_suffs;
 
-	save_class->saveable = VIPS_SAVEABLE_RGB;
+	save_class->saveable =
+		VIPS_FOREIGN_SAVEABLE_MONO | VIPS_FOREIGN_SAVEABLE_RGB;
 	save_class->format_table = vips_foreign_save_rad_format_table;
-	save_class->coding[VIPS_CODING_NONE] = FALSE;
-	save_class->coding[VIPS_CODING_RAD] = TRUE;
+	save_class->coding = VIPS_FOREIGN_CODING_RAD;
 }
 
 static void
@@ -123,7 +123,8 @@ vips_foreign_save_rad_file_build(VipsObject *object)
 
 	VipsTarget *target;
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_save_rad_file_parent_class)->build(object))
+	if (VIPS_OBJECT_CLASS(vips_foreign_save_rad_file_parent_class)->
+		build(object))
 		return -1;
 
 	if (!(target = vips_target_new_to_file(file->filename)))
@@ -288,13 +289,14 @@ vips_foreign_save_rad_buffer_init(VipsForeignSaveRadBuffer *buffer)
  * vips_radsave: (method)
  * @in: image to save
  * @filename: file to write to
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Write a VIPS image in Radiance (HDR) format.
  *
  * Sections of this reader from Greg Ward and Radiance with kind permission.
  *
- * See also: vips_image_write_to_file().
+ * ::: seealso
+ *     [method@Image.write_to_file].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -316,15 +318,16 @@ vips_radsave(VipsImage *in, const char *filename, ...)
  * @in: image to save
  * @buf: (array length=len) (element-type guint8): return output buffer here
  * @len: (type gsize): return output length here
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * As vips_radsave(), but save to a memory buffer.
+ * As [method@Image.radsave], but save to a memory buffer.
  *
  * The address of the buffer is returned in @buf, the length of the buffer in
- * @len. You are responsible for freeing the buffer with g_free() when you
+ * @len. You are responsible for freeing the buffer with [func@GLib.free] when you
  * are done with it.
  *
- * See also: vips_radsave(), vips_image_write_to_file().
+ * ::: seealso
+ *     [method@Image.radsave], [method@Image.write_to_file].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -360,11 +363,12 @@ vips_radsave_buffer(VipsImage *in, void **buf, size_t *len, ...)
  * vips_radsave_target: (method)
  * @in: image to save
  * @target: save image to this target
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * As vips_radsave(), but save to a target.
+ * As [method@Image.radsave], but save to a target.
  *
- * See also: vips_radsave().
+ * ::: seealso
+ *     [method@Image.radsave].
  *
  * Returns: 0 on success, -1 on error.
  */

@@ -77,6 +77,10 @@ typedef struct _VipsForeignLoadTiff {
 	 */
 	gboolean autorotate;
 
+	/* Remove denial of service limits.
+	 */
+	gboolean unlimited;
+
 } VipsForeignLoadTiff;
 
 typedef VipsForeignLoadClass VipsForeignLoadTiffClass;
@@ -137,7 +141,7 @@ vips_foreign_load_tiff_header(VipsForeignLoad *load)
 
 	if (vips__tiff_read_header_source(tiff->source, load->out,
 			tiff->page, tiff->n, tiff->autorotate, tiff->subifd,
-			load->fail_on))
+			load->fail_on, tiff->unlimited))
 		return -1;
 
 	return 0;
@@ -150,7 +154,7 @@ vips_foreign_load_tiff_load(VipsForeignLoad *load)
 
 	if (vips__tiff_read_source(tiff->source, load->real,
 			tiff->page, tiff->n, tiff->autorotate, tiff->subifd,
-			load->fail_on))
+			load->fail_on, tiff->unlimited))
 		return -1;
 
 	return 0;
@@ -209,12 +213,21 @@ vips_foreign_load_tiff_class_init(VipsForeignLoadTiffClass *class)
 		G_STRUCT_OFFSET(VipsForeignLoadTiff, autorotate),
 		FALSE);
 
-	VIPS_ARG_INT(class, "subifd", 21,
+	VIPS_ARG_INT(class, "subifd", 23,
 		_("subifd"),
 		_("Subifd index"),
 		VIPS_ARGUMENT_OPTIONAL_INPUT,
 		G_STRUCT_OFFSET(VipsForeignLoadTiff, subifd),
 		-1, 100000, -1);
+
+#ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+	VIPS_ARG_BOOL(class, "unlimited", 24,
+		_("Unlimited"),
+		_("Remove all denial of service limits"),
+		VIPS_ARGUMENT_OPTIONAL_INPUT,
+		G_STRUCT_OFFSET(VipsForeignLoadTiff, unlimited),
+		FALSE);
+#endif
 }
 
 static void
@@ -223,6 +236,7 @@ vips_foreign_load_tiff_init(VipsForeignLoadTiff *tiff)
 	tiff->page = 0;
 	tiff->n = 1;
 	tiff->subifd = -1;
+	tiff->unlimited = FALSE;
 }
 
 typedef struct _VipsForeignLoadTiffSource {
@@ -251,11 +265,8 @@ vips_foreign_load_tiff_source_build(VipsObject *object)
 		g_object_ref(tiff->source);
 	}
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_load_tiff_source_parent_class)
-			->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_load_tiff_source_parent_class)
+		->build(object);
 }
 
 static gboolean
@@ -322,11 +333,8 @@ vips_foreign_load_tiff_file_build(VipsObject *object)
 				vips_source_new_from_file(file->filename)))
 		return -1;
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_load_tiff_file_parent_class)
-			->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_load_tiff_file_parent_class)
+		->build(object);
 }
 
 static gboolean
@@ -404,11 +412,8 @@ vips_foreign_load_tiff_buffer_build(VipsObject *object)
 			  VIPS_AREA(buffer->blob)->length)))
 		return -1;
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_load_tiff_buffer_parent_class)
-			->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_load_tiff_buffer_parent_class)
+		->build(object);
 }
 
 static gboolean
@@ -461,17 +466,11 @@ vips_foreign_load_tiff_buffer_init(VipsForeignLoadTiffBuffer *buffer)
  * vips_tiffload:
  * @filename: file to load
  * @out: (out): decompressed image
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Optional arguments:
+ * Read a TIFF file into a VIPS image.
  *
- * * @page: %gint, load this page
- * * @n: %gint, load this many pages
- * * @autorotate: %gboolean, use orientation tag to rotate the image
- *   during load
- * * @subifd: %gint, select this subifd index
- *
- * Read a TIFF file into a VIPS image. It is a full baseline TIFF 6 reader,
+ * It is a full baseline TIFF 6 reader,
  * with extensions for tiled images, multipage images, XYZ and LAB colour
  * space, pyramidal images and JPEG compression, including CMYK and YCbCr.
  *
@@ -480,21 +479,21 @@ vips_foreign_load_tiff_buffer_init(VipsForeignLoadTiffBuffer *buffer)
  *
  * @n means load this many pages. By default a single page is read. All the
  * pages must have the same dimensions, and they are loaded as a tall, thin
- * "toilet roll" image. The #VIPS_META_PAGE_HEIGHT metadata
+ * "toilet roll" image. The [const@META_PAGE_HEIGHT] metadata
  * tag gives the height in pixels of each page. Use -1 to load all pages.
  *
- * Setting @autorotate to %TRUE will make the loader interpret the
+ * Setting @autorotate to `TRUE` will make the loader interpret the
  * orientation tag and automatically rotate the image appropriately during
  * load.
  *
- * If @autorotate is %FALSE, the metadata field #VIPS_META_ORIENTATION is set
+ * If @autorotate is `FALSE`, the metadata field [const@META_ORIENTATION] is set
  * to the value of the orientation tag. Applications may read and interpret
  * this field
- * as they wish later in processing. See vips_autorot(). Save
- * operations will use #VIPS_META_ORIENTATION, if present, to set the
+ * as they wish later in processing. See [method@Image.autorot]. Save
+ * operations will use [const@META_ORIENTATION], if present, to set the
  * orientation of output images.
  *
- * If @autorotate is TRUE, the image will be rotated upright during load and
+ * If @autorotate is `TRUE`, the image will be rotated upright during load and
  * no metadata attached. This can be very slow.
  *
  * If @subifd is -1 (the default), the main image is selected for each page.
@@ -502,14 +501,31 @@ vips_foreign_load_tiff_buffer_init(VipsForeignLoadTiffBuffer *buffer)
  * selected. This can be used to read lower resolution layers from
  * bioformats-style image pyramids.
  *
- * Any ICC profile is read and attached to the VIPS image as
- * #VIPS_META_ICC_NAME. Any XMP metadata is read and attached to the image
- * as #VIPS_META_XMP_NAME. Any IPTC is attached as #VIPS_META_IPTC_NAME. The
- * image description is
- * attached as #VIPS_META_IMAGEDESCRIPTION. Data in the photoshop tag is
- * attached as #VIPS_META_PHOTOSHOP_NAME.
+ * Use @fail_on to set the type of error that will cause load to fail. By
+ * default, loaders are permissive, that is, [enum@Vips.FailOn.NONE].
  *
- * See also: vips_image_new_from_file(), vips_autorot().
+ * When using libtiff 4.7.0+, the TIFF loader will limit memory allocation
+ * for tag processing to 20MB to prevent denial of service attacks.
+ * Set @unlimited to remove this limit.
+ *
+ * Any ICC profile is read and attached to the VIPS image as
+ * [const@META_ICC_NAME]. Any XMP metadata is read and attached to the image
+ * as [const@META_XMP_NAME]. Any IPTC is attached as [const@META_IPTC_NAME]. The
+ * image description is
+ * attached as [const@META_IMAGEDESCRIPTION]. Data in the photoshop tag is
+ * attached as [const@META_PHOTOSHOP_NAME].
+ *
+ * ::: tip "Optional arguments"
+ *     * @page: `gint`, load this page
+ *     * @n: `gint`, load this many pages
+ *     * @autorotate: `gboolean`, use orientation tag to rotate the image
+ *       during load
+ *     * @subifd: `gint`, select this subifd index
+ *     * @fail_on: [enum@FailOn], types of read error to fail on
+ *     * @unlimited: `gboolean`, remove all denial of service limits
+ *
+ * ::: seealso
+ *     [ctor@Image.new_from_file], [method@Image.autorot].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -531,23 +547,25 @@ vips_tiffload(const char *filename, VipsImage **out, ...)
  * @buf: (array length=len) (element-type guint8): memory area to load
  * @len: (type gsize): size of memory area
  * @out: (out): image to write
- * @...: %NULL-terminated list of optional named arguments
- *
- * Optional arguments:
- *
- * * @page: %gint, load this page
- * * @n: %gint, load this many pages
- * * @autorotate: %gboolean, use orientation tag to rotate the image
- *   during load
- * * @subifd: %gint, select this subifd index
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Read a TIFF-formatted memory block into a VIPS image. Exactly as
- * vips_tiffload(), but read from a memory source.
+ * [ctor@Image.tiffload], but read from a memory source.
  *
  * You must not free the buffer while @out is active. The
- * #VipsObject::postclose signal on @out is a good place to free.
+ * [signal@Object::postclose] signal on @out is a good place to free.
  *
- * See also: vips_tiffload().
+ * ::: tip "Optional arguments"
+ *     * @page: `gint`, load this page
+ *     * @n: `gint`, load this many pages
+ *     * @autorotate: `gboolean`, use orientation tag to rotate the image
+ *       during load
+ *     * @subifd: `gint`, select this subifd index
+ *     * @fail_on: [enum@FailOn], types of read error to fail on
+ *     * @unlimited: `gboolean`, remove all denial of service limits
+ *
+ * ::: seealso
+ *     [ctor@Image.tiffload].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -575,19 +593,21 @@ vips_tiffload_buffer(void *buf, size_t len, VipsImage **out, ...)
  * vips_tiffload_source:
  * @source: source to load
  * @out: (out): image to write
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Optional arguments:
+ * Exactly as [ctor@Image.tiffload], but read from a source.
  *
- * * @page: %gint, load this page
- * * @n: %gint, load this many pages
- * * @autorotate: %gboolean, use orientation tag to rotate the image
- *   during load
- * * @subifd: %gint, select this subifd index
+ * ::: tip "Optional arguments"
+ *     * @page: `gint`, load this page
+ *     * @n: `gint`, load this many pages
+ *     * @autorotate: `gboolean`, use orientation tag to rotate the image
+ *       during load
+ *     * @subifd: `gint`, select this subifd index
+ *     * @fail_on: [enum@FailOn], types of read error to fail on
+ *     * @unlimited: `gboolean`, remove all denial of service limits
  *
- * Exactly as vips_tiffload(), but read from a source.
- *
- * See also: vips_tiffload().
+ * ::: seealso
+ *     [ctor@Image.tiffload].
  *
  * Returns: 0 on success, -1 on error.
  */

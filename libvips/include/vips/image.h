@@ -112,7 +112,7 @@ typedef enum {
 	VIPS_INTERPRETATION_MATRIX = 27,
 	VIPS_INTERPRETATION_scRGB = 28,
 	VIPS_INTERPRETATION_HSV = 29,
-	VIPS_INTERPRETATION_LAST = 30
+	VIPS_INTERPRETATION_LAST = 30	/*< skip >*/
 } VipsInterpretation;
 
 typedef enum {
@@ -127,7 +127,7 @@ typedef enum {
 	VIPS_FORMAT_COMPLEX = 7,
 	VIPS_FORMAT_DOUBLE = 8,
 	VIPS_FORMAT_DPCOMPLEX = 9,
-	VIPS_FORMAT_LAST = 10
+	VIPS_FORMAT_LAST = 10	/*< skip >*/
 } VipsBandFormat;
 
 typedef enum {
@@ -135,14 +135,14 @@ typedef enum {
 	VIPS_CODING_NONE = 0,
 	VIPS_CODING_LABQ = 2,
 	VIPS_CODING_RAD = 6,
-	VIPS_CODING_LAST = 7
+	VIPS_CODING_LAST = 7	/*< skip >*/
 } VipsCoding;
 
 typedef enum {
 	VIPS_ACCESS_RANDOM,
 	VIPS_ACCESS_SEQUENTIAL,
 	VIPS_ACCESS_SEQUENTIAL_UNBUFFERED,
-	VIPS_ACCESS_LAST
+	VIPS_ACCESS_LAST	/*< skip >*/
 } VipsAccess;
 
 typedef void *(*VipsStartFn)(VipsImage *out, void *a, void *b);
@@ -252,7 +252,7 @@ struct _VipsImage {
 	VipsStopFn stop_fn;
 	void *client1; /* user arguments */
 	void *client2;
-	GMutex *sslock;		   /* start-stop lock */
+	GMutex sslock;		   /* start-stop lock */
 	GSList *regions;	   /* list of regions current for this image */
 	VipsDemandStyle dhint; /* demand style hint */
 
@@ -367,8 +367,6 @@ typedef struct _VipsImageClass {
 
 } VipsImageClass;
 
-/* Don't put spaces around void here, it breaks gtk-doc.
- */
 VIPS_API
 GType vips_image_get_type(void);
 
@@ -443,6 +441,13 @@ void vips_image_minimise_all(VipsImage *image);
 
 VIPS_API
 gboolean vips_image_is_sequential(VipsImage *image);
+
+VIPS_API
+void vips_image_preeval(VipsImage *image);
+VIPS_API
+void vips_image_eval(VipsImage *image, guint64 processed);
+VIPS_API
+void vips_image_posteval(VipsImage *image);
 
 VIPS_API
 void vips_image_set_progress(VipsImage *image, gboolean progress);

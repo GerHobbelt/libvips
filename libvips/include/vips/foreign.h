@@ -82,8 +82,6 @@ typedef struct _VipsForeignClass {
 
 } VipsForeignClass;
 
-/* Don't put spaces around void here, it breaks gtk-doc.
- */
 VIPS_API
 GType vips_foreign_get_type(void);
 
@@ -117,15 +115,15 @@ typedef enum /*< flags >*/ {
  * How sensitive loaders are to errors, from never stop (very insensitive), to
  * stop on the smallest warning (very sensitive).
  *
- * Each one implies the ones before it, so #VIPS_FAIL_ON_ERROR implies
- * #VIPS_FAIL_ON_TRUNCATED.
+ * Each one implies the ones before it, so [enum@Vips.FailOn.ERROR] implies
+ * [enum@Vips.FailOn.TRUNCATED].
  */
 typedef enum {
 	VIPS_FAIL_ON_NONE,
 	VIPS_FAIL_ON_TRUNCATED,
 	VIPS_FAIL_ON_ERROR,
 	VIPS_FAIL_ON_WARNING,
-	VIPS_FAIL_ON_LAST
+	VIPS_FAIL_ON_LAST	/*< skip >*/
 } VipsFailOn;
 
 #define VIPS_TYPE_FOREIGN_LOAD (vips_foreign_load_get_type())
@@ -145,6 +143,7 @@ typedef enum {
 
 typedef struct _VipsForeignLoad {
 	VipsForeign parent_object;
+
 	/*< private >*/
 
 	/* Set TRUE to force open via memory.
@@ -201,11 +200,12 @@ typedef struct _VipsForeignLoad {
 
 typedef struct _VipsForeignLoadClass {
 	VipsForeignClass parent_class;
+
 	/*< public >*/
 
 	/* Is a file in this format.
 	 *
-	 * This function should return %TRUE if the file contains an image of
+	 * This function should return `TRUE` if the file contains an image of
 	 * this type. If you don't define this function, #VipsForeignLoad
 	 * will use @suffs instead.
 	 */
@@ -213,14 +213,14 @@ typedef struct _VipsForeignLoadClass {
 
 	/* Is a buffer in this format.
 	 *
-	 * This function should return %TRUE if the buffer contains an image of
+	 * This function should return `TRUE` if the buffer contains an image of
 	 * this type.
 	 */
 	gboolean (*is_a_buffer)(const void *data, size_t size);
 
 	/* Is a stream in this format.
 	 *
-	 * This function should return %TRUE if the stream contains an image of
+	 * This function should return `TRUE` if the stream contains an image of
 	 * this type.
 	 */
 	gboolean (*is_a_source)(VipsSource *source);
@@ -268,8 +268,6 @@ typedef struct _VipsForeignLoadClass {
 	int (*load)(VipsForeignLoad *load);
 } VipsForeignLoadClass;
 
-/* Don't put spaces around void here, it breaks gtk-doc.
- */
 VIPS_API
 GType vips_foreign_load_get_type(void);
 
@@ -310,25 +308,52 @@ void vips_foreign_load_invalidate(VipsImage *image);
 		VIPS_TYPE_FOREIGN_SAVE, VipsForeignSaveClass))
 
 /**
- * VipsSaveable:
- * @VIPS_SAVEABLE_MONO: 1 band (eg. CSV)
- * @VIPS_SAVEABLE_RGB: 1 or 3 bands (eg. PPM)
- * @VIPS_SAVEABLE_RGBA: 1, 2, 3 or 4 bands (eg. PNG)
- * @VIPS_SAVEABLE_RGBA_ONLY: 3 or 4 bands (eg. WEBP)
- * @VIPS_SAVEABLE_RGB_CMYK: 1, 3 or 4 bands (eg. JPEG)
- * @VIPS_SAVEABLE_ANY: any number of bands (eg. TIFF)
+ * VipsForeignSaveable:
+ * @VIPS_FOREIGN_SAVEABLE_ANY: saver supports everything (eg. TIFF)
+ * @VIPS_FOREIGN_SAVEABLE_MONO: 1 band
+ * @VIPS_FOREIGN_SAVEABLE_RGB: 3 bands
+ * @VIPS_FOREIGN_SAVEABLE_CMYK: 4 bands
+ * @VIPS_FOREIGN_SAVEABLE_ALPHA: an extra band
  *
- * See also: #VipsForeignSave.
+ * The set of image types supported by a saver.
+ *
+ * ::: seealso
+ *     [class@ForeignSave].
  */
-typedef enum {
-	VIPS_SAVEABLE_MONO,
-	VIPS_SAVEABLE_RGB,
-	VIPS_SAVEABLE_RGBA,
-	VIPS_SAVEABLE_RGBA_ONLY,
-	VIPS_SAVEABLE_RGB_CMYK,
-	VIPS_SAVEABLE_ANY,
-	VIPS_SAVEABLE_LAST
-} VipsSaveable;
+typedef enum /*< flags >*/ {
+	VIPS_FOREIGN_SAVEABLE_ANY = 0,
+	VIPS_FOREIGN_SAVEABLE_MONO = 1,
+	VIPS_FOREIGN_SAVEABLE_RGB = 2,
+	VIPS_FOREIGN_SAVEABLE_CMYK = 4,
+	VIPS_FOREIGN_SAVEABLE_ALPHA = 8,
+
+	VIPS_FOREIGN_SAVEABLE_ALL = (VIPS_FOREIGN_SAVEABLE_MONO |
+		VIPS_FOREIGN_SAVEABLE_RGB |
+		VIPS_FOREIGN_SAVEABLE_CMYK |
+		VIPS_FOREIGN_SAVEABLE_ALPHA)
+} VipsForeignSaveable;
+
+/**
+ * VipsForeignCoding:
+ * @VIPS_FOREIGN_CODING_NONE: saver supports [enum@Vips.Coding.NONE]
+ * @VIPS_FOREIGN_CODING_LABQ: saver supports [enum@Vips.Coding.LABQ]
+ * @VIPS_FOREIGN_CODING_RAD: saver supports [enum@Vips.Coding.RAD]
+ * @VIPS_FOREIGN_CODING_ALL: saver supports all coding types
+ *
+ * The set of coding types supported by a saver.
+ *
+ * ::: seealso
+ *     [enum@Coding].
+ */
+typedef enum /*< flags >*/ {
+	VIPS_FOREIGN_CODING_NONE = 1 << 0,
+	VIPS_FOREIGN_CODING_LABQ = 1 << 1,
+	VIPS_FOREIGN_CODING_RAD = 1 << 2,
+
+	VIPS_FOREIGN_CODING_ALL = (VIPS_FOREIGN_CODING_NONE |
+		VIPS_FOREIGN_CODING_LABQ |
+		VIPS_FOREIGN_CODING_RAD)
+} VipsForeignCoding;
 
 /**
  * VipsForeignKeep:
@@ -354,7 +379,7 @@ typedef enum /*< flags >*/ {
 		VIPS_FOREIGN_KEEP_XMP |
 		VIPS_FOREIGN_KEEP_IPTC |
 		VIPS_FOREIGN_KEEP_ICC |
-		VIPS_FOREIGN_KEEP_OTHER),
+		VIPS_FOREIGN_KEEP_OTHER)
 } VipsForeignKeep;
 
 typedef struct _VipsForeignSave {
@@ -403,11 +428,11 @@ typedef struct _VipsForeignSaveClass {
 
 	/* How this format treats bands.
 	 *
-	 * @saveable describes the bands that your saver can handle. For
+	 * @saveable describes the image types that your saver can handle. For
 	 * example, PPM images can have 1 or 3 bands (mono or RGB), so it
-	 * uses #VIPS_SAVEABLE_RGB.
+	 * uses [flags@Vips.ForeignSaveable.MONO] | [flags@Vips.ForeignSaveable.RGB].
 	 */
-	VipsSaveable saveable;
+	VipsForeignSaveable saveable;
 
 	/* How this format treats band formats.
 	 *
@@ -417,16 +442,15 @@ typedef struct _VipsForeignSaveClass {
 	 */
 	VipsBandFormat *format_table;
 
-	/* The set of coding types this format can save. For example, jpeg can
-	 * only save NONE, so has NONE TRUE and RAD and LABQ FALSE.
+	/* The set of coding types this format can save. For example,
+	 * [method@Image.vipssave] can save all coding types, so it
+	 * uses [flags@Vips.ForeignCoding.ALL]
 	 *
-	 * Default NONE TRUE, RAD and LABQ FALSE.
+	 * Default to [flags@Vips.ForeignCoding.NONE].
 	 */
-	VipsCoding coding[VIPS_CODING_LAST];
+	VipsForeignCoding coding;
 } VipsForeignSaveClass;
 
-/* Don't put spaces around void here, it breaks gtk-doc.
- */
 VIPS_API
 GType vips_foreign_save_get_type(void);
 
@@ -471,25 +495,8 @@ typedef enum {
 	VIPS_FOREIGN_SUBSAMPLE_AUTO,
 	VIPS_FOREIGN_SUBSAMPLE_ON,
 	VIPS_FOREIGN_SUBSAMPLE_OFF,
-	VIPS_FOREIGN_SUBSAMPLE_LAST
+	VIPS_FOREIGN_SUBSAMPLE_LAST	/*< skip >*/
 } VipsForeignSubsample;
-
-/**
- * VipsForeignJpegSubsample:
- * @VIPS_FOREIGN_JPEG_SUBSAMPLE_AUTO: default preset
- * @VIPS_FOREIGN_JPEG_SUBSAMPLE_ON: always perform subsampling
- * @VIPS_FOREIGN_JPEG_SUBSAMPLE_OFF: never perform subsampling
- *
- * Set jpeg subsampling mode.
- *
- * DEPRECATED: use #VipsForeignSubsample
- */
-typedef enum {
-	VIPS_FOREIGN_JPEG_SUBSAMPLE_AUTO,
-	VIPS_FOREIGN_JPEG_SUBSAMPLE_ON,
-	VIPS_FOREIGN_JPEG_SUBSAMPLE_OFF,
-	VIPS_FOREIGN_JPEG_SUBSAMPLE_LAST
-} VipsForeignJpegSubsample;
 
 VIPS_API
 int vips_jpegload(const char *filename, VipsImage **out, ...)
@@ -532,7 +539,7 @@ typedef enum {
 	VIPS_FOREIGN_WEBP_PRESET_DRAWING,
 	VIPS_FOREIGN_WEBP_PRESET_ICON,
 	VIPS_FOREIGN_WEBP_PRESET_TEXT,
-	VIPS_FOREIGN_WEBP_PRESET_LAST
+	VIPS_FOREIGN_WEBP_PRESET_LAST	/*< skip >*/
 } VipsForeignWebpPreset;
 
 VIPS_API
@@ -590,7 +597,7 @@ typedef enum {
 	VIPS_FOREIGN_TIFF_COMPRESSION_WEBP,
 	VIPS_FOREIGN_TIFF_COMPRESSION_ZSTD,
 	VIPS_FOREIGN_TIFF_COMPRESSION_JP2K,
-	VIPS_FOREIGN_TIFF_COMPRESSION_LAST
+	VIPS_FOREIGN_TIFF_COMPRESSION_LAST	/*< skip >*/
 } VipsForeignTiffCompression;
 
 /**
@@ -606,7 +613,7 @@ typedef enum {
 	VIPS_FOREIGN_TIFF_PREDICTOR_NONE = 1,
 	VIPS_FOREIGN_TIFF_PREDICTOR_HORIZONTAL = 2,
 	VIPS_FOREIGN_TIFF_PREDICTOR_FLOAT = 3,
-	VIPS_FOREIGN_TIFF_PREDICTOR_LAST
+	VIPS_FOREIGN_TIFF_PREDICTOR_LAST	/*< skip >*/
 } VipsForeignTiffPredictor;
 
 /**
@@ -619,7 +626,7 @@ typedef enum {
 typedef enum {
 	VIPS_FOREIGN_TIFF_RESUNIT_CM,
 	VIPS_FOREIGN_TIFF_RESUNIT_INCH,
-	VIPS_FOREIGN_TIFF_RESUNIT_LAST
+	VIPS_FOREIGN_TIFF_RESUNIT_LAST	/*< skip >*/
 } VipsForeignTiffResunit;
 
 VIPS_API
@@ -649,6 +656,9 @@ VIPS_API
 int vips_fitsload(const char *filename, VipsImage **out, ...)
 	G_GNUC_NULL_TERMINATED;
 VIPS_API
+int vips_fitsload_source(VipsSource *source, VipsImage **out, ...)
+	G_GNUC_NULL_TERMINATED;
+VIPS_API
 int vips_fitssave(VipsImage *in, const char *filename, ...)
 	G_GNUC_NULL_TERMINATED;
 
@@ -668,9 +678,6 @@ int vips_rawsave_buffer(VipsImage *in, void **buf, size_t *len, ...)
 	G_GNUC_NULL_TERMINATED;
 VIPS_API
 int vips_rawsave_target(VipsImage *in, VipsTarget *target, ...)
-	G_GNUC_NULL_TERMINATED;
-VIPS_DEPRECATED_FOR(vips_rawsave_target)
-int vips_rawsave_fd(VipsImage *in, int fd, ...)
 	G_GNUC_NULL_TERMINATED;
 
 VIPS_API
@@ -707,6 +714,9 @@ int vips_magickload(const char *filename, VipsImage **out, ...)
 	G_GNUC_NULL_TERMINATED;
 VIPS_API
 int vips_magickload_buffer(void *buf, size_t len, VipsImage **out, ...)
+	G_GNUC_NULL_TERMINATED;
+VIPS_API
+int vips_magickload_source(VipsSource *source, VipsImage **out, ...)
 	G_GNUC_NULL_TERMINATED;
 VIPS_API
 int vips_magicksave(VipsImage *in, const char *filename, ...)
@@ -765,15 +775,15 @@ int vips_pngsave_buffer(VipsImage *in, void **buf, size_t *len, ...)
  *
  * The netpbm file format to save as.
  *
- * #VIPS_FOREIGN_PPM_FORMAT_PBM images are single bit.
+ * [enum@Vips.ForeignPpmFormat.PBM] images are single bit.
  *
- * #VIPS_FOREIGN_PPM_FORMAT_PGM images are 8, 16, or 32-bits, one band.
+ * [enum@Vips.ForeignPpmFormat.PGM] images are 8, 16, or 32-bits, one band.
  *
- * #VIPS_FOREIGN_PPM_FORMAT_PPM images are 8, 16, or 32-bits, three bands.
+ * [enum@Vips.ForeignPpmFormat.PPM] images are 8, 16, or 32-bits, three bands.
  *
- * #VIPS_FOREIGN_PPM_FORMAT_PFM images are 32-bit float pixels.
+ * [enum@Vips.ForeignPpmFormat.PFM] images are 32-bit float pixels.
  *
- * #VIPS_FOREIGN_PPM_FORMAT_PNM images are anymap images -- the image format
+ * [enum@Vips.ForeignPpmFormat.PNM] images are anymap images -- the image format
  * is used to pick the saver.
  *
  */
@@ -783,11 +793,14 @@ typedef enum {
 	VIPS_FOREIGN_PPM_FORMAT_PPM,
 	VIPS_FOREIGN_PPM_FORMAT_PFM,
 	VIPS_FOREIGN_PPM_FORMAT_PNM,
-	VIPS_FOREIGN_PPM_FORMAT_LAST
+	VIPS_FOREIGN_PPM_FORMAT_LAST	/*< skip >*/
 } VipsForeignPpmFormat;
 
 VIPS_API
 int vips_ppmload(const char *filename, VipsImage **out, ...)
+	G_GNUC_NULL_TERMINATED;
+VIPS_API
+int vips_ppmload_buffer(void *buf, size_t len, VipsImage **out, ...)
 	G_GNUC_NULL_TERMINATED;
 VIPS_API
 int vips_ppmload_source(VipsSource *source, VipsImage **out, ...)
@@ -821,6 +834,29 @@ int vips_radsave_buffer(VipsImage *in, void **buf, size_t *len, ...)
 VIPS_API
 int vips_radsave_target(VipsImage *in, VipsTarget *target, ...)
 	G_GNUC_NULL_TERMINATED;
+
+/**
+ * VipsForeignPdfPageBox:
+ * @VIPS_FOREIGN_PDF_PAGE_BOX_MEDIA
+ * @VIPS_FOREIGN_PDF_PAGE_BOX_CROP
+ * @VIPS_FOREIGN_PDF_PAGE_BOX_TRIM
+ * @VIPS_FOREIGN_PDF_PAGE_BOX_BLEED
+ * @VIPS_FOREIGN_PDF_PAGE_BOX_ART
+ *
+ * Each page of a PDF document can contain multiple page boxes,
+ * also known as boundary boxes or print marks.
+ *
+ * Each page box defines a region of the complete page that
+ * should be rendered. The default region is the crop box.
+ */
+typedef enum {
+	VIPS_FOREIGN_PDF_PAGE_BOX_MEDIA,
+	VIPS_FOREIGN_PDF_PAGE_BOX_CROP,
+	VIPS_FOREIGN_PDF_PAGE_BOX_TRIM,
+	VIPS_FOREIGN_PDF_PAGE_BOX_BLEED,
+	VIPS_FOREIGN_PDF_PAGE_BOX_ART,
+	VIPS_FOREIGN_PDF_PAGE_BOX_LAST /*< skip >*/
+} VipsForeignPdfPageBox;
 
 VIPS_API
 int vips_pdfload(const char *filename, VipsImage **out, ...)
@@ -863,6 +899,16 @@ int vips_gifsave_buffer(VipsImage *in, void **buf, size_t *len, ...)
 	G_GNUC_NULL_TERMINATED;
 VIPS_API
 int vips_gifsave_target(VipsImage *in, VipsTarget *target, ...)
+	G_GNUC_NULL_TERMINATED;
+
+VIPS_API
+int vips_dcrawload(const char *filename, VipsImage **out, ...)
+	G_GNUC_NULL_TERMINATED;
+VIPS_API
+int vips_dcrawload_buffer(void *buf, size_t len, VipsImage **out, ...)
+	G_GNUC_NULL_TERMINATED;
+VIPS_API
+int vips_dcrawload_source(VipsSource *source, VipsImage **out, ...)
 	G_GNUC_NULL_TERMINATED;
 
 VIPS_API
@@ -948,7 +994,7 @@ typedef enum {
 	VIPS_FOREIGN_DZ_LAYOUT_GOOGLE,
 	VIPS_FOREIGN_DZ_LAYOUT_IIIF,
 	VIPS_FOREIGN_DZ_LAYOUT_IIIF3,
-	VIPS_FOREIGN_DZ_LAYOUT_LAST
+	VIPS_FOREIGN_DZ_LAYOUT_LAST	/*< skip >*/
 } VipsForeignDzLayout;
 
 /**
@@ -963,7 +1009,7 @@ typedef enum {
 	VIPS_FOREIGN_DZ_DEPTH_ONEPIXEL,
 	VIPS_FOREIGN_DZ_DEPTH_ONETILE,
 	VIPS_FOREIGN_DZ_DEPTH_ONE,
-	VIPS_FOREIGN_DZ_DEPTH_LAST
+	VIPS_FOREIGN_DZ_DEPTH_LAST	/*< skip >*/
 } VipsForeignDzDepth;
 
 /**
@@ -978,7 +1024,7 @@ typedef enum {
 	VIPS_FOREIGN_DZ_CONTAINER_FS,
 	VIPS_FOREIGN_DZ_CONTAINER_ZIP,
 	VIPS_FOREIGN_DZ_CONTAINER_SZI,
-	VIPS_FOREIGN_DZ_CONTAINER_LAST
+	VIPS_FOREIGN_DZ_CONTAINER_LAST	/*< skip >*/
 } VipsForeignDzContainer;
 
 VIPS_API
@@ -1000,14 +1046,14 @@ int vips_dzsave_target(VipsImage *in, VipsTarget *target, ...)
  *
  * The compression format to use inside a HEIF container.
  *
- * This is assumed to use the same numbering as %heif_compression_format.
+ * This is assumed to use the same numbering as `heif_compression_format`.
  */
 typedef enum {
 	VIPS_FOREIGN_HEIF_COMPRESSION_HEVC = 1,
 	VIPS_FOREIGN_HEIF_COMPRESSION_AVC = 2,
 	VIPS_FOREIGN_HEIF_COMPRESSION_JPEG = 3,
 	VIPS_FOREIGN_HEIF_COMPRESSION_AV1 = 4,
-	VIPS_FOREIGN_HEIF_COMPRESSION_LAST
+	VIPS_FOREIGN_HEIF_COMPRESSION_LAST	/*< skip >*/
 } VipsForeignHeifCompression;
 
 /**
@@ -1029,7 +1075,7 @@ typedef enum {
 	VIPS_FOREIGN_HEIF_ENCODER_RAV1E,
 	VIPS_FOREIGN_HEIF_ENCODER_SVT,
 	VIPS_FOREIGN_HEIF_ENCODER_X265,
-	VIPS_FOREIGN_HEIF_ENCODER_LAST
+	VIPS_FOREIGN_HEIF_ENCODER_LAST	/*< skip >*/
 } VipsForeignHeifEncoder;
 
 #ifdef __cplusplus

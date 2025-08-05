@@ -7,6 +7,8 @@
  *	- cleanups
  * 20/9/12
  * 	- redo as a class
+ * 13/7/24
+ *	- clip out of range values
  */
 
 /*
@@ -61,9 +63,9 @@ vips_Lab2LabS_line(VipsColour *colour, VipsPel *out, VipsPel **in, int width)
 	int i;
 
 	for (i = 0; i < width; i++) {
-		q[0] = p[0] * (32767.0 / 100.0);
-		q[1] = p[1] * (32768.0 / 128.0);
-		q[2] = p[2] * (32768.0 / 128.0);
+		q[0] = VIPS_CLIP(0, p[0] * (32767.0 / 100.0), SHRT_MAX);
+		q[1] = VIPS_CLIP(SHRT_MIN, p[1] * (32768.0 / 128.0), SHRT_MAX);
+		q[2] = VIPS_CLIP(SHRT_MIN, p[2] * (32768.0 / 128.0), SHRT_MAX);
 
 		q += 3;
 		p += 3;
@@ -101,11 +103,12 @@ vips_Lab2LabS_init(VipsLab2LabS *Lab2LabS)
  * vips_Lab2LabS: (method)
  * @in: input image
  * @out: (out): output image
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Turn Lab to LabS, signed 16-bit int fixed point.
  *
- * See also: vips_LabQ2Lab().
+ * ::: seealso
+ *     [method@Image.LabQ2Lab].
  *
  * Returns: 0 on success, -1 on error.
  */

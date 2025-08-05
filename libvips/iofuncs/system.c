@@ -176,7 +176,7 @@ vips_system_build(VipsObject *object)
 			g_strconcat(system->out_name, option_string, NULL);
 	}
 
-	vips_strncpy(cmd, system->cmd_format, VIPS_PATH_MAX);
+	g_strlcpy(cmd, system->cmd_format, VIPS_PATH_MAX);
 	if (system->in)
 		for (i = 0; i < VIPS_AREA(system->in)->n; i++)
 			if (vips__substitute(cmd, VIPS_PATH_MAX,
@@ -209,14 +209,14 @@ vips_system_build(VipsObject *object)
 			g_error_free(error);
 		}
 		if (std_error) {
-			vips__chomp(std_error);
+			g_strchomp(std_error);
 			if (strcmp(std_error, "") != 0)
 				vips_error(class->nickname,
 					"error output: %s", std_error);
 			VIPS_FREE(std_error);
 		}
 		if (std_output) {
-			vips__chomp(std_output);
+			g_strchomp(std_output);
 			if (strcmp(std_output, "") != 0)
 				vips_error(class->nickname,
 					"output: %s", std_output);
@@ -229,12 +229,12 @@ vips_system_build(VipsObject *object)
 	}
 
 	if (std_error) {
-		vips__chomp(std_error);
+		g_strchomp(std_error);
 		if (strcmp(std_error, "") != 0)
-			g_warning(_("stderr output: %s"), std_error);
+			g_warning("stderr output: %s", std_error);
 	}
 	if (std_output) {
-		vips__chomp(std_output);
+		g_strchomp(std_output);
 		g_object_set(system, "log", std_output, NULL);
 	}
 
@@ -323,39 +323,31 @@ vips_system_init(VipsSystem *system)
 /**
  * vips_system:
  * @cmd_format: command to run
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Optional arguments:
- *
- * * @in: array of input images
- * * @out: output image
- * * @in_format: write input files like this
- * * @out_format: write output filename like this
- * * @log: stdout of command is returned here
- *
- * vips_system() runs a command, optionally passing a set of images in and
+ * [ctor@Image.system] runs a command, optionally passing a set of images in and
  * optionally getting an image back. The command's stdout is returned in @log.
  *
  * First, if @in is set, the array of images are written to files. See
- * vips_image_new_temp_file() to see how temporary files are created.
- * If @in_format is
- * something like &percnt;s.png, the file will be written in PNG format. By
- * default, @in_format is &percnt;s.tif.
+ * [ctor@Image.new_temp_file] to see how temporary files are created.
+ * If @in_format is something like `%s.png`, the file will be written in PNG
+ * format. By default, @in_format is `%s.tif`.
  *
  * If @out_format is set, an output filename is formed in the same way. Any
- * trailing [options] are stripped from @out_format.
+ * trailing `[options]` are stripped from @out_format.
  *
- * The command string to run is made by substituting the first set of &percnt;s
+ * The command string to run is made by substituting the first set of `%s`
  * in @cmd_format for the names of the input files, if @in is set, and then
- * the next &percnt;s for the output filename, if @out_format is set.
- * You can put a number between the &percnt; and the s to change the order
+ * the next `%s` for the output filename, if @out_format is set.
+ * You can put a number between the `%` and the `s` to change the order
  * in which the substitution occurs.
  *
- * The command is executed with popen() and the output captured in @log.
+ * The command is executed with [`popen()`](man:popen(3)) and the output captured in @log.
  *
  * After the command finishes, if @out_format is set, the output image is
- * opened and returned in @out. You can append [options] to @out_format to
+ * opened and returned in @out. You can append `[options]` to @out_format to
  * control how this open happens.
+ *
  * Closing @out image will automatically delete the output file.
  *
  * Finally the input images are deleted.
@@ -363,7 +355,7 @@ vips_system_init(VipsSystem *system)
  * For example, this call will run the ImageMagick convert program on an
  * image, using JPEG files to pass images into and out of the convert command.
  *
- * |[
+ * ```c
  * VipsArrayImage *in;
  * VipsImage *out;
  * char *log;
@@ -376,7 +368,14 @@ vips_system_init(VipsSystem *system)
  *         "log", &log,
  *         NULL))
  *     error ...
- * ]|
+ * ```
+ *
+ * ::: tip "Optional arguments"
+ *     * @in: [struct@ArrayImage], array of input images
+ *     * @out: [class@Image], output, image
+ *     * @in_format: `gchararray`, write input files like this
+ *     * @out_format: `gchararray`, write output filename like this
+ *     * @log: `gchararray`, output, stdout of command is returned here
  *
  * Returns: 0 on success, -1 on failure.
  */

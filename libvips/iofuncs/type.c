@@ -57,25 +57,6 @@
 #include <vips/internal.h>
 #include <vips/debug.h>
 
-/**
- * SECTION: basic
- * @short_description: a few typedefs used everywhere
- * @stability: Stable
- * @include: vips/vips.h
- *
- * A few simple typedefs used by VIPS.
- */
-
-/**
- * SECTION: type
- * @short_description: basic types
- * @stability: Stable
- * @see_also: <link linkend="libvips-header">header</link>
- * @include: vips/vips.h
- *
- * A selection of %GType definitions used by VIPS.
- */
-
 /* A very simple boxed type for testing. Just an int.
  *
  * You can manipulate this thing from Python (for example) with:
@@ -93,7 +74,7 @@
  * vips_thing_new:
  * @i:
  *
- * Returns: (transfer full): a new #VipsThing.
+ * Returns: (transfer full): a new [struct@Thing].
  */
 VipsThing *
 vips_thing_new(int i)
@@ -137,7 +118,7 @@ static GSList *vips_area_all = NULL;
 VipsArea *
 vips_area_copy(VipsArea *area)
 {
-	g_mutex_lock(area->lock);
+	g_mutex_lock(&area->lock);
 
 	g_assert(area->count > 0);
 
@@ -147,7 +128,7 @@ vips_area_copy(VipsArea *area)
 	printf("vips_area_copy: %p count = %d\n", area, area->count);
 #endif /*DEBUG*/
 
-	g_mutex_unlock(area->lock);
+	g_mutex_unlock(&area->lock);
 
 	return area;
 }
@@ -175,7 +156,7 @@ vips_area_free(VipsArea *area)
 void
 vips_area_unref(VipsArea *area)
 {
-	g_mutex_lock(area->lock);
+	g_mutex_lock(&area->lock);
 
 	g_assert(area->count > 0);
 
@@ -186,35 +167,35 @@ vips_area_unref(VipsArea *area)
 #endif /*DEBUG*/
 
 	if (vips__leak) {
-		g_mutex_lock(vips__global_lock);
+		g_mutex_lock(&vips__global_lock);
 		g_assert(g_slist_find(vips_area_all, area));
-		g_mutex_unlock(vips__global_lock);
+		g_mutex_unlock(&vips__global_lock);
 	}
 
 	if (area->count == 0) {
 		vips_area_free(area);
 
-		g_mutex_unlock(area->lock);
+		g_mutex_unlock(&area->lock);
 
-		VIPS_FREEF(vips_g_mutex_free, area->lock);
+		g_mutex_clear(&area->lock);
+
+		if (vips__leak) {
+			g_mutex_lock(&vips__global_lock);
+			vips_area_all = g_slist_remove(vips_area_all, area);
+			g_mutex_unlock(&vips__global_lock);
+		}
 
 		g_free(area);
 
-		if (vips__leak) {
-			g_mutex_lock(vips__global_lock);
-			vips_area_all = g_slist_remove(vips_area_all, area);
-			g_mutex_unlock(vips__global_lock);
-		}
-
 #ifdef DEBUG
-		g_mutex_lock(vips__global_lock);
+		g_mutex_lock(&vips__global_lock);
 		printf("vips_area_unref: free .. total = %d\n",
 			g_slist_length(vips_area_all));
-		g_mutex_unlock(vips__global_lock);
+		g_mutex_unlock(&vips__global_lock);
 #endif /*DEBUG*/
 	}
 	else
-		g_mutex_unlock(area->lock);
+		g_mutex_unlock(&area->lock);
 }
 
 /* autoptr needs typed versions of functions for free.
@@ -225,23 +206,31 @@ VipsArrayDouble_unref(VipsArrayDouble *array)
 	vips_area_unref(VIPS_AREA(array));
 }
 
+void
+VipsArrayImage_unref(VipsArrayImage *array)
+{
+	vips_area_unref(VIPS_AREA(array));
+}
+
 /**
  * vips_area_new:
  * @free_fn: (scope async) (nullable): @data will be freed with this function
  * @data: (transfer full): data will be freed with this function
  *
  * A VipsArea wraps a chunk of memory. It adds reference counting and a free
- * function. It also keeps a count and a %GType, so the area can be an array.
+ * function. It also keeps a count and a [alias@GObject.Type], so the area can
+ * be an array.
  *
  * This type is used for things like passing an array of double or an array of
- * #VipsObject pointers to operations, and for reference-counted immutable
+ * [class@Object] pointers to operations, and for reference-counted immutable
  * strings.
  *
- * Initial count == 1, so _unref() after attaching somewhere.
+ * Initial count == 1, so [method@Area.unref] after attaching somewhere.
  *
- * See also: vips_area_unref().
+ * ::: seealso
+ *     [method@Area.unref].
  *
- * Returns: (transfer full): the new #VipsArea.
+ * Returns: (transfer full): the new [struct@Area].
  */
 VipsArea *
 vips_area_new(VipsCallbackFn free_fn, void *data)
@@ -250,7 +239,7 @@ vips_area_new(VipsCallbackFn free_fn, void *data)
 
 	area = g_new(VipsArea, 1);
 	area->count = 1;
-	area->lock = vips_g_mutex_new();
+	g_mutex_init(&area->lock);
 	area->length = 0;
 	area->data = data;
 	area->free_fn = free_fn;
@@ -258,17 +247,17 @@ vips_area_new(VipsCallbackFn free_fn, void *data)
 	area->sizeof_type = 0;
 
 	if (vips__leak) {
-		g_mutex_lock(vips__global_lock);
+		g_mutex_lock(&vips__global_lock);
 		vips_area_all = g_slist_prepend(vips_area_all, area);
-		g_mutex_unlock(vips__global_lock);
+		g_mutex_unlock(&vips__global_lock);
 	}
 
 #ifdef DEBUG
-	g_mutex_lock(vips__global_lock);
+	g_mutex_lock(&vips__global_lock);
 	printf("vips_area_new: %p count = %d (%d in total)\n",
 		area, area->count,
 		g_slist_length(vips_area_all));
-	g_mutex_unlock(vips__global_lock);
+	g_mutex_unlock(&vips__global_lock);
 #endif /*DEBUG*/
 
 	return area;
@@ -301,16 +290,17 @@ vips__type_leak(void)
 
 /**
  * vips_area_new_array:
- * @type: %GType of elements to store
- * @sizeof_type: sizeof() an element in the array
+ * @type: [alias@GObject.Type] of elements to store
+ * @sizeof_type: `sizeof()` an element in the array
  * @n: number of elements in the array
  *
- * An area which holds an array of elements of some %GType. To set values for
- * the elements, get the pointer and write.
+ * An area which holds an array of elements of some [alias@GObject.Type].
+ * To set values for the elements, get the pointer and write.
  *
- * See also: vips_area_unref().
+ * ::: seealso
+ *     [method@Area.unref].
  *
- * Returns: (transfer full): the new #VipsArea.
+ * Returns: (transfer full): the new [struct@Area].
  */
 VipsArea *
 vips_area_new_array(GType type, size_t sizeof_type, int n)
@@ -346,15 +336,16 @@ vips_area_free_array_object(GObject **array, VipsArea *area)
  * vips_area_new_array_object: (constructor)
  * @n: number of elements in the array
  *
- * An area which holds an array of %GObject s. See vips_area_new_array(). When
- * the area is freed, each %GObject will be unreffed.
+ * An area which holds an array of [class@GObject.Object] s. See [ctor@Area.new_array]. When
+ * the area is freed, each [class@GObject.Object] will be unreffed.
  *
- * Add an extra NULL element at the end, handy for eg.
- * vips_image_pipeline_array() etc.
+ * Add an extra `NULL` element at the end, handy for eg.
+ * [func@Image.pipeline_array] etc.
  *
- * See also: vips_area_unref().
+ * ::: seealso
+ *     [method@Area.unref].
  *
- * Returns: (transfer full): the new #VipsArea.
+ * Returns: (transfer full): the new [struct@Area].
  */
 VipsArea *
 vips_area_new_array_object(int n)
@@ -375,15 +366,15 @@ vips_area_new_array_object(int n)
 
 /**
  * vips_area_get_data:
- * @area: #VipsArea to fetch from
+ * @area: [struct@Area] to fetch from
  * @length: (out) (optional): optionally return length in bytes here
  * @n: (out) (optional): optionally return number of elements here
  * @type: (out) (optional): optionally return element type here
- * @sizeof_type: (out) (optional): optionally return sizeof() element type here
+ * @sizeof_type: (out) (optional): optionally return `sizeof()` element type here
  *
  * Return the data pointer plus optionally the length in bytes of an area,
- * the number of elements, the %GType of each element and the sizeof() each
- * element.
+ * the number of elements, the [alias@GObject.Type] of each element and the
+ * `sizeof()` each element.
  *
  * Returns: (transfer none): The pointer held by @area.
  */
@@ -415,7 +406,7 @@ transform_area_g_string(const GValue *src_value, GValue *dest_value)
 	char buf[256];
 
 	area = g_value_get_boxed(src_value);
-	vips_snprintf(buf, 256, "VIPS_TYPE_AREA, count = %d, data = %p",
+	g_snprintf(buf, 256, "VIPS_TYPE_AREA, count = %d, data = %p",
 		area->count, area->data);
 	g_value_set_string(dest_value, buf);
 }
@@ -562,9 +553,11 @@ transform_save_string_ref_string(const GValue *src_value, GValue *dest_value)
  *
  * Strings must be valid utf-8; use blob for binary data.
  *
- * See also: vips_area_unref().
+ * ::: seealso
+ *     [method@Area.unref].
  *
- * Returns: (transfer full) (nullable): the new #VipsRefString, or NULL on error.
+ * Returns: (transfer full) (nullable): the new [struct@RefString], or `NULL` on
+ * error.
  */
 VipsRefString *
 vips_ref_string_new(const char *str)
@@ -584,13 +577,14 @@ vips_ref_string_new(const char *str)
 
 /**
  * vips_ref_string_get:
- * @refstr: the #VipsRefString to fetch from
+ * @refstr: the [struct@RefString] to fetch from
  * @length: (out) (optional): return length here, optionally
  *
  * Get a pointer to the private string inside a refstr. Handy for language
  * bindings.
  *
- * See also: vips_value_get_ref_string().
+ * ::: seealso
+ *     [func@value_get_ref_string].
  *
  * Returns: (transfer none): The C string held by @refstr.
  */
@@ -631,16 +625,17 @@ G_DEFINE_BOXED_TYPE_WITH_CODE(VipsRefString, vips_ref_string,
  * @data: (array length=length) (element-type guint8) (transfer full): data to store
  * @length: number of bytes in @data
  *
- * Like vips_area_new(), but track a length as well. The returned #VipsBlob
- * takes ownership of @data and will free it with @free_fn. Pass %NULL for
+ * Like [ctor@Area.new], but track a length as well. The returned [struct@Blob]
+ * takes ownership of @data and will free it with @free_fn. Pass `NULL` for
  * @free_fn to not transfer ownership.
  *
  * An area of mem with a free func and a length (some sort of binary object,
  * like an ICC profile).
  *
- * See also: vips_area_unref().
+ * ::: seealso
+ *     [method@Area.unref].
  *
- * Returns: (transfer full): the new #VipsBlob.
+ * Returns: (transfer full): the new [struct@Blob].
  */
 VipsBlob *
 vips_blob_new(VipsCallbackFn free_fn, const void *data, size_t length)
@@ -658,12 +653,13 @@ vips_blob_new(VipsCallbackFn free_fn, const void *data, size_t length)
  * @data: (array length=length) (element-type guint8) (transfer none): data to store
  * @length: number of bytes in @data
  *
- * Like vips_blob_new(), but take a copy of the data. Useful for bindings
+ * Like [ctor@Blob.new], but take a copy of the data. Useful for bindings
  * which struggle with callbacks.
  *
- * See also: vips_blob_new().
+ * ::: seealso
+ *     [ctor@Blob.new].
  *
- * Returns: (transfer full): the new #VipsBlob.
+ * Returns: (transfer full): the new [struct@Blob].
  */
 VipsBlob *
 vips_blob_copy(const void *data, size_t length)
@@ -681,12 +677,13 @@ vips_blob_copy(const void *data, size_t length)
 
 /**
  * vips_blob_get:
- * @blob: #VipsBlob to fetch from
+ * @blob: [struct@Blob] to fetch from
  * @length: return number of bytes of data
  *
- * Get the data from a #VipsBlob.
+ * Get the data from a [struct@Blob].
  *
- * See also: vips_blob_new().
+ * ::: seealso
+ *     [ctor@Blob.new].
  *
  * Returns: (array length=length) (element-type guint8) (transfer none): the
  * data
@@ -700,7 +697,7 @@ vips_blob_get(VipsBlob *blob, size_t *length)
 
 /**
  * vips_blob_set:
- * @blob: #VipsBlob to set
+ * @blob: [struct@Blob] to set
  * @free_fn: (scope async) (allow-none): @data will be freed with this function
  * @data: (array length=length) (element-type guint8) (transfer full): data to store
  * @length: number of bytes in @data
@@ -710,7 +707,8 @@ vips_blob_get(VipsBlob *blob, size_t *length)
  * It's sometimes useful to be able to create blobs as empty and then fill
  * them later.
  *
- * See also: vips_blob_new().
+ * ::: seealso
+ *     [ctor@Blob.new].
  */
 void
 vips_blob_set(VipsBlob *blob,
@@ -718,7 +716,7 @@ vips_blob_set(VipsBlob *blob,
 {
 	VipsArea *area = VIPS_AREA(blob);
 
-	g_mutex_lock(area->lock);
+	g_mutex_lock(&area->lock);
 
 	vips_area_free(area);
 
@@ -726,7 +724,7 @@ vips_blob_set(VipsBlob *blob,
 	area->length = length;
 	area->data = (void *) data;
 
-	g_mutex_unlock(area->lock);
+	g_mutex_unlock(&area->lock);
 }
 
 /* Transform a blob to a G_TYPE_STRING.
@@ -739,7 +737,7 @@ transform_blob_g_string(const GValue *src_value, GValue *dest_value)
 	char buf[256];
 
 	blob = vips_value_get_blob(src_value, &length);
-	vips_snprintf(buf, 256, "VIPS_TYPE_BLOB, data = %p, length = %zd",
+	g_snprintf(buf, 256, "VIPS_TYPE_BLOB, data = %p, length = %zd",
 		blob, length);
 	g_value_set_string(dest_value, buf);
 }
@@ -807,11 +805,12 @@ G_DEFINE_BOXED_TYPE_WITH_CODE(VipsBlob, vips_blob,
  * @n: number of ints
  *
  * Allocate a new array of ints and copy @array into it. Free with
- * vips_area_unref().
+ * [method@Area.unref].
  *
- * See also: #VipsArea.
+ * ::: seealso
+ *     [struct@Area].
  *
- * Returns: (transfer full): A new #VipsArrayInt.
+ * Returns: (transfer full): A new [struct@ArrayInt].
  */
 VipsArrayInt *
 vips_array_int_new(const int *array, int n)
@@ -832,11 +831,12 @@ vips_array_int_new(const int *array, int n)
  * @...: list of int arguments
  *
  * Allocate a new array of @n ints and copy @... into it. Free with
- * vips_area_unref().
+ * [method@Area.unref].
  *
- * See also: vips_array_int_new()
+ * ::: seealso
+ *     [ctor@ArrayInt.new]
  *
- * Returns: (transfer full): A new #VipsArrayInt.
+ * Returns: (transfer full): A new [struct@ArrayInt].
  */
 VipsArrayInt *
 vips_array_int_newv(int n, ...)
@@ -859,10 +859,10 @@ vips_array_int_newv(int n, ...)
 
 /**
  * vips_array_int_get:
- * @array: the #VipsArrayInt to fetch from
+ * @array: the [struct@ArrayInt] to fetch from
  * @n: length of array
  *
- * Fetch an int array from a #VipsArrayInt. Useful for language bindings.
+ * Fetch an int array from a [struct@ArrayInt]. Useful for language bindings.
  *
  * Returns: (array length=n) (transfer none): array of int
  */
@@ -1052,11 +1052,12 @@ G_DEFINE_BOXED_TYPE_WITH_CODE(VipsArrayInt, vips_array_int,
  * @n: number of doubles
  *
  * Allocate a new array of doubles and copy @array into it. Free with
- * vips_area_unref().
+ * [method@Area.unref].
  *
- * See also: #VipsArea.
+ * ::: seealso
+ *     [struct@Area].
  *
- * Returns: (transfer full): A new #VipsArrayDouble.
+ * Returns: (transfer full): A new [struct@ArrayDouble].
  */
 VipsArrayDouble *
 vips_array_double_new(const double *array, int n)
@@ -1077,11 +1078,12 @@ vips_array_double_new(const double *array, int n)
  * @...: list of double arguments
  *
  * Allocate a new array of @n doubles and copy @... into it. Free with
- * vips_area_unref().
+ * [method@Area.unref].
  *
- * See also: vips_array_double_new()
+ * ::: seealso
+ *     [ctor@ArrayDouble.new]
  *
- * Returns: (transfer full): A new #VipsArrayDouble.
+ * Returns: (transfer full): A new [struct@ArrayDouble].
  */
 VipsArrayDouble *
 vips_array_double_newv(int n, ...)
@@ -1104,10 +1106,10 @@ vips_array_double_newv(int n, ...)
 
 /**
  * vips_array_double_get:
- * @array: the #VipsArrayDouble to fetch from
+ * @array: the [struct@ArrayDouble] to fetch from
  * @n: length of array
  *
- * Fetch a double array from a #VipsArrayDouble. Useful for language bindings.
+ * Fetch a double array from a [struct@ArrayDouble]. Useful for language bindings.
  *
  * Returns: (array length=n) (transfer none): array of double
  */
@@ -1177,6 +1179,7 @@ transform_g_string_array_double(const GValue *src_value, GValue *dest_value)
 		if (vips_strtod(p, &array[i])) {
 			/* Set array to length zero to indicate an error.
 			 */
+			g_warning("bad argument: not a numeric value \"%s\"", p);
 			vips_value_set_array_double(dest_value, NULL, 0);
 			g_free(str);
 			return;
@@ -1262,22 +1265,23 @@ G_DEFINE_BOXED_TYPE_WITH_CODE(VipsArrayDouble, vips_array_double,
 
 /**
  * vips_array_image_new: (constructor)
- * @array: (array length=n): array of #VipsImage
+ * @array: (array length=n): array of [class@Image]
  * @n: number of images
  *
  * Allocate a new array of images and copy @array into it. Free with
- * vips_area_unref().
+ * [method@Area.unref].
  *
  * The images will all be reffed by this function. They
  * will be automatically unreffed for you by
- * vips_area_unref().
+ * [method@Area.unref].
  *
- * Add an extra NULL element at the end, handy for eg.
- * vips_image_pipeline_array() etc.
+ * Add an extra `NULL` element at the end, handy for eg.
+ * [func@Image.pipeline_array] etc.
  *
- * See also: #VipsArea.
+ * ::: seealso
+ *     [struct@Area].
  *
- * Returns: (transfer full): A new #VipsArrayImage.
+ * Returns: (transfer full): A new [struct@ArrayImage].
  */
 VipsArrayImage *
 vips_array_image_new(VipsImage **array, int n)
@@ -1301,21 +1305,22 @@ vips_array_image_new(VipsImage **array, int n)
 /**
  * vips_array_image_newv: (constructor)
  * @n: number of images
- * @...: list of #VipsImage arguments
+ * @...: list of [class@Image] arguments
  *
- * Allocate a new array of @n #VipsImage and copy @... into it. Free with
- * vips_area_unref().
+ * Allocate a new array of @n [class@Image] and copy @... into it. Free with
+ * [method@Area.unref].
  *
  * The images will all be reffed by this function. They
  * will be automatically unreffed for you by
- * vips_area_unref().
+ * [method@Area.unref].
  *
- * Add an extra NULL element at the end, handy for eg.
- * vips_image_pipeline_array() etc.
+ * Add an extra `NULL` element at the end, handy for eg.
+ * [func@Image.pipeline_array] etc.
  *
- * See also: vips_array_image_new()
+ * ::: seealso
+ *     [ctor@ArrayImage.new]
  *
- * Returns: (transfer full): A new #VipsArrayImage.
+ * Returns: (transfer full): A new [struct@ArrayImage].
  */
 VipsArrayImage *
 vips_array_image_newv(int n, ...)
@@ -1389,12 +1394,13 @@ vips_array_image_new_from_string(const char *string, VipsAccess access)
  * vips_array_image_empty: (constructor)
  *
  * Make an empty image array.
- * Handy with vips_array_image_add() for bindings
+ * Handy with [method@ArrayImage.append] for bindings
  * which can't handle object array arguments.
  *
- * See also: vips_array_image_add().
+ * ::: seealso
+ *     [method@ArrayImage.append].
  *
- * Returns: (transfer full): A new #VipsArrayImage.
+ * Returns: (transfer full): A new [struct@ArrayImage].
  */
 VipsArrayImage *
 vips_array_image_empty(void)
@@ -1407,14 +1413,15 @@ vips_array_image_empty(void)
  * @array: (transfer none): append to this
  * @image: add this
  *
- * Make a new #VipsArrayImage, one larger than @array, with @image appended
+ * Make a new [struct@ArrayImage], one larger than @array, with @image appended
  * to the end.
- * Handy with vips_array_image_empty() for bindings
+ * Handy with [ctor@ArrayImage.empty] for bindings
  * which can't handle object array arguments.
  *
- * See also: vips_array_image_empty().
+ * ::: seealso
+ *     [ctor@ArrayImage.empty].
  *
- * Returns: (transfer full): A new #VipsArrayImage.
+ * Returns: (transfer full): A new [struct@ArrayImage].
  */
 VipsArrayImage *
 vips_array_image_append(VipsArrayImage *array, VipsImage *image)
@@ -1444,12 +1451,12 @@ vips_array_image_append(VipsArrayImage *array, VipsImage *image)
 
 /**
  * vips_array_image_get:
- * @array: the #VipsArrayImage to fetch from
+ * @array: the [struct@ArrayImage] to fetch from
  * @n: length of array
  *
- * Fetch an image array from a #VipsArrayImage. Useful for language bindings.
+ * Fetch an image array from a [struct@ArrayImage]. Useful for language bindings.
  *
- * Returns: (array length=n) (transfer none): array of #VipsImage
+ * Returns: (array length=n) (transfer none): array of [class@Image]
  */
 VipsImage **
 vips_array_image_get(VipsArrayImage *array, int *n)
@@ -1572,8 +1579,8 @@ vips_value_set_save_string(GValue *value, const char *str)
 /**
  * vips_value_set_save_stringf:
  * @value: (out): GValue to set
- * @fmt: printf()-style format string
- * @...: arguments to printf()-formatted @fmt
+ * @fmt: `printf()`-style format string
+ * @...: arguments to `printf()`-formatted @fmt
  *
  * Generates a string and copies it into @value.
  */
@@ -1594,10 +1601,10 @@ vips_value_set_save_stringf(GValue *value, const char *fmt, ...)
 
 /**
  * vips_value_get_ref_string:
- * @value: %GValue to get from
+ * @value: [struct@GObject.Value] to get from
  * @length: (out) (optional): return length here, optionally
  *
- * Get the C string held internally by the %GValue.
+ * Get the C string held internally by the [struct@GObject.Value].
  *
  * Returns: (transfer none): The C string held by @value.
  */
@@ -1609,14 +1616,14 @@ vips_value_get_ref_string(const GValue *value, size_t *length)
 
 /**
  * vips_value_set_ref_string:
- * @value: (out): %GValue to set
+ * @value: (out): [struct@GObject.Value] to set
  * @str: C string to copy into the GValue
  *
  * Copies the C string @str into @value.
  *
  * vips_ref_string are immutable C strings that are copied between images by
  * copying reference-counted pointers, making them much more efficient than
- * regular %GValue strings.
+ * regular [struct@GObject.Value] strings.
  *
  * @str should be a valid utf-8 string.
  */
@@ -1648,7 +1655,8 @@ vips_value_set_ref_string(GValue *value, const char *str)
  * are saved to VIPS files for you coded as base64 inside the XML. They are
  * copied by copying reference-counted pointers.
  *
- * See also: vips_value_get_blob()
+ * ::: seealso
+ *     [func@value_get_blob]
  */
 void
 vips_value_set_blob(GValue *value,
@@ -1670,13 +1678,14 @@ vips_value_set_blob(GValue *value,
  * memory
  * @length: length of memory area
  *
- * Just like vips_value_set_blob(), but when
+ * Just like [func@value_set_blob], but when
  * @value is freed, @data will be
- * freed with g_free().
+ * freed with [func@GLib.free].
  *
  * This can be easier to call for language bindings.
  *
- * See also: vips_value_set_blob()
+ * ::: seealso
+ *     [func@value_set_blob]
  */
 void
 vips_value_set_blob_free(GValue *value, void *data, size_t length)
@@ -1701,7 +1710,8 @@ vips_value_set_blob_free(GValue *value, void *data, size_t length)
  * are saved to VIPS files for you coded as base64 inside the XML. They are
  * copied by copying reference-counted pointers.
  *
- * See also: vips_value_set_blob()
+ * ::: seealso
+ *     [func@value_set_blob]
  *
  * Returns: (transfer none) (array length=length) (element-type guint8): The pointer held
  * by @value.
@@ -1714,7 +1724,7 @@ vips_value_get_blob(const GValue *value, size_t *length)
 
 /**
  * vips_value_set_array:
- * @value: (out): %GValue to set
+ * @value: (out): [struct@GObject.Value] to set
  * @n: number of elements
  * @type: the type of each element
  * @sizeof_type: the sizeof each element
@@ -1736,7 +1746,7 @@ vips_value_set_array(GValue *value, int n, GType type, size_t sizeof_type)
 
 /**
  * vips_value_get_array:
- * @value: %GValue to get from
+ * @value: [struct@GObject.Value] to get from
  * @n: (out) (optional): return the number of elements here, optionally
  * @type: (out) (optional): return the type of each element here, optionally
  * @sizeof_type: (out) (optional): return the sizeof each element here, optionally
@@ -1745,7 +1755,8 @@ vips_value_set_array(GValue *value, int n, GType type, size_t sizeof_type)
  * Optionally return the other properties of the array in @n, @type,
  * @sizeof_type.
  *
- * See also: vips_value_set_array().
+ * ::: seealso
+ *     [func@value_set_array].
  *
  * Returns: (transfer none): The array address.
  */
@@ -1773,13 +1784,14 @@ vips_value_get_array(const GValue *value,
 
 /**
  * vips_value_get_array_int:
- * @value: %GValue to get from
+ * @value: [struct@GObject.Value] to get from
  * @n: (out) (optional): return the number of elements here, optionally
  *
  * Return the start of the array of ints held by @value.
  * optionally return the number of elements in @n.
  *
- * See also: vips_array_int_new().
+ * ::: seealso
+ *     [ctor@ArrayInt.new].
  *
  * Returns: (transfer none) (array length=n): The array address.
  */
@@ -1791,13 +1803,14 @@ vips_value_get_array_int(const GValue *value, int *n)
 
 /**
  * vips_value_set_array_int:
- * @value: %GValue to get from
+ * @value: [struct@GObject.Value] to get from
  * @array: (array length=n) (allow-none): array of ints
  * @n: the number of elements
  *
  * Set @value to hold a copy of @array. Pass in the array length in @n.
  *
- * See also: vips_array_int_get().
+ * ::: seealso
+ *     [method@ArrayInt.get].
  */
 void
 vips_value_set_array_int(GValue *value, const int *array, int n)
@@ -1814,13 +1827,14 @@ vips_value_set_array_int(GValue *value, const int *array, int n)
 
 /**
  * vips_value_get_array_double:
- * @value: %GValue to get from
+ * @value: [struct@GObject.Value] to get from
  * @n: (out) (optional): return the number of elements here, optionally
  *
  * Return the start of the array of doubles held by @value.
  * optionally return the number of elements in @n.
  *
- * See also: vips_array_double_new().
+ * ::: seealso
+ *     [ctor@ArrayDouble.new].
  *
  * Returns: (transfer none) (array length=n): The array address.
  */
@@ -1832,13 +1846,14 @@ vips_value_get_array_double(const GValue *value, int *n)
 
 /**
  * vips_value_set_array_double:
- * @value: %GValue to get from
+ * @value: [struct@GObject.Value] to get from
  * @array: (array length=n) (allow-none): array of doubles
  * @n: the number of elements
  *
  * Set @value to hold a copy of @array. Pass in the array length in @n.
  *
- * See also: vips_array_double_get().
+ * ::: seealso
+ *     [method@ArrayDouble.get].
  */
 void
 vips_value_set_array_double(GValue *value, const double *array, int n)
@@ -1855,13 +1870,14 @@ vips_value_set_array_double(GValue *value, const double *array, int n)
 
 /**
  * vips_value_get_array_image:
- * @value: %GValue to get from
+ * @value: [struct@GObject.Value] to get from
  * @n: (out) (optional): return the number of elements here, optionally
  *
  * Return the start of the array of images held by @value.
  * optionally return the number of elements in @n.
  *
- * See also: vips_value_set_array_image().
+ * ::: seealso
+ *     [func@value_set_array_image].
  *
  * Returns: (transfer none) (array length=n): The array address.
  */
@@ -1873,12 +1889,13 @@ vips_value_get_array_image(const GValue *value, int *n)
 
 /**
  * vips_value_set_array_image:
- * @value: %GValue to get from
+ * @value: [struct@GObject.Value] to get from
  * @n: the number of elements
  *
  * Set @value to hold an array of images. Pass in the array length in @n.
  *
- * See also: vips_array_image_get().
+ * ::: seealso
+ *     [method@ArrayImage.get].
  */
 void
 vips_value_set_array_image(GValue *value, int n)
@@ -1893,13 +1910,14 @@ vips_value_set_array_image(GValue *value, int n)
 
 /**
  * vips_value_get_array_object: (skip)
- * @value: %GValue to get from
+ * @value: [struct@GObject.Value] to get from
  * @n: (out) (optional): return the number of elements here, optionally
  *
- * Return the start of the array of %GObject held by @value.
+ * Return the start of the array of [class@GObject.Object] held by @value.
  * Optionally return the number of elements in @n.
  *
- * See also: vips_area_new_array_object().
+ * ::: seealso
+ *     [ctor@Area.new_array_object].
  *
  * Returns: (transfer none) (array length=n): The array address.
  */
@@ -1911,12 +1929,13 @@ vips_value_get_array_object(const GValue *value, int *n)
 
 /**
  * vips_value_set_array_object:
- * @value: (out): %GValue to set
+ * @value: (out): [struct@GObject.Value] to set
  * @n: the number of elements
  *
- * Set @value to hold an array of %GObject. Pass in the array length in @n.
+ * Set @value to hold an array of [class@GObject.Object]. Pass in the array length in @n.
  *
- * See also: vips_value_get_array_object().
+ * ::: seealso
+ *     [func@value_get_array_object].
  */
 void
 vips_value_set_array_object(GValue *value, int n)

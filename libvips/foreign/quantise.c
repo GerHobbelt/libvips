@@ -50,7 +50,7 @@
 #ifdef HAVE_IMAGEQUANT
 
 VipsQuantiseAttr *
-vips__quantise_attr_create()
+vips__quantise_attr_create(void)
 {
 	return liq_attr_create();
 }
@@ -181,7 +181,7 @@ vips__quantise_attr_destroy(VipsQuantiseAttr *attr)
 #elif defined(HAVE_QUANTIZR) /*!HAVE_IMAGEQUANT*/
 
 VipsQuantiseAttr *
-vips__quantise_attr_create()
+vips__quantise_attr_create(void)
 {
 	return quantizr_new_options();
 }

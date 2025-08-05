@@ -170,11 +170,12 @@ vips_hist_cum_init(VipsHistCum *hist_cum)
  * vips_hist_cum: (method)
  * @in: input image
  * @out: (out): output image
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Form cumulative histogram.
  *
- * See also: vips_hist_norm().
+ * ::: seealso
+ *     [method@Image.hist_norm].
  *
  * Returns: 0 on success, -1 on error
  */

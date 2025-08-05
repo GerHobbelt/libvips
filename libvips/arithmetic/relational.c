@@ -1,4 +1,4 @@
-/* relational.c --- various relational operations
+/* relational.c -- various relational operations
  *
  * Modified:
  * 26/7/93 JC
@@ -265,16 +265,16 @@ vips_relationalv(VipsImage *left, VipsImage *right, VipsImage **out,
 }
 
 /**
- * vips_relational:
- * @left: left-hand input #VipsImage
- * @right: right-hand input #VipsImage
- * @out: (out): output #VipsImage
+ * vips_relational: (method)
+ * @left: left-hand input [class@Image]
+ * @right: right-hand input [class@Image]
+ * @out: (out): output [class@Image]
  * @relational: relational operation to perform
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Perform various relational operations on pairs of images.
  *
- * The output type is always uchar, with 0 for FALSE and 255 for TRUE.
+ * The output type is always uchar, with 0 for `FALSE` and 255 for `TRUE`.
  *
  * Less-than and greater-than for complex images compare the modulus.
  *
@@ -288,13 +288,15 @@ vips_relationalv(VipsImage *left, VipsImage *right, VipsImage **out,
  *
  * The two input images are cast up to the smallest common format (see table
  * Smallest common format in
- * <link linkend="libvips-arithmetic">arithmetic</link>).
+ * [arithmetic](libvips-arithmetic.html)).
  *
  * To decide if pixels match exactly, that is have the same value in every
- * band, use vips_bandbool() after this operation to AND or OR image bands
- * together.
+ * band, use [method@Image.bandbool] after this operation to AND or OR image
+ * bands together.
  *
- * See also: vips_boolean(), vips_bandbool(), vips_relational_const().
+ * ::: seealso
+ *     [method@Image.boolean], [method@Image.bandbool],
+ *     [method@Image.relational_const].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -313,14 +315,14 @@ vips_relational(VipsImage *left, VipsImage *right, VipsImage **out,
 }
 
 /**
- * vips_equal:
- * @left: left-hand input #VipsImage
- * @right: right-hand input #VipsImage
- * @out: (out): output #VipsImage
- * @...: %NULL-terminated list of optional named arguments
+ * vips_equal: (method)
+ * @left: left-hand input [class@Image]
+ * @right: right-hand input [class@Image]
+ * @out: (out): output [class@Image]
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Perform #VIPS_OPERATION_RELATIONAL_EQUAL on a pair of images. See
- * vips_relational().
+ * Perform [enum@Vips.OperationRelational.EQUAL] on a pair of images. See
+ * [method@Image.relational].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -339,14 +341,14 @@ vips_equal(VipsImage *left, VipsImage *right, VipsImage **out, ...)
 }
 
 /**
- * vips_notequal:
- * @left: left-hand input #VipsImage
- * @right: right-hand input #VipsImage
- * @out: (out): output #VipsImage
- * @...: %NULL-terminated list of optional named arguments
+ * vips_notequal: (method)
+ * @left: left-hand input [class@Image]
+ * @right: right-hand input [class@Image]
+ * @out: (out): output [class@Image]
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Perform #VIPS_OPERATION_RELATIONAL_NOTEQ on a pair of images. See
- * vips_relational().
+ * Perform [enum@Vips.OperationRelational.NOTEQ] on a pair of images. See
+ * [method@Image.relational].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -365,14 +367,14 @@ vips_notequal(VipsImage *left, VipsImage *right, VipsImage **out, ...)
 }
 
 /**
- * vips_more:
- * @left: left-hand input #VipsImage
- * @right: right-hand input #VipsImage
- * @out: (out): output #VipsImage
- * @...: %NULL-terminated list of optional named arguments
+ * vips_more: (method)
+ * @left: left-hand input [class@Image]
+ * @right: right-hand input [class@Image]
+ * @out: (out): output [class@Image]
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Perform #VIPS_OPERATION_RELATIONAL_MORE on a pair of images. See
- * vips_relational().
+ * Perform [enum@Vips.OperationRelational.MORE] on a pair of images. See
+ * [method@Image.relational].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -391,14 +393,14 @@ vips_more(VipsImage *left, VipsImage *right, VipsImage **out, ...)
 }
 
 /**
- * vips_moreeq:
- * @left: left-hand input #VipsImage
- * @right: right-hand input #VipsImage
- * @out: (out): output #VipsImage
- * @...: %NULL-terminated list of optional named arguments
+ * vips_moreeq: (method)
+ * @left: left-hand input [class@Image]
+ * @right: right-hand input [class@Image]
+ * @out: (out): output [class@Image]
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Perform #VIPS_OPERATION_RELATIONAL_MOREEQ on a pair of images. See
- * vips_relational().
+ * Perform [enum@Vips.OperationRelational.MOREEQ] on a pair of images. See
+ * [method@Image.relational].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -417,14 +419,14 @@ vips_moreeq(VipsImage *left, VipsImage *right, VipsImage **out, ...)
 }
 
 /**
- * vips_less:
- * @left: left-hand input #VipsImage
- * @right: right-hand input #VipsImage
- * @out: (out): output #VipsImage
- * @...: %NULL-terminated list of optional named arguments
+ * vips_less: (method)
+ * @left: left-hand input [class@Image]
+ * @right: right-hand input [class@Image]
+ * @out: (out): output [class@Image]
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Perform #VIPS_OPERATION_RELATIONAL_LESS on a pair of images. See
- * vips_relational().
+ * Perform [enum@Vips.OperationRelational.LESS] on a pair of images. See
+ * [method@Image.relational].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -443,14 +445,14 @@ vips_less(VipsImage *left, VipsImage *right, VipsImage **out, ...)
 }
 
 /**
- * vips_lesseq:
- * @left: left-hand input #VipsImage
- * @right: right-hand input #VipsImage
- * @out: (out): output #VipsImage
- * @...: %NULL-terminated list of optional named arguments
+ * vips_lesseq: (method)
+ * @left: left-hand input [class@Image]
+ * @right: right-hand input [class@Image]
+ * @out: (out): output [class@Image]
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Perform #VIPS_OPERATION_RELATIONAL_LESSEQ on a pair of images. See
- * vips_relational().
+ * Perform [enum@Vips.OperationRelational.LESSEQ] on a pair of images. See
+ * [method@Image.relational].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -650,12 +652,12 @@ vips_relational_constv(VipsImage *in, VipsImage **out,
  * @relational: relational operation to perform
  * @c: (array length=n): array of constants
  * @n: number of constants in @c
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Perform various relational operations on an image and an array of
  * constants.
  *
- * The output type is always uchar, with 0 for FALSE and 255 for TRUE.
+ * The output type is always uchar, with 0 for `FALSE` and 255 for `TRUE`.
  *
  * If the array of constants has just one element, that constant is used for
  * all image bands. If the array has more than one element and they have
@@ -664,7 +666,8 @@ vips_relational_constv(VipsImage *in, VipsImage **out,
  * element and the image only has a single band, the result is a many-band
  * image where each band corresponds to one array element.
  *
- * See also: vips_boolean(), vips_relational().
+ * ::: seealso
+ *     [method@Image.boolean], [method@Image.relational].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -684,14 +687,14 @@ vips_relational_const(VipsImage *in, VipsImage **out,
 
 /**
  * vips_equal_const: (method)
- * @in: input #VipsImage
- * @out: (out): output #VipsImage
+ * @in: input [class@Image]
+ * @out: (out): output [class@Image]
  * @c: (array length=n): array of constants
  * @n: number of constants in @c
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Perform #VIPS_OPERATION_RELATIONAL_EQUAL on an image and a constant. See
- * vips_relational_const().
+ * Perform [enum@Vips.OperationRelational.EQUAL] on an image and a constant. See
+ * [method@Image.relational_const].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -711,14 +714,14 @@ vips_equal_const(VipsImage *in, VipsImage **out, const double *c, int n, ...)
 
 /**
  * vips_notequal_const: (method)
- * @in: input #VipsImage
- * @out: (out): output #VipsImage
+ * @in: input [class@Image]
+ * @out: (out): output [class@Image]
  * @c: (array length=n): array of constants
  * @n: number of constants in @c
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Perform #VIPS_OPERATION_RELATIONAL_NOTEQ on an image and a constant. See
- * vips_relational_const().
+ * Perform [enum@Vips.OperationRelational.NOTEQ] on an image and a constant. See
+ * [method@Image.relational_const].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -739,14 +742,14 @@ vips_notequal_const(VipsImage *in, VipsImage **out,
 
 /**
  * vips_less_const: (method)
- * @in: input #VipsImage
- * @out: (out): output #VipsImage
+ * @in: input [class@Image]
+ * @out: (out): output [class@Image]
  * @c: (array length=n): array of constants
  * @n: number of constants in @c
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Perform #VIPS_OPERATION_RELATIONAL_LESS on an image and a constant. See
- * vips_relational_const().
+ * Perform [enum@Vips.OperationRelational.LESS] on an image and a constant. See
+ * [method@Image.relational_const].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -766,14 +769,14 @@ vips_less_const(VipsImage *in, VipsImage **out, const double *c, int n, ...)
 
 /**
  * vips_lesseq_const: (method)
- * @in: input #VipsImage
- * @out: (out): output #VipsImage
+ * @in: input [class@Image]
+ * @out: (out): output [class@Image]
  * @c: (array length=n): array of constants
  * @n: number of constants in @c
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Perform #VIPS_OPERATION_RELATIONAL_LESSEQ on an image and a constant. See
- * vips_relational_const().
+ * Perform [enum@Vips.OperationRelational.LESSEQ] on an image and a constant. See
+ * [method@Image.relational_const].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -793,14 +796,14 @@ vips_lesseq_const(VipsImage *in, VipsImage **out, const double *c, int n, ...)
 
 /**
  * vips_more_const: (method)
- * @in: input #VipsImage
- * @out: (out): output #VipsImage
+ * @in: input [class@Image]
+ * @out: (out): output [class@Image]
  * @c: (array length=n): array of constants
  * @n: number of constants in @c
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Perform #VIPS_OPERATION_RELATIONAL_MORE on an image and a constant. See
- * vips_relational_const().
+ * Perform [enum@Vips.OperationRelational.MORE] on an image and a constant. See
+ * [method@Image.relational_const].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -820,14 +823,14 @@ vips_more_const(VipsImage *in, VipsImage **out, const double *c, int n, ...)
 
 /**
  * vips_moreeq_const: (method)
- * @in: input #VipsImage
- * @out: (out): output #VipsImage
+ * @in: input [class@Image]
+ * @out: (out): output [class@Image]
  * @c: (array length=n): array of constants
  * @n: number of constants in @c
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Perform #VIPS_OPERATION_RELATIONAL_MOREEQ on an image and a constant. See
- * vips_relational_const().
+ * Perform [enum@Vips.OperationRelational.MOREEQ] on an image and a constant. See
+ * [method@Image.relational_const].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -851,12 +854,13 @@ vips_moreeq_const(VipsImage *in, VipsImage **out, const double *c, int n, ...)
  * @out: (out): output image
  * @relational: relational operation to perform
  * @c: constant
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Perform various relational operations on an image and a constant. See
- * vips_relational_const().
+ * [method@Image.relational_const].
  *
- * See also: vips_boolean(), vips_relational().
+ * ::: seealso
+ *     [method@Image.boolean], [method@Image.relational].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -879,10 +883,10 @@ vips_relational_const1(VipsImage *in, VipsImage **out,
  * @in: input image
  * @out: (out): output image
  * @c: constant
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Perform #VIPS_OPERATION_RELATIONAL_EQUAL on an image and a constant. See
- * vips_relational_const().
+ * Perform [enum@Vips.OperationRelational.EQUAL] on an image and a constant. See
+ * [method@Image.relational_const].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -905,10 +909,10 @@ vips_equal_const1(VipsImage *in, VipsImage **out, double c, ...)
  * @in: input image
  * @out: (out): output image
  * @c: constant
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Perform #VIPS_OPERATION_RELATIONAL_NOTEQ on an image and a constant. See
- * vips_relational_const().
+ * Perform [enum@Vips.OperationRelational.NOTEQ] on an image and a constant. See
+ * [method@Image.relational_const].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -931,10 +935,10 @@ vips_notequal_const1(VipsImage *in, VipsImage **out, double c, ...)
  * @in: input image
  * @out: (out): output image
  * @c: constant
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Perform #VIPS_OPERATION_RELATIONAL_LESS on an image and a constant. See
- * vips_relational_const().
+ * Perform [enum@Vips.OperationRelational.LESS] on an image and a constant. See
+ * [method@Image.relational_const].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -957,10 +961,10 @@ vips_less_const1(VipsImage *in, VipsImage **out, double c, ...)
  * @in: input image
  * @out: (out): output image
  * @c: constant
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Perform #VIPS_OPERATION_RELATIONAL_LESSEQ on an image and a constant. See
- * vips_relational_const().
+ * Perform [enum@Vips.OperationRelational.LESSEQ] on an image and a constant. See
+ * [method@Image.relational_const].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -983,10 +987,10 @@ vips_lesseq_const1(VipsImage *in, VipsImage **out, double c, ...)
  * @in: input image
  * @out: (out): output image
  * @c: constant
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Perform #VIPS_OPERATION_RELATIONAL_MORE on an image and a constant. See
- * vips_relational_const().
+ * Perform [enum@Vips.OperationRelational.MORE] on an image and a constant. See
+ * [method@Image.relational_const].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -1009,10 +1013,10 @@ vips_more_const1(VipsImage *in, VipsImage **out, double c, ...)
  * @in: input image
  * @out: (out): output image
  * @c: constant
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Perform #VIPS_OPERATION_RELATIONAL_MOREEQ on an image and a constant. See
- * vips_relational_const().
+ * Perform [enum@Vips.OperationRelational.MOREEQ] on an image and a constant. See
+ * [method@Image.relational_const].
  *
  * Returns: 0 on success, -1 on error
  */

@@ -103,11 +103,9 @@ static void
 add_buffer(VipsArithmetic *arithmetic, VipsPel *out, VipsPel **in, int width)
 {
 	VipsImage *im = arithmetic->ready[0];
-
-	/* Complex just doubles the size.
-	 */
-	const int sz = width * vips_image_get_bands(im) *
-		(vips_band_format_iscomplex(vips_image_get_format(im)) ? 2 : 1);
+	int bands = vips_image_get_bands(im);
+	VipsBandFormat format = vips_image_get_format(im);
+	int sz = width * bands * (vips_band_format_iscomplex(format) ? 2 : 1);
 
 	int x;
 
@@ -190,11 +188,11 @@ vips_add_init(VipsAdd *add)
 }
 
 /**
- * vips_add:
+ * vips_add: (method)
  * @left: input image
  * @right: input image
  * @out: (out): output image
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * This operation calculates @in1 + @in2 and writes the result to @out.
  *
@@ -208,67 +206,29 @@ vips_add_init(VipsAdd *add)
  *
  * The two input images are cast up to the smallest common format (see table
  * Smallest common format in
- * <link linkend="libvips-arithmetic">arithmetic</link>), then the
+ * [arithmetic](libvips-arithmetic.html)), then the
  * following table is used to determine the output type:
  *
- * <table>
- *   <title>VipsAdd type promotion</title>
- *   <tgroup cols='2' align='left' colsep='1' rowsep='1'>
- *     <thead>
- *       <row>
- *         <entry>input type</entry>
- *         <entry>output type</entry>
- *       </row>
- *     </thead>
- *     <tbody>
- *       <row>
- *         <entry>uchar</entry>
- *         <entry>ushort</entry>
- *       </row>
- *       <row>
- *         <entry>char</entry>
- *         <entry>short</entry>
- *       </row>
- *       <row>
- *         <entry>ushort</entry>
- *         <entry>uint</entry>
- *       </row>
- *       <row>
- *         <entry>short</entry>
- *         <entry>int</entry>
- *       </row>
- *       <row>
- *         <entry>uint</entry>
- *         <entry>uint</entry>
- *       </row>
- *       <row>
- *         <entry>int</entry>
- *         <entry>int</entry>
- *       </row>
- *       <row>
- *         <entry>float</entry>
- *         <entry>float</entry>
- *       </row>
- *       <row>
- *         <entry>double</entry>
- *         <entry>double</entry>
- *       </row>
- *       <row>
- *         <entry>complex</entry>
- *         <entry>complex</entry>
- *       </row>
- *       <row>
- *         <entry>double complex</entry>
- *         <entry>double complex</entry>
- *       </row>
- *     </tbody>
- *   </tgroup>
- * </table>
+ * ## [method@Image.add] type promotion
+ *
+ * | input type     | output type    |
+ * |----------------|----------------|
+ * | uchar          | ushort         |
+ * | char           | short          |
+ * | ushort         | uint           |
+ * | short          | int            |
+ * | uint           | uint           |
+ * | int            | int            |
+ * | float          | float          |
+ * | double         | double         |
+ * | complex        | complex        |
+ * | double complex | double complex |
  *
  * In other words, the output type is just large enough to hold the whole
  * range of possible values.
  *
- * See also: vips_subtract(), vips_linear().
+ * ::: seealso
+ *     [method@Image.subtract], [method@Image.linear].
  *
  * Returns: 0 on success, -1 on error
  */

@@ -76,16 +76,17 @@
  *
  * The area around
  * (@xsec, @ysec) is searched for the best match to the area around (@xref,
- * @yref). It  searches an area of size @hsearchsize for a
- * match of size @hwindowsize.  The position of the best match is
+ * @yref). It searches an area of size @hsearchsize for a
+ * match of size @hwindowsize. The position of the best match is
  * returned, together with the correlation at that point.
  *
- * Only  the  first  band  of each image is correlated. @ref and @sec may be
- * very large --- the function  extracts  and  generates  just  the
- * parts needed.  Correlation is done with vips_spcor(); the position of
- * the maximum is found with vips_max().
+ * Only the first band of each image is correlated. @ref and @sec may be
+ * very large -- the function extracts and generates just the
+ * parts needed. Correlation is done with [method@Image.spcor]; the position
+ * of the maximum is found with [method@Image.max].
  *
- * See also: vips_match(), vips__lrmosaic().
+ * ::: seealso
+ *     [method@Image.match], [method@Image.mosaic].
  *
  * Returns: 0 on success, -1 on error
  */

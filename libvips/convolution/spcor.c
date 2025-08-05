@@ -331,7 +331,7 @@ vips_spcor_init(VipsSpcor *spcor)
  * @in: input image
  * @ref: reference image
  * @out: (out): output image
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Calculate a correlation surface.
  *
@@ -345,12 +345,12 @@ vips_spcor_init(VipsSpcor *spcor)
  *
  * The correlation coefficient is calculated as:
  *
- * |[
+ * ```
  *          sumij (ref(i,j)-mean(ref))(inkl(i,j)-mean(inkl))
  * c(k,l) = ------------------------------------------------
  *          sqrt(sumij (ref(i,j)-mean(ref))^2) *
  *                      sqrt(sumij (inkl(i,j)-mean(inkl))^2)
- * ]|
+ * ```
  *
  * where inkl is the area of @in centred at position (k,l).
  *
@@ -365,7 +365,8 @@ vips_spcor_init(VipsSpcor *spcor)
  * The output image is always float, unless either of the two inputs is
  * double, in which case the output is also double.
  *
- * See also: vips_fastcor().
+ * ::: seealso
+ *     [method@Image.fastcor].
  *
  * Returns: 0 on success, -1 on error
  */

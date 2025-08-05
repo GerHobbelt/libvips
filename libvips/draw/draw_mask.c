@@ -377,16 +377,17 @@ vips_draw_maskv(VipsImage *image,
  * @mask: mask of 0/255 values showing where to plot
  * @x: draw mask here
  * @y: draw mask here
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Draw @mask on the image. @mask is a monochrome 8-bit image with 0/255
  * for transparent or @ink coloured points. Intermediate values blend the ink
- * with the pixel. Use with vips_text() to draw text on an image. Use in a
- * vips_draw_line() subclass to draw an object along a line.
+ * with the pixel. Use with [ctor@Image.text] to draw text on an image. Use in a
+ * [method@Image.draw_line] subclass to draw an object along a line.
  *
  * @ink is an array of double containing values to draw.
  *
- * See also: vips_text(), vips_draw_line().
+ * ::: seealso
+ *     [ctor@Image.text], [method@Image.draw_line].
  *
  * Returns: 0 on success, or -1 on error.
  */
@@ -411,11 +412,12 @@ vips_draw_mask(VipsImage *image,
  * @mask: mask of 0/255 values showing where to plot
  * @x: draw mask here
  * @y: draw mask here
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * As vips_draw_mask(), but just takes a single double for @ink.
+ * As [method@Image.draw_mask], but just takes a single double for @ink.
  *
- * See also: vips_draw_mask().
+ * ::: seealso
+ *     [method@Image.draw_mask].
  *
  * Returns: 0 on success, or -1 on error.
  */

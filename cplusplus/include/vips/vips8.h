@@ -42,19 +42,14 @@
 #include <glib-object.h>
 #endif
 
-/* Define VIPS_CPLUSPLUS_EXPORTS to build a DLL using MSVC.
+/* Note: when building without Meson, it may be necessary to define
+ * _VIPS_PUBLIC as __declspec(dllexport) when building a DLL.
  */
-#ifdef _VIPS_PUBLIC
-#  define VIPS_CPLUSPLUS_API _VIPS_PUBLIC
-#elif defined(_MSC_VER) && !defined(VIPS_STATICLIB)
-#  ifdef VIPS_CPLUSPLUS_EXPORTS
-#    define VIPS_CPLUSPLUS_API __declspec(dllexport)
-#  else
-#    define VIPS_CPLUSPLUS_API __declspec(dllimport)
-#  endif
-#else
-#  define VIPS_CPLUSPLUS_API
+#ifndef _VIPS_PUBLIC
+#define _VIPS_PUBLIC
 #endif
+
+#define VIPS_CPLUSPLUS_API _VIPS_PUBLIC
 
 #define VIPS_NAMESPACE_START namespace vips {
 #define VIPS_NAMESPACE_END }

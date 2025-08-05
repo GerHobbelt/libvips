@@ -1,4 +1,4 @@
-/* gate.c --- thread profiling
+/* gate.c -- thread profiling
  *
  * Written on: 18 nov 13
  */
@@ -70,8 +70,6 @@ typedef struct _VipsThreadGate {
  */
 
 typedef struct _VipsThreadProfile {
-	/*< private >*/
-
 	const char *name;
 	GThread *thread;
 	GHashTable *gates;
@@ -80,13 +78,15 @@ typedef struct _VipsThreadProfile {
 
 gboolean vips__thread_profile = FALSE;
 
-static GPrivate *vips_thread_profile_key = NULL;
+static void thread_profile_destroy_notify(gpointer data);
+static GPrivate vips_thread_profile_key =
+	G_PRIVATE_INIT(thread_profile_destroy_notify);
 
 static FILE *vips__thread_fp = NULL;
 
 /**
  * vips_profile_set:
- * @profile: %TRUE to enable profile recording
+ * @profile: `TRUE` to enable profile recording
  *
  * If set, vips will record profiling information, and dump it on program
  * exit. These profiles can be analysed with the `vipsprofile` program.
@@ -134,7 +134,7 @@ vips_thread_profile_save_cb(gpointer key, gpointer value, gpointer data)
 static void
 vips_thread_profile_save(VipsThreadProfile *profile)
 {
-	g_mutex_lock(vips__global_lock);
+	g_mutex_lock(&vips__global_lock);
 
 	VIPS_DEBUG_MSG("vips_thread_profile_save: %s\n", profile->name);
 
@@ -142,7 +142,7 @@ vips_thread_profile_save(VipsThreadProfile *profile)
 		vips__thread_fp =
 			vips__file_open_write("vips-profile.txt", TRUE);
 		if (!vips__thread_fp) {
-			g_mutex_unlock(vips__global_lock);
+			g_mutex_unlock(&vips__global_lock);
 			g_warning("unable to create profile log");
 			return;
 		}
@@ -155,7 +155,7 @@ vips_thread_profile_save(VipsThreadProfile *profile)
 		vips_thread_profile_save_cb, vips__thread_fp);
 	vips_thread_profile_save_gate(profile->memory, vips__thread_fp);
 
-	g_mutex_unlock(vips__global_lock);
+	g_mutex_unlock(&vips__global_lock);
 }
 
 static void
@@ -191,8 +191,10 @@ vips__thread_profile_stop(void)
 }
 
 static void
-vips__thread_profile_init_cb(VipsThreadProfile *profile)
+thread_profile_destroy_notify(gpointer data)
 {
+	VipsThreadProfile *profile = data;
+
 	/* We only come here if vips_thread_shutdown() was not called for this
 	 * thread. Do our best to clean up.
 	 *
@@ -203,22 +205,11 @@ vips__thread_profile_init_cb(VipsThreadProfile *profile)
 	 * been called.
 	 */
 	if (vips__thread_profile)
-		g_warning("discarding unsaved state for thread %p --- "
+		g_warning("discarding unsaved state for thread %p -- "
 				  "call vips_thread_shutdown() for this thread",
 			profile->thread);
 
 	vips_thread_profile_free(profile);
-}
-
-static void *
-vips__thread_profile_init(void *data)
-{
-	static GPrivate private =
-		G_PRIVATE_INIT((GDestroyNotify) vips__thread_profile_init_cb);
-
-	vips_thread_profile_key = &private;
-
-	return NULL;
 }
 
 static VipsThreadGate *
@@ -237,11 +228,7 @@ vips_thread_gate_new(const char *gate_name)
 void
 vips__thread_profile_attach(const char *thread_name)
 {
-	static GOnce once = G_ONCE_INIT;
-
 	VipsThreadProfile *profile;
-
-	VIPS_ONCE(&once, vips__thread_profile_init, NULL);
 
 	VIPS_DEBUG_MSG("vips__thread_profile_attach: %s\n", thread_name);
 
@@ -251,20 +238,19 @@ vips__thread_profile_attach(const char *thread_name)
 		g_direct_hash, g_str_equal,
 		NULL, (GDestroyNotify) vips_thread_gate_free);
 	profile->memory = vips_thread_gate_new("memory");
-	g_private_replace(vips_thread_profile_key, profile);
+	g_private_replace(&vips_thread_profile_key, profile);
 }
 
 static VipsThreadProfile *
 vips_thread_profile_get(void)
 {
-	return g_private_get(vips_thread_profile_key);
+	return g_private_get(&vips_thread_profile_key);
 }
 
-/* This usually happens automatically when a thread shuts down, see
- * vips__thread_profile_init() where we set a GDestroyNotify, but will not
- * happen for the main thread.
+/* This usually happens automatically when a thread shuts down, but that will
+ * not happen for the main thread.
  *
- * Shut down any stats on the main thread with this, see vips_shutdown()
+ * Shut down any stats on the main thread with this, see vips_shutdown().
  */
 void
 vips__thread_profile_detach(void)
@@ -278,7 +264,7 @@ vips__thread_profile_detach(void)
 			vips_thread_profile_save(profile);
 
 		vips_thread_profile_free(profile);
-		g_private_set(vips_thread_profile_key, NULL);
+		g_private_set(&vips_thread_profile_key, NULL);
 	}
 }
 

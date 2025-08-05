@@ -231,7 +231,7 @@ vips_fastcor_init(VipsFastcor *fastcor)
  * @in: input image
  * @ref: reference image
  * @out: (out): output image
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Calculate a fast correlation surface.
  *
@@ -252,7 +252,8 @@ vips_fastcor_init(VipsFastcor *fastcor)
  * In other words, the output type is just large enough to hold the whole
  * range of possible values.
  *
- * See also: vips_spcor().
+ * ::: seealso
+ *     [method@Image.spcor].
  *
  * Returns: 0 on success, -1 on error
  */

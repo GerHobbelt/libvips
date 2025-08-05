@@ -5,6 +5,19 @@ export PKG_CONFIG_PATH="$WORK/lib/pkgconfig"
 export CPPFLAGS="-I$WORK/include"
 export LDFLAGS="-L$WORK/lib"
 
+# `-fuse-ld=gold` can't be passed via `CFLAGS` and `CXXFLAGS` as Meson
+# injects `-Werror=ignored-optimization-argument` during compile tests.
+# https://github.com/google/oss-fuzz/issues/12167
+# https://github.com/mesonbuild/meson/issues/6377#issuecomment-575977919
+if [[ "$CFLAGS" == *"-fuse-ld=gold"* ]]; then
+  export CFLAGS="${CFLAGS//-fuse-ld=gold/}"
+  export CC_LD=gold
+fi
+if [[ "$CXXFLAGS" == *"-fuse-ld=gold"* ]]; then
+  export CXXFLAGS="${CXXFLAGS//-fuse-ld=gold/}"
+  export CXX_LD=gold
+fi
+
 # Run as many parallel jobs as there are available CPU cores
 export MAKEFLAGS="-j$(nproc)"
 
@@ -30,7 +43,7 @@ popd
 # lcms
 pushd $SRC/lcms
 meson setup build --prefix=$WORK --libdir=lib --default-library=static --buildtype=debugoptimized \
-  -Djpeg=disabled -Dtiff=disabled
+  -Dtests=disabled -Djpeg=disabled -Dtiff=disabled
 meson install -C build --tag devel
 popd
 
@@ -81,16 +94,16 @@ cmake \
   -DENABLE_STATIC=TRUE \
   -DENABLE_SHARED=FALSE \
   -DWITH_TURBOJPEG=FALSE \
+  -DWITH_TOOLS=FALSE \
+  -DWITH_TESTS=FALSE \
   .
-cmake --build . --target jpeg-static
-cmake --install . --component lib
-cmake --install . --component include
+cmake --build . --target install
 popd
 
 # libspng
 pushd $SRC/libspng
 meson setup build --prefix=$WORK --libdir=lib --default-library=static --buildtype=debugoptimized \
-  -Dstatic_zlib=true
+  -Dstatic_zlib=true -Dbuild_examples=false
 meson install -C build --tag devel
 popd
 
@@ -135,7 +148,8 @@ popd
 
 # cgif
 pushd $SRC/cgif
-meson setup build --prefix=$WORK --libdir=lib --default-library=static --buildtype=debugoptimized
+meson setup build --prefix=$WORK --libdir=lib --default-library=static --buildtype=debugoptimized \
+  -Dexamples=false -Dtests=false
 meson install -C build --tag devel
 popd
 
@@ -174,13 +188,15 @@ cmake \
 cmake --build . --target install
 popd
 
+# FIXME: Workaround for https://github.com/mesonbuild/meson/issues/14640
+export LDFLAGS+=" -Wl,-rpath=\$ORIGIN/lib"
+
 # libvips
 # Disable building man pages, gettext po files, tools, and tests
 sed -i "/subdir('man')/{N;N;N;d;}" meson.build
 meson setup build --prefix=$WORK --libdir=lib --prefer-static --default-library=static --buildtype=debugoptimized \
-  -Ddeprecated=false -Dexamples=false -Dcplusplus=false -Dmodules=disabled \
-  -Dfuzzing_engine=oss-fuzz -Dfuzzer_ldflags="$LIB_FUZZING_ENGINE" \
-  -Dcpp_link_args="$LDFLAGS -Wl,-rpath=\$ORIGIN/lib"
+  -Dbackend_max_links=4 -Ddeprecated=false -Dexamples=false -Dcplusplus=false -Dmodules=disabled \
+  -Dfuzzing_engine=oss-fuzz -Dfuzzer_ldflags="$LIB_FUZZING_ENGINE"
 meson install -C build --tag devel
 
 # Copy fuzz executables to $OUT
@@ -190,19 +206,19 @@ find build/fuzz -maxdepth 1 -executable -type f -exec cp -v '{}' $OUT \;
 mkdir -p $OUT/lib
 cp $WORK/lib/*.so $OUT/lib
 
-# Merge the seed corpus in a single directory, exclude files larger than 2k
+# Merge the seed corpus in a single directory, exclude files larger than 4k
 mkdir -p fuzz/corpus
 find \
   $SRC/afl-testcases/{gif*,jpeg*,png,tiff,webp}/full/images \
   fuzz/*_fuzzer_corpus \
   test/test-suite/images \
-  -type f -size -2k \
+  -type f -size -4k \
   -exec bash -c 'hash=($(sha1sum {})); mv {} fuzz/corpus/$hash' \;
 zip -jrq $OUT/seed_corpus.zip fuzz/corpus
 
 # Link corpus
-for fuzzer in fuzz/*_fuzzer.cc; do
-  target=$(basename "$fuzzer" .cc)
+for fuzzer in $OUT/*_fuzzer; do
+  target=$(basename "$fuzzer")
   ln -sf "seed_corpus.zip" "$OUT/${target}_seed_corpus.zip"
 done
 

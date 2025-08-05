@@ -217,7 +217,7 @@ vips_foreign_save_csv_class_init(VipsForeignSaveCsvClass *class)
 
 	foreign_class->suffs = vips_foreign_save_csv_suffs;
 
-	save_class->saveable = VIPS_SAVEABLE_MONO;
+	save_class->saveable = VIPS_FOREIGN_SAVEABLE_MONO;
 
 	VIPS_ARG_STRING(class, "separator", 13,
 		_("Separator"),
@@ -338,13 +338,10 @@ vips_foreign_save_csv_target_init(VipsForeignSaveCsvTarget *target)
  * vips_csvsave: (method)
  * @in: image to save
  * @filename: file to write to
- * @...: %NULL-terminated list of optional named arguments
- *
- * Optional arguments:
- *
- * * @separator: separator string
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Writes the pixels in @in to the @filename as CSV (comma-separated values).
+ *
  * The image is written
  * one line of text per scanline. Complex numbers are written as
  * "(real,imaginary)" and will need extra parsing I guess. Only the first band
@@ -353,7 +350,11 @@ vips_foreign_save_csv_target_init(VipsForeignSaveCsvTarget *target)
  * @separator gives the string to use to separate numbers in the output.
  * The default is "\\t" (tab).
  *
- * See also: vips_image_write_to_file().
+ * ::: tip "Optional arguments"
+ *     * @separator: `gchararray`, separator string
+ *
+ * ::: seealso
+ *     [method@Image.write_to_file].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -374,15 +375,15 @@ vips_csvsave(VipsImage *in, const char *filename, ...)
  * vips_csvsave_target: (method)
  * @in: image to save
  * @target: save image to this target
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Optional arguments:
+ * As [method@Image.csvsave], but save to a target.
  *
- * * @separator: separator string
+ * ::: tip "Optional arguments"
+ *     * @separator: `gchararray`, separator string
  *
- * As vips_csvsave(), but save to a target.
- *
- * See also: vips_csvsave().
+ * ::: seealso
+ *     [method@Image.csvsave].
  *
  * Returns: 0 on success, -1 on error.
  */

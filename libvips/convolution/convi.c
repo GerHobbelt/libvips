@@ -309,7 +309,7 @@ vips_convi_uchar_vector_gen(VipsRegion *out_region,
 	VipsConvi *convi = (VipsConvi *) b;
 	VipsConvolution *convolution = (VipsConvolution *) convi;
 	VipsImage *M = convolution->M;
-	int offset = VIPS_RINT(vips_image_get_offset(M));
+	int offset = rint(vips_image_get_offset(M));
 	VipsImage *in = (VipsImage *) a;
 	VipsRegion *ir = seq->ir;
 	const int nnz = convi->nnz;
@@ -435,7 +435,7 @@ vips_convi_compile_section(VipsConvi *convi, VipsImage *in, Pass *pass)
 
 		/* The source. sl0 is the first scanline in the mask.
 		 */
-		vips_snprintf(source, 256, "sl%d", y);
+		g_snprintf(source, 256, "sl%d", y);
 		if (orc_program_find_var_by_name(p, source) == -1) {
 			SCANLINE(source, 1);
 			pass->line[pass->n_scanline] = y;
@@ -447,7 +447,7 @@ vips_convi_compile_section(VipsConvi *convi, VipsImage *in, Pass *pass)
 		if (x == 0)
 			ASM2("convubw", "value", source);
 		else {
-			vips_snprintf(off, 256, "c%db", x);
+			g_snprintf(off, 256, "c%db", x);
 			if (orc_program_find_var_by_name(p, off) == -1) {
 				CONST(off, in->Bands * x, 1);
 				pass->n_const++;
@@ -461,7 +461,7 @@ vips_convi_compile_section(VipsConvi *convi, VipsImage *in, Pass *pass)
 		 * of the image and coefficient are interesting, so we can take
 		 * the bottom half of a 16x16->32 multiply.
 		 */
-		vips_snprintf(coeff, 256, "c%dw", convi->mant[i]);
+		g_snprintf(coeff, 256, "c%dw", convi->mant[i]);
 		if (orc_program_find_var_by_name(p, coeff) == -1) {
 			CONST(coeff, convi->mant[i], 2);
 			pass->n_const++;
@@ -500,9 +500,9 @@ vips_convi_compile_section(VipsConvi *convi, VipsImage *in, Pass *pass)
 
 	/* Some orcs seem to be unstable with many compilers active at once.
 	 */
-	g_mutex_lock(vips__global_lock);
+	g_mutex_lock(&vips__global_lock);
 	result = orc_program_compile(p);
-	g_mutex_unlock(vips__global_lock);
+	g_mutex_unlock(&vips__global_lock);
 
 	if (!ORC_COMPILE_RESULT_IS_SUCCESSFUL(result))
 		return -1;
@@ -523,7 +523,7 @@ vips_convi_compile_clip(VipsConvi *convi)
 {
 	VipsConvolution *convolution = (VipsConvolution *) convi;
 	VipsImage *M = convolution->M;
-	int offset = VIPS_RINT(vips_image_get_offset(M));
+	int offset = rint(vips_image_get_offset(M));
 
 	OrcProgram *p;
 	OrcCompileResult result;
@@ -551,9 +551,9 @@ vips_convi_compile_clip(VipsConvi *convi)
 
 	/* Some orcs seem to be unstable with many compilers active at once.
 	 */
-	g_mutex_lock(vips__global_lock);
+	g_mutex_lock(&vips__global_lock);
 	result = orc_program_compile(p);
-	g_mutex_unlock(vips__global_lock);
+	g_mutex_unlock(&vips__global_lock);
 
 	if (!ORC_COMPILE_RESULT_IS_SUCCESSFUL(result))
 		return -1;
@@ -730,7 +730,7 @@ vips_convi_gen_vector(VipsRegion *out_region,
 \
 			sum = 0; \
 			for (i = 0; i < nnz; i++) \
-				sum += t[i] * p[offsets[i]]; \
+				sum += (double) t[i] * p[offsets[i]]; \
 \
 			sum = (sum / scale) + offset; \
 \
@@ -757,9 +757,9 @@ vips_convi_gen(VipsRegion *out_region,
 	VipsConvi *convi = (VipsConvi *) b;
 	VipsConvolution *convolution = (VipsConvolution *) convi;
 	VipsImage *M = convolution->M;
-	int scale = VIPS_RINT(vips_image_get_scale(M));
+	int scale = rint(vips_image_get_scale(M));
 	int rounding = scale / 2;
-	int offset = VIPS_RINT(vips_image_get_offset(M));
+	int offset = rint(vips_image_get_offset(M));
 	VipsImage *in = (VipsImage *) a;
 	VipsRegion *ir = seq->ir;
 	int *restrict t = convi->coeff;
@@ -892,12 +892,12 @@ vips__image_intize(VipsImage *in, VipsImage **out)
 	for (y = 0; y < t->Ysize; y++)
 		for (x = 0; x < t->Xsize; x++)
 			*VIPS_MATRIX(*out, x, y) =
-				VIPS_RINT(*VIPS_MATRIX(t, x, y));
+				rint(*VIPS_MATRIX(t, x, y));
 
-	out_scale = VIPS_RINT(vips_image_get_scale(t));
+	out_scale = rint(vips_image_get_scale(t));
 	if (out_scale == 0)
 		out_scale = 1;
-	out_offset = VIPS_RINT(vips_image_get_offset(t));
+	out_offset = rint(vips_image_get_offset(t));
 
 	/* Now convolve a 1 everywhere image with the int version we've made,
 	 * what do we get?
@@ -910,7 +910,7 @@ vips__image_intize(VipsImage *in, VipsImage **out)
 
 	/* And adjust the scale to get as close to a match as we can.
 	 */
-	out_scale = VIPS_RINT(out_scale + (int_result - double_result));
+	out_scale = rint(out_scale + (int_result - double_result));
 	if (out_scale == 0)
 		out_scale = 1;
 
@@ -1025,7 +1025,7 @@ vips_convi_intize(VipsConvi *convi, VipsImage *M)
 	for (i = 0; i < convi->n_point; i++) {
 		/* 128 since this is signed.
 		 */
-		convi->mant[i] = VIPS_RINT(128 * scaled[i] * pow(2, -shift));
+		convi->mant[i] = rint(128 * scaled[i] * pow(2, -shift));
 
 		if (convi->mant[i] < -128 ||
 			convi->mant[i] > 127) {
@@ -1108,7 +1108,7 @@ vips_convi_intize(VipsConvi *convi, VipsImage *M)
 			int_value = VIPS_LSHIFT_INT(int_sum, convi->exp);
 		int_value = VIPS_CLIP(0, int_value, 255);
 
-		if (VIPS_ABS(true_value - int_value) > 2) {
+		if (abs(true_value - int_value) > 2) {
 			g_info("vips_convi_intize: too inaccurate");
 			return -1;
 		}
@@ -1215,7 +1215,7 @@ vips_convi_build(VipsObject *object)
 	convolution->out->Xoffset = 0;
 	convolution->out->Yoffset = 0;
 
-	/* Prepare output. Consider a 7x7 mask and a 7x7 image --- the output
+	/* Prepare output. Consider a 7x7 mask and a 7x7 image -- the output
 	 * would be 1x1.
 	 */
 	convolution->out->Xsize -= M->Xsize - 1;
@@ -1264,26 +1264,27 @@ vips_convi_init(VipsConvi *convi)
  * @in: input image
  * @out: (out): output image
  * @mask: convolve with this mask
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Integer convolution. This is a low-level operation, see vips_conv() for
+ * Integer convolution. This is a low-level operation, see [method@Image.conv] for
  * something more convenient.
  *
- * @mask is converted to an integer mask with rint() of each element, rint of
+ * @mask is converted to an integer mask with `rint()` of each element, rint of
  * scale and rint of offset. Each output pixel is then calculated as
  *
- * |[
+ * ```
  * sigma[i]{pixel[i] * mask[i]} / scale + offset
- * ]|
+ * ```
  *
- * The output image always has the same #VipsBandFormat as the input image.
+ * The output image always has the same [enum@BandFormat] as the input image.
  *
- * For #VIPS_FORMAT_UCHAR images, vips_convi() uses a fast vector path based on
+ * For [enum@Vips.BandFormat.UCHAR] images, [method@Image.convi] uses a fast vector path based on
  * half-float arithmetic. This can produce slightly different results.
  * Disable the vector path with `--vips-novector` or `VIPS_NOVECTOR` or
- * vips_vector_set_enabled().
+ * [func@vector_set_enabled].
  *
- * See also: vips_conv().
+ * ::: seealso
+ *     [method@Image.conv].
  *
  * Returns: 0 on success, -1 on error
  */

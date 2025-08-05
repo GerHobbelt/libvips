@@ -258,6 +258,18 @@ VImage::add(VImage right, VOption *options) const
 }
 
 VImage
+VImage::addalpha(VOption *options) const
+{
+	VImage out;
+
+	call("addalpha", (options ? options : VImage::option())
+			->set("in", *this)
+			->set("out", &out));
+
+	return out;
+}
+
+VImage
 VImage::affine(std::vector<double> matrix, VOption *options) const
 {
 	VImage out;
@@ -515,6 +527,18 @@ VImage::cast(VipsBandFormat format, VOption *options) const
 			->set("in", *this)
 			->set("out", &out)
 			->set("format", format));
+
+	return out;
+}
+
+VImage
+VImage::clamp(VOption *options) const
+{
+	VImage out;
+
+	call("clamp", (options ? options : VImage::option())
+			->set("in", *this)
+			->set("out", &out));
 
 	return out;
 }
@@ -2294,6 +2318,19 @@ VImage::matrixload_source(VSource source, VOption *options)
 	return out;
 }
 
+VImage
+VImage::matrixmultiply(VImage right, VOption *options) const
+{
+	VImage out;
+
+	call("matrixmultiply", (options ? options : VImage::option())
+			->set("left", *this)
+			->set("out", &out)
+			->set("right", right));
+
+	return out;
+}
+
 void
 VImage::matrixprint(VOption *options) const
 {
@@ -2325,6 +2362,19 @@ VImage::max(VOption *options) const
 	call("max", (options ? options : VImage::option())
 			->set("in", *this)
 			->set("out", &out));
+
+	return out;
+}
+
+VImage
+VImage::maxpair(VImage right, VOption *options) const
+{
+	VImage out;
+
+	call("maxpair", (options ? options : VImage::option())
+			->set("left", *this)
+			->set("out", &out)
+			->set("right", right));
 
 	return out;
 }
@@ -2367,6 +2417,19 @@ VImage::min(VOption *options) const
 	call("min", (options ? options : VImage::option())
 			->set("in", *this)
 			->set("out", &out));
+
+	return out;
+}
+
+VImage
+VImage::minpair(VImage right, VOption *options) const
+{
+	VImage out;
+
+	call("minpair", (options ? options : VImage::option())
+			->set("left", *this)
+			->set("out", &out)
+			->set("right", right));
 
 	return out;
 }
@@ -2670,6 +2733,18 @@ VImage::ppmload(const char *filename, VOption *options)
 }
 
 VImage
+VImage::ppmload_buffer(VipsBlob *buffer, VOption *options)
+{
+	VImage out;
+
+	call("ppmload_buffer", (options ? options : VImage::option())
+			->set("out", &out)
+			->set("buffer", buffer));
+
+	return out;
+}
+
+VImage
 VImage::ppmload_source(VSource source, VOption *options)
 {
 	VImage out;
@@ -2886,12 +2961,24 @@ VImage::rawsave(const char *filename, VOption *options) const
 			->set("filename", filename));
 }
 
-void
-VImage::rawsave_fd(int fd, VOption *options) const
+VipsBlob *
+VImage::rawsave_buffer(VOption *options) const
 {
-	call("rawsave_fd", (options ? options : VImage::option())
+	VipsBlob *buffer;
+
+	call("rawsave_buffer", (options ? options : VImage::option())
 			->set("in", *this)
-			->set("fd", fd));
+			->set("buffer", &buffer));
+
+	return buffer;
+}
+
+void
+VImage::rawsave_target(VTarget target, VOption *options) const
+{
+	call("rawsave_target", (options ? options : VImage::option())
+			->set("in", *this)
+			->set("target", target));
 }
 
 VImage
@@ -2997,6 +3084,20 @@ VImage::remainder_const(std::vector<double> c, VOption *options) const
 			->set("in", *this)
 			->set("out", &out)
 			->set("c", c));
+
+	return out;
+}
+
+VImage
+VImage::remosaic(const char *old_str, const char *new_str, VOption *options) const
+{
+	VImage out;
+
+	call("remosaic", (options ? options : VImage::option())
+			->set("in", *this)
+			->set("out", &out)
+			->set("old_str", old_str)
+			->set("new_str", new_str));
 
 	return out;
 }
@@ -3159,6 +3260,20 @@ VImage::scharr(VOption *options) const
 	call("scharr", (options ? options : VImage::option())
 			->set("in", *this)
 			->set("out", &out));
+
+	return out;
+}
+
+VImage
+VImage::sdf(int width, int height, VipsSdfShape shape, VOption *options)
+{
+	VImage out;
+
+	call("sdf", (options ? options : VImage::option())
+			->set("out", &out)
+			->set("width", width)
+			->set("height", height)
+			->set("shape", shape));
 
 	return out;
 }

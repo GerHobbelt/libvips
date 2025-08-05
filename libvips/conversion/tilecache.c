@@ -129,9 +129,8 @@ typedef struct _VipsBlockCache {
 	gboolean threaded;
 	gboolean persistent;
 
-	int ntiles;		   /* Current cache size */
-	GMutex *lock;	   /* Lock everything here */
-	GCond *new_tile;   /* A new tile is ready */
+	GMutex lock;	   /* Lock everything here */
+	GCond new_tile;	   /* A new tile is ready */
 	GHashTable *tiles; /* Tiles, hashed by coordinates */
 	GQueue *recycle;   /* Queue of unreffed tiles to reuse */
 } VipsBlockCache;
@@ -154,13 +153,22 @@ vips_block_cache_drop_all(VipsBlockCache *cache)
 }
 
 static void
+vips_block_cache_finalize(GObject *gobject)
+{
+	VipsBlockCache *cache = (VipsBlockCache *) gobject;
+
+	g_mutex_clear(&cache->lock);
+	g_cond_clear(&cache->new_tile);
+
+	G_OBJECT_CLASS(vips_block_cache_parent_class)->finalize(gobject);
+}
+
+static void
 vips_block_cache_dispose(GObject *gobject)
 {
 	VipsBlockCache *cache = (VipsBlockCache *) gobject;
 
 	vips_block_cache_drop_all(cache);
-	VIPS_FREEF(vips_g_mutex_free, cache->lock);
-	VIPS_FREEF(vips_g_cond_free, cache->new_tile);
 
 	if (cache->tiles)
 		g_assert(g_hash_table_size(cache->tiles) == 0);
@@ -213,8 +221,6 @@ vips_tile_new(VipsBlockCache *cache, int x, int y)
 	tile->pos.height = cache->tile_height;
 	g_hash_table_insert(cache->tiles, &tile->pos, tile);
 	g_queue_push_tail(tile->cache->recycle, tile);
-	g_assert(cache->ntiles >= 0);
-	cache->ntiles += 1;
 
 	if (!(tile->region = vips_region_new(cache->in))) {
 		g_hash_table_remove(cache->tiles, &tile->pos);
@@ -223,7 +229,7 @@ vips_tile_new(VipsBlockCache *cache, int x, int y)
 
 	vips__region_no_ownership(tile->region);
 
-	if (vips_tile_move(tile, x, y)) {
+	if (vips_region_buffer(tile->region, &tile->pos)) {
 		g_hash_table_remove(cache->tiles, &tile->pos);
 		return NULL;
 	}
@@ -291,7 +297,7 @@ vips_tile_find(VipsBlockCache *cache, int x, int y)
 	/* VipsBlockCache not full?
 	 */
 	if (cache->max_tiles == -1 ||
-		cache->ntiles < cache->max_tiles) {
+		g_hash_table_size(cache->tiles) < cache->max_tiles) {
 		VIPS_DEBUG_MSG_RED(
 			"vips_tile_find: making new tile at %d x %d\n", x, y);
 		if (!(tile = vips_tile_new(cache, x, y)))
@@ -345,14 +351,14 @@ vips_block_cache_minimise(VipsImage *image, VipsBlockCache *cache)
 {
 	VIPS_DEBUG_MSG("vips_block_cache_minimise:\n");
 
-	g_mutex_lock(cache->lock);
+	g_mutex_lock(&cache->lock);
 
 	/* We can't drop tiles that are in use.
 	 */
 	g_hash_table_foreach_remove(cache->tiles,
 		vips_tile_unlocked, NULL);
 
-	g_mutex_unlock(cache->lock);
+	g_mutex_unlock(&cache->lock);
 }
 
 static int
@@ -387,6 +393,7 @@ vips_block_cache_class_init(VipsBlockCacheClass *class)
 
 	VIPS_DEBUG_MSG("vips_block_cache_class_init\n");
 
+	gobject_class->finalize = vips_block_cache_finalize;
 	gobject_class->dispose = vips_block_cache_dispose;
 	gobject_class->set_property = vips_object_set_property;
 	gobject_class->get_property = vips_object_get_property;
@@ -467,8 +474,6 @@ vips_tile_destroy(VipsTile *tile)
 	g_assert(g_queue_find(tile->cache->recycle, tile));
 	g_queue_remove(cache->recycle, tile);
 
-	cache->ntiles -= 1;
-	g_assert(cache->ntiles >= 0);
 	tile->cache = NULL;
 
 	VIPS_UNREF(tile->region);
@@ -486,9 +491,8 @@ vips_block_cache_init(VipsBlockCache *cache)
 	cache->threaded = FALSE;
 	cache->persistent = FALSE;
 
-	cache->ntiles = 0;
-	cache->lock = vips_g_mutex_new();
-	cache->new_tile = vips_g_cond_new();
+	g_mutex_init(&cache->lock);
+	g_cond_init(&cache->new_tile);
 	cache->tiles = g_hash_table_new_full(
 		(GHashFunc) vips_rect_hash,
 		(GEqualFunc) vips_rect_equal,
@@ -621,7 +625,7 @@ vips_tile_cache_gen(VipsRegion *out_region,
 
 	VIPS_GATE_START("vips_tile_cache_gen: wait1");
 
-	vips__worker_lock(cache->lock);
+	vips__worker_lock(&cache->lock);
 
 	VIPS_GATE_STOP("vips_tile_cache_gen: wait1");
 
@@ -680,7 +684,7 @@ vips_tile_cache_gen(VipsRegion *out_region,
 				 * mode, we keep the lock and make 'em wait.
 				 */
 				if (cache->threaded)
-					g_mutex_unlock(cache->lock);
+					g_mutex_unlock(&cache->lock);
 
 				/* Don't compute if we've seen an error
 				 * previously.
@@ -694,7 +698,7 @@ vips_tile_cache_gen(VipsRegion *out_region,
 				if (cache->threaded) {
 					VIPS_GATE_START("vips_tile_cache_gen: wait2");
 
-					g_mutex_lock(cache->lock);
+					g_mutex_lock(&cache->lock);
 
 					VIPS_GATE_STOP("vips_tile_cache_gen: wait2");
 				}
@@ -711,7 +715,7 @@ vips_tile_cache_gen(VipsRegion *out_region,
 						"vips_tile_cache_gen: error on tile %p\n",
 						tile);
 
-					g_warning(_("error in tile %d x %d"),
+					g_warning("error in tile %d x %d",
 						tile->pos.left, tile->pos.top);
 
 					vips_region_black(tile->region);
@@ -724,7 +728,7 @@ vips_tile_cache_gen(VipsRegion *out_region,
 				/* Let everyone know there's a new DATA tile.
 				 * They need to all check their work lists.
 				 */
-				g_cond_broadcast(cache->new_tile);
+				g_cond_broadcast(&cache->new_tile);
 
 				break;
 			}
@@ -747,7 +751,7 @@ vips_tile_cache_gen(VipsRegion *out_region,
 
 			VIPS_GATE_START("vips_tile_cache_gen: wait3");
 
-			vips__worker_cond_wait(cache->new_tile, cache->lock);
+			vips__worker_cond_wait(&cache->new_tile, &cache->lock);
 
 			VIPS_GATE_STOP("vips_tile_cache_gen: wait3");
 
@@ -755,7 +759,7 @@ vips_tile_cache_gen(VipsRegion *out_region,
 		}
 	}
 
-	g_mutex_unlock(cache->lock);
+	g_mutex_unlock(&cache->lock);
 
 	return result;
 }
@@ -826,42 +830,43 @@ vips_tile_cache_init(VipsTileCache *cache)
  * vips_tilecache: (method)
  * @in: input image
  * @out: (out): output image
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Optional arguments:
  *
- * * @tile_width: width of tiles in cache
- * * @tile_height: height of tiles in cache
- * * @max_tiles: maximum number of tiles to cache
- * * @access: hint expected access pattern #VipsAccess
- * * @threaded: allow many threads
- * * @persistent: don't drop cache at end of computation
- *
- * This operation behaves rather like vips_copy() between images
+ * This operation behaves rather like [method@Image.copy] between images
  * @in and @out, except that it keeps a cache of computed pixels.
  * This cache is made of up to @max_tiles tiles (a value of -1
  * means any number of tiles), and each tile is of size @tile_width
  * by @tile_height pixels.
  *
  * Each cache tile is made with a single call to
- * vips_region_prepare().
+ * [method@Region.prepare].
  *
  * When the cache fills, a tile is chosen for reuse. If @access is
- * #VIPS_ACCESS_RANDOM, then the least-recently-used tile is reused. If
- * @access is #VIPS_ACCESS_SEQUENTIAL
+ * [enum@Vips.Access.RANDOM], then the least-recently-used tile is reused. If
+ * @access is [enum@Vips.Access.SEQUENTIAL]
  * the top-most tile is reused.
  *
  * By default, @tile_width and @tile_height are 128 pixels, and the operation
- * will cache up to 1,000 tiles. @access defaults to #VIPS_ACCESS_RANDOM.
+ * will cache up to 1,000 tiles. @access defaults to [enum@Vips.Access.RANDOM].
  *
  * Normally, only a single thread at once is allowed to calculate tiles. If
- * you set @threaded to %TRUE, vips_tilecache() will allow many threads to
- * calculate tiles at once, and share the cache between them.
+ * you set @threaded to `TRUE`, [method@Image.tilecache] will allow many
+ * threads to calculate tiles at once, and share the cache between them.
  *
  * Normally the cache is dropped when computation finishes. Set @persistent to
- * %TRUE to keep the cache between computations.
+ * `TRUE` to keep the cache between computations.
  *
- * See also: vips_cache(), vips_linecache().
+ * ::: tip "Optional arguments"
+ *     * @tile_width: `gint`, width of tiles in cache
+ *     * @tile_height: `gint`, height of tiles in cache
+ *     * @max_tiles: `gint`, maximum number of tiles to cache
+ *     * @access: [enum@Access], hint expected access pattern
+ *     * @threaded: `gboolean`, allow many threads
+ *     * @persistent: `gboolean`, don't drop cache at end of computation
+ *
+ * ::: seealso
+ *     [method@Image.linecache].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -895,7 +900,7 @@ vips_line_cache_gen(VipsRegion *out_region,
 
 	VIPS_GATE_START("vips_line_cache_gen: wait");
 
-	vips__worker_lock(block_cache->lock);
+	vips__worker_lock(&block_cache->lock);
 
 	VIPS_GATE_STOP("vips_line_cache_gen: wait");
 
@@ -903,13 +908,13 @@ vips_line_cache_gen(VipsRegion *out_region,
 	 */
 	if (out_region->valid.height >
 		block_cache->max_tiles * block_cache->tile_height) {
-		block_cache->max_tiles =
+		block_cache->max_tiles = // FIXME: Invalidates operation cache
 			1 + (out_region->valid.height / block_cache->tile_height);
 		VIPS_DEBUG_MSG("vips_line_cache_gen: bumped max_tiles to %d\n",
 			block_cache->max_tiles);
 	}
 
-	g_mutex_unlock(block_cache->lock);
+	g_mutex_unlock(&block_cache->lock);
 
 	return vips_tile_cache_gen(out_region, seq, a, b, stop);
 }
@@ -928,7 +933,7 @@ vips_line_cache_build(VipsObject *object)
 	VIPS_DEBUG_MSG("vips_line_cache_build\n");
 
 	if (!vips_object_argument_isset(object, "access"))
-		block_cache->access = VIPS_ACCESS_SEQUENTIAL;
+		block_cache->access = VIPS_ACCESS_SEQUENTIAL; // FIXME: Invalidates operation cache
 
 	if (VIPS_OBJECT_CLASS(vips_line_cache_parent_class)->build(object))
 		return -1;
@@ -937,7 +942,7 @@ vips_line_cache_build(VipsObject *object)
 	 */
 	vips_get_tile_size(block_cache->in,
 		&tile_width, &tile_height, &n_lines);
-	block_cache->tile_width = block_cache->in->Xsize;
+	block_cache->tile_width = block_cache->in->Xsize; // FIXME: Invalidates operation cache
 
 	/* Output has two buffers n_lines height, so 2 * n_lines is the maximum
 	 * non-locality from threading. Double again for conv, rounding, etc.
@@ -947,7 +952,7 @@ vips_line_cache_build(VipsObject *object)
 	 * minimum of two strips, so we can handle requests that straddle a
 	 * tile boundary.
 	 */
-	block_cache->max_tiles = VIPS_MAX(2,
+	block_cache->max_tiles = VIPS_MAX(2, // FIXME: Invalidates operation cache
 		4 * n_lines / block_cache->tile_height);
 
 	VIPS_DEBUG_MSG("vips_line_cache_build: n_lines = %d\n",
@@ -999,36 +1004,35 @@ vips_line_cache_init(VipsLineCache *cache)
  * vips_linecache: (method)
  * @in: input image
  * @out: (out): output image
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Optional arguments:
- *
- * * @access: hint expected access pattern #VipsAccess
- * * @tile_height: height of tiles in cache
- * * @threaded: allow many threads
- *
- * This operation behaves rather like vips_copy() between images
+ * This operation behaves rather like [method@Image.copy] between images
  * @in and @out, except that it keeps a cache of computed scanlines.
  *
  * The number of lines cached is enough for a small amount of non-local
  * access.
  *
- * Each cache tile is made with a single call to
- * vips_region_prepare().
+ * Each cache tile is made with a single call to [method@Region.prepare].
  *
  * When the cache fills, a tile is chosen for reuse. If @access is
- * #VIPS_ACCESS_RANDOM, then the least-recently-used tile is reused. If
- * @access is #VIPS_ACCESS_SEQUENTIAL, then
- * the top-most tile is reused. @access defaults to #VIPS_ACCESS_RANDOM.
+ * [enum@Vips.Access.RANDOM], then the least-recently-used tile is reused. If
+ * @access is [enum@Vips.Access.SEQUENTIAL], then
+ * the top-most tile is reused. @access defaults to [enum@Vips.Access.RANDOM].
  *
  * @tile_height can be used to set the size of the strips that
- * vips_linecache() uses. The default is 1 (a single scanline).
+ * [method@Image.linecache] uses. The default is 1 (a single scanline).
  *
  * Normally, only a single thread at once is allowed to calculate tiles. If
- * you set @threaded to %TRUE, vips_linecache() will allow many threads to
- * calculate tiles at once and share the cache between them.
+ * you set @threaded to `TRUE`, [method@Image.linecache] will allow many
+ * threads to calculate tiles at once and share the cache between them.
  *
- * See also: vips_cache(), vips_tilecache().
+ * ::: tip "Optional arguments"
+ *     * @access: [enum@Access], hint expected access pattern
+ *     * @tile_height: `gint`, height of tiles in cache
+ *     * @threaded: `gboolean`, allow many threads
+ *
+ * ::: seealso
+ *     [method@Image.tilecache].
  *
  * Returns: 0 on success, -1 on error.
  */

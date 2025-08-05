@@ -454,7 +454,7 @@ vips_mosaic1_build(VipsObject *object)
 		return -1;
 
 	if (!mosaic1->interpolate)
-		mosaic1->interpolate = vips_interpolate_new("bilinear");
+		mosaic1->interpolate = vips_interpolate_new("bilinear"); // FIXME: Invalidates operation cache
 
 	jfn = mosaic1->direction == VIPS_DIRECTION_HORIZONTAL
 		? vips__lrmerge1
@@ -626,7 +626,7 @@ vips_mosaic1_init(VipsMosaic1 *mosaic1)
 }
 
 /**
- * vips_mosaic1:
+ * vips_mosaic1: (method)
  * @ref: reference image
  * @sec: secondary image
  * @out: output image
@@ -639,31 +639,23 @@ vips_mosaic1_init(VipsMosaic1 *mosaic1)
  * @yr2: second reference tie-point
  * @xs2: second secondary tie-point
  * @ys2: second secondary tie-point
- * @...: %NULL-terminated list of optional named arguments
- *
- * Optional arguments:
- *
- * * @search: search to improve tie-points
- * * @hwindow: half window size
- * * @harea: half search size
- * * @interpolate: interpolate pixels with this
- * * @mblend: maximum blend size
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * This operation joins two images top-bottom (with @sec on the right)
  * or left-right (with @sec at the bottom)
  * given an approximate pair of tie-points. @sec is scaled and rotated as
  * necessary before the join.
  *
- * If @search is %TRUE, before performing the transformation, the tie-points
+ * If @search is `TRUE`, before performing the transformation, the tie-points
  * are improved by searching an area of @sec of size @harea for a
  * object of size @hwindow in @ref.
  *
- * @mblend limits  the  maximum size of the
- * blend area.  A value of "-1" means "unlimited". The two images are blended
+ * @mblend limits the maximum size of the
+ * blend area. A value of "-1" means "unlimited". The two images are blended
  * with a raised cosine.
  *
  * Pixels with all bands equal to zero are "transparent", that
- * is, zero pixels in the overlap area do not  contribute  to  the  merge.
+ * is, zero pixels in the overlap area do not contribute to the merge.
  * This makes it possible to join non-rectangular images.
  *
  * If the number of bands differs, one of the images
@@ -673,9 +665,17 @@ vips_mosaic1_init(VipsMosaic1 *mosaic1)
  *
  * The two input images are cast up to the smallest common type (see table
  * Smallest common format in
- * <link linkend="libvips-arithmetic">arithmetic</link>).
+ * [arithmetic](libvips-arithmetic.html)).
  *
- * See also: vips_merge(), vips_insert(), vips_globalbalance().
+ * ::: tip "Optional arguments"
+ *     * @search: `gboolean`, search to improve tie-points
+ *     * @hwindow: `gint`, half window size
+ *     * @harea: `gint`, half search size
+ *     * @interpolate: [class@Interpolate], interpolate pixels with this
+ *     * @mblend: `gint`, maximum blend size
+ *
+ * ::: seealso
+ *     [method@Image.merge], [method@Image.insert], [method@Image.globalbalance].
  *
  * Returns: 0 on success, -1 on error
  */

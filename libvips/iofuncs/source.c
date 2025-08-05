@@ -74,6 +74,46 @@
 #include <vips/debug.h>
 #include <vips/internal.h>
 
+/**
+ * VipsSource:
+ *
+ * A [class@Source] provides a unified interface for reading, seeking, and
+ * mapping data, regardless of the underlying source type.
+ *
+ * This source can originate from something like a socket, file or memory
+ * area.
+ *
+ * During the header phase, we save data from unseekable sources in a buffer
+ * so readers can rewind and read again. We don't buffer data during the
+ * decode stage.
+ */
+
+/**
+ * VipsSourceCustom:
+ *
+ * Subclass of [class@Source] with action signals for handlers.
+ *
+ * This is supposed to be useful for language bindings.
+ */
+
+/**
+ * VipsTarget:
+ *
+ * A [class@Target] provides a unified interface for writing data to various
+ * output destinations.
+ *
+ * This target could be a socket, file, memory area, or any other destination
+ * that accepts byte data.
+ */
+
+/**
+ * VipsTargetCustom:
+ *
+ * Subclass of [class@Target] with action signals for handlers.
+ *
+ * This is supposed to be useful for language bindings.
+ */
+
 #define MODE_READ CLOEXEC(BINARYIZE(O_RDONLY))
 
 /* -1 on a pipe isn't actually unbounded. Have a limit to prevent
@@ -92,13 +132,14 @@ static gint64 vips__pipe_read_limit = 1024 * 1024 * 1024;
  * automatically read into memory to EOF before the loader starts. This can
  * produce high memory use if the descriptor represents a large object.
  *
- * Use vips_pipe_read_limit_set() to limit the size of object that
+ * Use [func@pipe_read_limit_set] to limit the size of object that
  * will be read in this way. The default is 1GB.
  *
  * Set a value of -1 to mean no limit.
  *
- * See also: `--vips-pipe-read-limit` and the environment variable
- * `VIPS_PIPE_READ_LIMIT`.
+ * ::: seealso
+ *     `--vips-pipe-read-limit` and the environment variable
+ *     `VIPS_PIPE_READ_LIMIT`.
  */
 void
 vips_pipe_read_limit_set(gint64 limit)
@@ -336,7 +377,7 @@ vips_source_seek_real(VipsSource *source, gint64 offset, int whence)
 	VIPS_DEBUG_MSG("vips_source_seek_real:\n");
 
 	/* Like _read_real(), we must not set a vips_error. We need to use the
-	 * vips__seek() wrapper so we can seek long files on Windows.
+	 * vips__seek wrapper so we can seek long files on Windows.
 	 */
 	if (connection->descriptor != -1)
 		return vips__seek_no_error(connection->descriptor, offset, whence);
@@ -383,7 +424,7 @@ vips_source_init(VipsSource *source)
  * @descriptor: read from this file descriptor
  *
  * Create an source attached to a file descriptor. @descriptor is
- * closed with close() when source is finalized.
+ * closed with [`close()`](man:close(2)) when source is finalized.
  *
  * Returns: a new source.
  */
@@ -411,16 +452,16 @@ vips_source_new_from_descriptor(int descriptor)
 
 /**
  * vips_source_new_from_file:
- * @descriptor: read from this filename
+ * @filename: read from this filename
  *
- * Create an source attached to a file.
+ * Create a source attached to a file.
  *
  * If this descriptor does not support mmap and the source is
  * used with a loader that can only work from memory, then the data will be
  * automatically read into memory to EOF before the loader starts. This can
  * produce high memory use if the descriptor represents a large object.
  *
- * Use vips_pipe_read_limit_set() to limit the size of object that
+ * Use [func@pipe_read_limit_set] to limit the size of object that
  * will be read in this way. The default is 1GB.
  *
  * Returns: a new source.
@@ -582,7 +623,7 @@ vips_source_new_from_options(const char *options)
  * @source: source to operate on
  *
  * Minimise the source. As many resources as can be safely removed are
- * removed. Use vips_source_unminimise() to restore the source if you wish to
+ * removed. Use [method@Source.unminimise] to restore the source if you wish to
  * use it again.
  *
  * Loaders should call this in response to the minimise signal on their output
@@ -622,7 +663,8 @@ vips_source_minimise(VipsSource *source)
  * Restore the source after minimisation. This is called at the start
  * of every source method, so loaders should not usually need this.
  *
- * See also: vips_source_minimise().
+ * ::: seealso
+ *     [method@Source.minimise].
  *
  * Returns: 0 on success, or -1 on error.
  */
@@ -680,7 +722,8 @@ vips_source_unminimise(VipsSource *source)
  *
  * Loaders should call this at the end of header read.
  *
- * See also: vips_source_unminimise().
+ * ::: seealso
+ *     [method@Source.unminimise].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -719,8 +762,7 @@ vips_source_print(VipsSource *source)
 	printf("  source->data = %p\n", source->data);
 	printf("  source->header_bytes = %p\n", source->header_bytes);
 	if (source->header_bytes)
-		printf("  source->header_bytes->len = %d\n",
-			source->header_bytes->len);
+		printf("  source->header_bytes->len = %d\n", source->header_bytes->len);
 	printf("  source->sniff = %p\n", source->sniff);
 	if (source->sniff)
 		printf("  source->sniff->len = %d\n", source->sniff->len);
@@ -737,7 +779,7 @@ vips_source_print(VipsSource *source)
  * Return the number of bytes actually read. If all bytes have been read from
  * the file, return 0.
  *
- * Arguments exactly as read(2).
+ * Arguments exactly as [`read()`](man:read(2)).
  *
  * Returns: the number of bytes read, 0 on end of file, -1 on error.
  */
@@ -981,10 +1023,10 @@ vips_source_descriptor_to_memory(VipsSource *source)
  * @source: source to operate on
  *
  * Some sources can be efficiently mapped into memory.
- * You can still use vips_source_map() if this function returns %FALSE,
+ * You can still use [method@Source.map] if this function returns `FALSE`,
  * but it will be slow.
  *
- * Returns: %TRUE if the source can be efficiently mapped into memory.
+ * Returns: `TRUE` if the source can be efficiently mapped into memory.
  */
 gboolean
 vips_source_is_mappable(VipsSource *source)
@@ -1007,13 +1049,13 @@ vips_source_is_mappable(VipsSource *source)
  * @source: source to operate on
  *
  * Test if this source is a simple file with support for seek. Named pipes,
- * for example, will fail this test. If TRUE, you can use
- * vips_connection_filename() to find the filename.
+ * for example, will fail this test. If `TRUE`, you can use
+ * [method@Connection.filename] to find the filename.
  *
  * Use this to add basic source support for older loaders which can only work
  * on files.
  *
- * Returns: %TRUE if the source is a simple file.
+ * Returns: `TRUE` if the source is a simple file.
  */
 gboolean
 vips_source_is_file(VipsSource *source)
@@ -1031,20 +1073,20 @@ vips_source_is_file(VipsSource *source)
 /**
  * vips_source_map:
  * @source: source to operate on
- * @length_out: return the file length here, or NULL
+ * @length: return the file length here, or `NULL`
  *
  * Map the source entirely into memory and return a pointer to the
- * start. If @length_out is non-NULL, the source size is written to it.
+ * start. If @length is non-NULL, the source size is written to it.
  *
- * This operation can take a long time. Use vips_source_is_mappable() to
+ * This operation can take a long time. Use [method@Source.is_mappable] to
  * check if a source can be mapped efficiently.
  *
  * The pointer is valid for as long as @source is alive.
  *
- * Returns: a pointer to the start of the file contents, or NULL on error.
+ * Returns: a pointer to the start of the file contents, or `NULL` on error.
  */
 const void *
-vips_source_map(VipsSource *source, size_t *length_out)
+vips_source_map(VipsSource *source, size_t *length)
 {
 	VIPS_DEBUG_MSG("vips_source_map:\n");
 
@@ -1071,12 +1113,12 @@ vips_source_map(VipsSource *source, size_t *length_out)
 
 	/* We don't know the length and must read and assemble in chunks.
 	 */
-	if (!source->data &&
+	if (source->is_pipe &&
 		vips_source_pipe_read_to_position(source, -1))
 		return NULL;
 
-	if (length_out)
-		*length_out = source->length;
+	if (length)
+		*length = source->length;
 
 	SANITY(source);
 
@@ -1097,10 +1139,10 @@ vips_source_map_cb(void *a, VipsArea *area)
  * vips_source_map_blob:
  * @source: source to operate on
  *
- * Just like vips_source_map(), but return a #VipsBlob containing the
+ * Just like [method@Source.map], but return a [struct@Blob] containing the
  * pointer. @source will stay alive as long as the result is alive.
  *
- * Returns: a new #VipsBlob containing the data, or NULL on error.
+ * Returns: a new [struct@Blob] containing the data, or `NULL` on error.
  */
 VipsBlob *
 vips_source_map_blob(VipsSource *source)
@@ -1128,7 +1170,7 @@ vips_source_map_blob(VipsSource *source)
  * @whence: seek relative to this point
  *
  * Move the file read position. You can't call this after pixel decode starts.
- * The arguments are exactly as lseek(2).
+ * The arguments are exactly as [`lseek()`](man:lseek(2)).
  *
  * Returns: the new file position, or -1 on error.
  */
@@ -1208,8 +1250,7 @@ vips_source_seek(VipsSource *source, gint64 offset, int whence)
 	 */
 	if (new_pos < 0 ||
 		(source->length != -1 && new_pos > source->length)) {
-		vips_error(nick,
-			_("bad seek to %" G_GINT64_FORMAT), new_pos);
+		vips_error(nick, _("bad seek to %" G_GINT64_FORMAT), new_pos);
 		return -1;
 	}
 
@@ -1339,9 +1380,9 @@ vips_source_sniff_at_most(VipsSource *source,
  * @length: number of bytes to sniff
  *
  * Return a pointer to the first few bytes of the file. If the file is too
- * short, return NULL.
+ * short, return `NULL`.
  *
- * Returns: a pointer to the bytes at the start of the file, or NULL on error.
+ * Returns: a pointer to the bytes at the start of the file, or `NULL` on error.
  */
 unsigned char *
 vips_source_sniff(VipsSource *source, size_t length)

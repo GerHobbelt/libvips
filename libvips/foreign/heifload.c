@@ -350,10 +350,21 @@ vips_foreign_load_heif_build(VipsObject *object)
 		struct heif_error error;
 
 		heif->ctx = heif_context_alloc();
-#ifdef HAVE_HEIF_SET_MAX_IMAGE_SIZE_LIMIT
+		/* heifsave is limited to a maximum image size of 16384x16384,
+		 * so align the heifload defaults accordingly.
+		 */
 		heif_context_set_maximum_image_size_limit(heif->ctx,
 			heif->unlimited ? USHRT_MAX : 0x4000);
-#endif /* HAVE_HEIF_SET_MAX_IMAGE_SIZE_LIMIT */
+#ifdef HAVE_HEIF_MAX_TOTAL_MEMORY
+		if (!heif->unlimited)
+			heif_context_get_security_limits(heif->ctx)
+				->max_total_memory = 2UL * 1024 * 1024 * 1024;
+#endif /* HAVE_HEIF_MAX_TOTAL_MEMORY */
+#ifdef HAVE_HEIF_GET_DISABLED_SECURITY_LIMITS
+		if (heif->unlimited)
+			heif_context_set_security_limits(heif->ctx,
+				heif_get_disabled_security_limits());
+#endif /* HAVE_HEIF_GET_DISABLED_SECURITY_LIMITS */
 		error = heif_context_read_from_reader(heif->ctx,
 			heif->reader, heif, NULL);
 		if (error.code) {
@@ -362,10 +373,8 @@ vips_foreign_load_heif_build(VipsObject *object)
 		}
 	}
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_load_heif_parent_class)->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_load_heif_parent_class)
+		->build(object);
 }
 
 static const char *heif_magic[] = {
@@ -557,6 +566,7 @@ vips_foreign_load_heif_set_header(VipsForeignLoadHeif *heif, VipsImage *out)
 	VipsForeignHeifCompression compression;
 	VipsInterpretation interpretation;
 	VipsBandFormat format;
+	const unsigned char *brand_data;
 
 	/* We take the metadata from the non-thumbnail first page. HEIC
 	 * thumbnails don't have metadata.
@@ -627,11 +637,11 @@ vips_foreign_load_heif_set_header(VipsForeignLoadHeif *heif, VipsImage *out)
 		 * For XMP, the content type is "application/rdf+xml".
 		 */
 		if (g_ascii_strcasecmp(type, "exif") == 0)
-			vips_snprintf(name, 256, VIPS_META_EXIF_NAME);
+			g_snprintf(name, 256, VIPS_META_EXIF_NAME);
 		else if (g_ascii_strcasecmp(content_type, "application/rdf+xml") == 0)
-			vips_snprintf(name, 256, VIPS_META_XMP_NAME);
+			g_snprintf(name, 256, VIPS_META_XMP_NAME);
 		else
-			vips_snprintf(name, 256, "heif-%s-%d", type, i);
+			g_snprintf(name, 256, "heif-%s-%d", type, i);
 
 		vips_image_set_blob(out, name,
 			(VipsCallbackFn) vips_area_free_cb, data, length);
@@ -650,7 +660,6 @@ vips_foreign_load_heif_set_header(VipsForeignLoadHeif *heif, VipsImage *out)
 	 */
 	vips_autorot_remove_angle(out);
 
-#ifdef HAVE_HEIF_COLOR_PROFILE
 	enum heif_color_profile_type profile_type =
 		heif_image_handle_get_color_profile_type(heif->handle);
 
@@ -710,7 +719,6 @@ vips_foreign_load_heif_set_header(VipsForeignLoadHeif *heif, VipsImage *out)
 	else if (profile_type == heif_color_profile_type_nclx) {
 		g_info("heifload: ignoring nclx profile");
 	}
-#endif /*HAVE_HEIF_COLOR_PROFILE*/
 
 	vips_image_set_int(out, "heif-primary", heif->primary_page);
 	vips_image_set_int(out, VIPS_META_N_PAGES, heif->n_top);
@@ -725,20 +733,13 @@ vips_foreign_load_heif_set_header(VipsForeignLoadHeif *heif, VipsImage *out)
 	 * were added in v1.7.
 	 */
 	compression = VIPS_FOREIGN_HEIF_COMPRESSION_HEVC;
-
-#ifdef HAVE_HEIF_AVIF
-	{
-		const unsigned char *brand_data;
-
-		if ((brand_data = vips_source_sniff(heif->source, 12))) {
-			enum heif_brand brand;
-			brand = heif_main_brand(brand_data, 12);
-			if (brand == heif_avif ||
-				brand == heif_avis)
-				compression = VIPS_FOREIGN_HEIF_COMPRESSION_AV1;
-		}
+	if ((brand_data = vips_source_sniff(heif->source, 12))) {
+		enum heif_brand brand;
+		brand = heif_main_brand(brand_data, 12);
+		if (brand == heif_avif ||
+			brand == heif_avis)
+			compression = VIPS_FOREIGN_HEIF_COMPRESSION_AV1;
 	}
-#endif /*HAVE_HEIF_AVIF*/
 
 	vips_image_set_string(out, "heif-compression",
 		vips_enum_nick(VIPS_TYPE_FOREIGN_HEIF_COMPRESSION,
@@ -810,10 +811,10 @@ vips_foreign_load_heif_header(VipsForeignLoad *load)
 	 */
 	if (!vips_object_argument_isset(VIPS_OBJECT(load), "page") &&
 		!vips_object_argument_isset(VIPS_OBJECT(load), "n"))
-		heif->page = heif->primary_page;
+		heif->page = heif->primary_page; // FIXME: Invalidates operation cache
 
 	if (heif->n == -1)
-		heif->n = heif->n_top - heif->page;
+		heif->n = heif->n_top - heif->page; // FIXME: Invalidates operation cache
 	if (heif->page < 0 ||
 		heif->n <= 0 ||
 		heif->page + heif->n > heif->n_top) {
@@ -909,10 +910,8 @@ vips_foreign_load_heif_header(VipsForeignLoad *load)
 		printf("    n_metadata = %d\n",
 			heif_image_handle_get_number_of_metadata_blocks(
 				heif->handle, NULL));
-#ifdef HAVE_HEIF_COLOR_PROFILE
 		printf("    colour profile type = 0x%xd\n",
 			heif_image_handle_get_color_profile_type(heif->handle));
-#endif /*HAVE_HEIF_COLOR_PROFILE*/
 	}
 #endif /*DEBUG*/
 
@@ -993,7 +992,7 @@ vips_foreign_load_heif_generate(VipsRegion *out_region,
 	}
 
 	memcpy(VIPS_REGION_ADDR(out_region, 0, r->top),
-		heif->data + heif->stride * line,
+		heif->data + (size_t) heif->stride * line,
 		VIPS_IMAGE_SIZEOF_LINE(out_region->im));
 
 	/* We may need to swap bytes and shift to fill 16 bits.
@@ -1107,12 +1106,14 @@ vips_foreign_load_heif_class_init(VipsForeignLoadHeifClass *class)
 		G_STRUCT_OFFSET(VipsForeignLoadHeif, autorotate),
 		FALSE);
 
+#ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 	VIPS_ARG_BOOL(class, "unlimited", 22,
 		_("Unlimited"),
 		_("Remove all denial of service limits"),
 		VIPS_ARGUMENT_OPTIONAL_INPUT,
 		G_STRUCT_OFFSET(VipsForeignLoadHeif, unlimited),
 		FALSE);
+#endif
 }
 
 static gint64
@@ -1175,7 +1176,7 @@ vips_foreign_load_heif_wait_for_file_size(gint64 target_size, void *userdata)
 	result = vips_source_seek(heif->source, target_size, SEEK_SET);
 	vips_source_seek(heif->source, old_position, SEEK_SET);
 
-	if (result < 0)
+	if (result < 0 || old_position < 0)
 		/* Unable to seek to this point, so it's beyond EOF.
 		 */
 		status = heif_reader_grow_status_size_beyond_eof;
@@ -1229,11 +1230,8 @@ vips_foreign_load_heif_file_build(VipsObject *object)
 		!(heif->source = vips_source_new_from_file(file->filename)))
 		return -1;
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_load_heif_file_parent_class)
-			->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_load_heif_file_parent_class)
+		->build(object);
 }
 
 static int
@@ -1305,11 +1303,8 @@ vips_foreign_load_heif_buffer_build(VipsObject *object)
 			VIPS_AREA(buffer->buf)->length)))
 		return -1;
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_load_heif_file_parent_class)
-			->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_load_heif_buffer_parent_class)
+		->build(object);
 }
 
 static gboolean
@@ -1373,11 +1368,8 @@ vips_foreign_load_heif_source_build(VipsObject *object)
 		g_object_ref(heif->source);
 	}
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_load_heif_source_parent_class)
-			->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_load_heif_source_parent_class)
+		->build(object);
 }
 
 static gboolean

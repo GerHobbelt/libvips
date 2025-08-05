@@ -1,19 +1,9 @@
+# Headers that we install but neither introspect nor document.
 public_other_headers = files(
-    'buf.h',
-    'connection.h',
-    'dbuf.h',
     'debug.h',
     'format.h',
-    'gate.h',
-    'generate.h',
     'private.h',
-    'sbuf.h',
-    'semaphore.h',
-    'thread.h',
-    'threadpool.h',
     'transform.h',
-    'util.h',
-    'vector.h',
 )
 
 public_deprecated_headers = files(
@@ -33,14 +23,19 @@ endif
 public_headers = files(
     'arithmetic.h',
     'basic.h',
+    'buf.h',
     'colour.h',
+    'connection.h',
     'conversion.h',
     'convolution.h',
     'create.h',
+    'dbuf.h',
     'draw.h',
     'error.h',
     'foreign.h',
     'freqfilt.h',
+    'gate.h',
+    'generate.h',
     'header.h',
     'histogram.h',
     'image.h',
@@ -53,30 +48,44 @@ public_headers = files(
     'rect.h',
     'region.h',
     'resample.h',
+    'sbuf.h',
+    'semaphore.h',
+    'thread.h',
+    'threadpool.h',
     'type.h',
+    'util.h',
+    'vector.h',
     'vips.h',
 )
 
+enum_headers = files(
+    'resample.h',
+    'memory.h',
+    'create.h',
+    'foreign.h',
+    'arithmetic.h',
+    'conversion.h',
+    'util.h',
+    'image.h',
+    'colour.h',
+    'operation.h',
+    'convolution.h',
+    'morphology.h',
+    'draw.h',
+    'basic.h',
+    'object.h',
+    'region.h'
+)
+
+if get_option('deprecated')
+    enum_headers += files(
+        'almostdeprecated.h',
+    )
+endif
+
 enumtypes = gnome.mkenums(
     'enumtypes',
-    sources: files(
-        'resample.h',
-        'memory.h',
-        'create.h',
-        'foreign.h',
-        'arithmetic.h',
-        'conversion.h',
-        'util.h',
-        'image.h',
-        'colour.h',
-        'operation.h',
-        'convolution.h',
-        'morphology.h',
-        'draw.h',
-        'basic.h',
-        'object.h',
-        'region.h'
-    ),
+    sources: enum_headers,
     h_template: 'enumtypes.h.in',
     c_template: 'enumtypes.c.in',
     install_header: true,
@@ -86,8 +95,8 @@ enumtypes = gnome.mkenums(
 vips_verbose_config = []
 foreach _, section : build_summary
     foreach key, arr : section
-        if key.contains('gtk-doc') or \
-           key.contains('doxygen') or \
+        if key.contains('docs') or \
+           key.contains('cpp-docs') or \
            key.contains('introspection') or \
            key.contains('examples')
            continue
@@ -98,8 +107,11 @@ foreach _, section : build_summary
 endforeach
 foreach _, section : build_features
     foreach key, arr : section
+        dep_name = arr[0]
         found = arr[1].found()
-        dep_name = found ? arr[1].name() : arr[0]
+        if found and arr[1].type_name() != 'internal'
+            dep_name = arr[1].name()
+        endif
         dynamic_module = arr.length() > 2 ? ' (dynamic module: @0@)'.format(arr[2]) : ''
         vips_verbose_config += '@0@ with @1@: @2@@3@'.format(key, dep_name, found, dynamic_module)
     endforeach

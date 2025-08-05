@@ -482,7 +482,7 @@ vips_foreign_save_jp2k_sizeof_tile(VipsForeignSaveJp2k *jp2k, VipsRect *tile)
 			(double) tile->height / comp->dy);
 		;
 
-		size += output_width * output_height * sizeof_element;
+		size += (size_t) output_width * output_height * sizeof_element;
 	}
 
 	return size;
@@ -819,11 +819,14 @@ vips_foreign_save_jp2k_build(VipsObject *object)
 		return -1;
 	}
 
+	/* The "lossless" param implies no chroma subsampling.
+	 */
+	if (jp2k->lossless)
+		jp2k->subsample_mode = VIPS_FOREIGN_SUBSAMPLE_OFF;
+
 	switch (jp2k->subsample_mode) {
 	case VIPS_FOREIGN_SUBSAMPLE_AUTO:
-		jp2k->subsample =
-			!jp2k->lossless &&
-			jp2k->Q < 90 &&
+		jp2k->subsample = jp2k->Q < 90 &&
 			(save->ready->Type == VIPS_INTERPRETATION_sRGB ||
 				save->ready->Type == VIPS_INTERPRETATION_RGB16) &&
 			save->ready->Bands == 3;
@@ -962,7 +965,7 @@ vips_foreign_save_jp2k_class_init(VipsForeignSaveJp2kClass *class)
 
 	foreign_class->suffs = vips__jp2k_suffs;
 
-	save_class->saveable = VIPS_SAVEABLE_ANY;
+	save_class->saveable = VIPS_FOREIGN_SAVEABLE_ANY;
 
 	VIPS_ARG_INT(class, "tile_width", 11,
 		_("Tile width"),
@@ -1037,11 +1040,8 @@ vips_foreign_save_jp2k_file_build(VipsObject *object)
 	if (!(jp2k->target = vips_target_new_to_file(file->filename)))
 		return -1;
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_save_jp2k_file_parent_class)
-			->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_save_jp2k_file_parent_class)
+		->build(object);
 }
 
 static void
@@ -1155,11 +1155,8 @@ vips_foreign_save_jp2k_target_build(VipsObject *object)
 		g_object_ref(jp2k->target);
 	}
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_save_jp2k_target_parent_class)
-			->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_save_jp2k_target_parent_class)
+		->build(object);
 }
 
 static void
@@ -1438,17 +1435,10 @@ vips__foreign_save_jp2k_compress(VipsRegion *region,
  * vips_jp2ksave: (method)
  * @in: image to save
  * @filename: file to write to
- * @...: %NULL-terminated list of optional named arguments
- *
- * Optional arguments:
- *
- * * @Q: %gint, quality factor
- * * @lossless: %gboolean, enables lossless compression
- * * @tile_width: %gint for tile size
- * * @tile_height: %gint for tile size
- * * @subsample_mode: #VipsForeignSubsample, chroma subsampling mode
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Write a VIPS image to a file in JPEG2000 format.
+ *
  * The saver supports 8, 16 and 32-bit int pixel
  * values, signed and unsigned. It supports greyscale, RGB, CMYK and
  * multispectral images.
@@ -1467,7 +1457,15 @@ vips__foreign_save_jp2k_compress(VipsRegion *region,
  *
  * This operation always writes a pyramid.
  *
- * See also: vips_image_write_to_file(), vips_jp2kload().
+ * ::: tip "Optional arguments"
+ *     * @Q: `gint`, quality factor
+ *     * @lossless: `gboolean`, enables lossless compression
+ *     * @tile_width: `gint`, tile width
+ *     * @tile_height: `gint`, tile width
+ *     * @subsample_mode: [enum@ForeignSubsample], chroma subsampling mode
+ *
+ * ::: seealso
+ *     [method@Image.write_to_file], [ctor@Image.jp2kload].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -1489,19 +1487,19 @@ vips_jp2ksave(VipsImage *in, const char *filename, ...)
  * @in: image to save
  * @buf: (array length=len) (element-type guint8): return output buffer here
  * @len: (type gsize): return output length here
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Optional arguments:
+ * As [method@Image.jp2ksave], but save to a target.
  *
- * * @Q: %gint, quality factor
- * * @lossless: %gboolean, enables lossless compression
- * * @tile_width: %gint for tile size
- * * @tile_height: %gint for tile size
- * * @subsample_mode: #VipsForeignSubsample, chroma subsampling mode
+ * ::: tip "Optional arguments"
+ *     * @Q: `gint`, quality factor
+ *     * @lossless: `gboolean`, enables lossless compression
+ *     * @tile_width: `gint`, tile width
+ *     * @tile_height: `gint`, tile width
+ *     * @subsample_mode: [enum@ForeignSubsample], chroma subsampling mode
  *
- * As vips_jp2ksave(), but save to a target.
- *
- * See also: vips_jp2ksave(), vips_image_write_to_target().
+ * ::: seealso
+ *     [method@Image.jp2ksave], [method@Image.write_to_target].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -1537,19 +1535,19 @@ vips_jp2ksave_buffer(VipsImage *in, void **buf, size_t *len, ...)
  * vips_jp2ksave_target: (method)
  * @in: image to save
  * @target: save image to this target
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Optional arguments:
+ * As [method@Image.jp2ksave], but save to a target.
  *
- * * @Q: %gint, quality factor
- * * @lossless: %gboolean, enables lossless compression
- * * @tile_width: %gint for tile size
- * * @tile_height: %gint for tile size
- * * @subsample_mode: #VipsForeignSubsample, chroma subsampling mode
+ * ::: tip "Optional arguments"
+ *     * @Q: `gint`, quality factor
+ *     * @lossless: `gboolean`, enables lossless compression
+ *     * @tile_width: `gint`, tile width
+ *     * @tile_height: `gint`, tile width
+ *     * @subsample_mode: [enum@ForeignSubsample], chroma subsampling mode
  *
- * As vips_jp2ksave(), but save to a target.
- *
- * See also: vips_jp2ksave(), vips_image_write_to_target().
+ * ::: seealso
+ *     [method@Image.jp2ksave], [method@Image.write_to_target].
  *
  * Returns: 0 on success, -1 on error.
  */

@@ -166,7 +166,7 @@ vips_foreign_save_magick_next_image(VipsForeignSaveMagick *magick)
 		page_index = magick->position.top / magick->page_height;
 		if (page_index < magick->delays_length)
 			image->delay =
-				VIPS_RINT(magick->delays[page_index] / 10.0);
+				rint(magick->delays[page_index] / 10.0);
 	}
 
 	/* ImageMagick uses iterations like this (at least in gif save):
@@ -351,15 +351,15 @@ vips_foreign_save_magick_build(VipsObject *object)
 	}
 
 	if (magick->format) {
-		vips_strncpy(magick->image_info->magick,
+		g_strlcpy(magick->image_info->magick,
 			magick->format, MaxPathExtent);
 		if (magick->filename)
-			(void) vips_snprintf(magick->image_info->filename,
+			(void) g_snprintf(magick->image_info->filename,
 				MaxPathExtent, "%s:%s",
 				magick->format, magick->filename);
 	}
 	else if (magick->filename) {
-		vips_strncpy(magick->image_info->filename,
+		g_strlcpy(magick->image_info->filename,
 			magick->filename, MaxPathExtent);
 	}
 
@@ -475,7 +475,7 @@ vips_foreign_save_magick_class_init(VipsForeignSaveMagickClass *class)
 	foreign_class->priority = -100;
 	foreign_class->suffs = vips__save_magick_suffs;
 
-	save_class->saveable = VIPS_SAVEABLE_ANY;
+	save_class->saveable = VIPS_FOREIGN_SAVEABLE_ANY;
 	save_class->format_table = bandfmt_magick;
 
 	VIPS_ARG_STRING(class, "format", 2,
@@ -503,8 +503,7 @@ vips_foreign_save_magick_class_init(VipsForeignSaveMagickClass *class)
 		_("Optimize_gif_transparency"),
 		_("Apply GIF transparency optimization"),
 		VIPS_ARGUMENT_OPTIONAL_INPUT,
-		G_STRUCT_OFFSET(VipsForeignSaveMagick,
-			optimize_gif_transparency),
+		G_STRUCT_OFFSET(VipsForeignSaveMagick, optimize_gif_transparency),
 		FALSE);
 
 	VIPS_ARG_INT(class, "bitdepth", 6,

@@ -46,7 +46,6 @@
 #include <ctype.h>
 
 #include <vips/vips.h>
-#include <vips/vips7compat.h>
 #include <vips/internal.h>
 #include <vips/debug.h>
 #include <vips/transform.h>
@@ -80,7 +79,7 @@ im_filename_split(const char *path, char *name, char *mode)
 	char *p;
 	size_t len;
 
-	vips_strncpy(name, path, FILENAME_MAX);
+	g_strlcpy(name, path, FILENAME_MAX);
 	strcpy(mode, "");
 
 	if ((len = strlen(name)) == 0)
@@ -93,9 +92,9 @@ im_filename_split(const char *path, char *name, char *mode)
 			char *q;
 
 			/* We are skipping back over the file extension,
-			 * isalnum() is probably sufficient.
+			 * g_ascii_isalnum() is probably sufficient.
 			 */
-			for (q = p - 1; isalnum(*q) && q > name; q -= 1)
+			for (q = p - 1; g_ascii_isalnum(*q) && q > name; q -= 1)
 				;
 
 			if (*q == '.') {
@@ -121,7 +120,7 @@ im_filename_split(const char *path, char *name, char *mode)
 	 */
 	if (*p == ':' &&
 		p - name != 1) {
-		vips_strncpy(mode, p + 1, FILENAME_MAX);
+		g_strlcpy(mode, p + 1, FILENAME_MAX);
 		*p = '\0';
 	}
 }
@@ -766,7 +765,7 @@ im_wrapmany(IMAGE **in, IMAGE *out, im_wrapmany_fn fn, void *a, void *b)
 	bun->a = a;
 	bun->b = b;
 
-	/* Check descriptors --- make sure that our caller has done this
+	/* Check descriptors -- make sure that our caller has done this
 	 * correctly.
 	 */
 	for (i = 0; i < n; i++) {
@@ -5708,7 +5707,7 @@ im__insert_base(const char *domain,
  *
  * The two input images are cast up to the smallest common type (see table
  * Smallest common format in
- * <link linkend="VIPS-arithmetic">arithmetic</link>).
+ * [arithmetic](libvips-arithmetic.html)).
  *
  * See also: im_insert(), im_lrjoin().
  *

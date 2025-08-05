@@ -224,11 +224,12 @@ vips_replicate_init(VipsReplicate *replicate)
  * @out: (out): output image
  * @across: repeat input this many times across
  * @down: repeat input this many times down
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Repeats an image many times.
  *
- * See also: vips_extract_area().
+ * ::: seealso
+ *     [method@Image.extract_area].
  *
  * Returns: 0 on success, -1 on error
  */

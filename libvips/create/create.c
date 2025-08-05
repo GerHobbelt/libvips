@@ -52,28 +52,30 @@
 #include "pmask.h"
 
 /**
- * SECTION: create
- * @short_description: create images in various ways
- * @stability: Stable
- * @include: vips/vips.h
- *
- * These functions generate various test images. You can combine them with
- * the arithmetic and rotate functions to build more complicated images.
- *
- * The im_benchmark() operations are for testing the VIPS SMP system.
- */
-
-/**
  * VipsTextWrap:
  * @VIPS_TEXT_WRAP_WORD: wrap at word boundaries
  * @VIPS_TEXT_WRAP_CHAR: wrap at character boundaries
  * @VIPS_TEXT_WRAP_WORD_CHAR: wrap at word boundaries, but fall back to character boundaries if there is not enough space for a full word
  * @VIPS_TEXT_WRAP_NONE: no wrapping
  *
- * Sets the word wrapping style for vips_text() when used with a maximum
+ * Sets the word wrapping style for [ctor@Image.text] when used with a maximum
  * width.
  *
- * See also: vips_text().
+ * ::: seealso
+ *     [ctor@Image.text].
+ */
+
+/**
+ * VipsSdfShape:
+ * @VIPS_SDF_SHAPE_CIRCLE: a circle at @a, radius @r
+ * @VIPS_SDF_SHAPE_BOX: a box from @a to @b
+ * @VIPS_SDF_SHAPE_ROUNDED_BOX: a box with rounded @corners from @a to @b
+ * @VIPS_SDF_SHAPE_LINE: a line from @a to @b
+ *
+ * The SDF to generate,
+ *
+ * ::: seealso
+ *     [ctor@Image.sdf].
  */
 
 G_DEFINE_ABSTRACT_TYPE(VipsCreate, vips_create, VIPS_TYPE_OPERATION);
@@ -133,6 +135,7 @@ vips_create_operation_init(void)
 	extern GType vips_text_get_type(void);
 #endif /*HAVE_PANGOCAIRO*/
 	extern GType vips_xyz_get_type(void);
+	extern GType vips_sdf_get_type(void);
 	extern GType vips_eye_get_type(void);
 	extern GType vips_grey_get_type(void);
 	extern GType vips_zone_get_type(void);
@@ -159,10 +162,13 @@ vips_create_operation_init(void)
 	vips_gaussmat_get_type();
 	vips_logmat_get_type();
 	vips_gaussnoise_get_type();
+
 #ifdef HAVE_PANGOCAIRO
 	vips_text_get_type();
 #endif /*HAVE_PANGOCAIRO*/
+
 	vips_xyz_get_type();
+	vips_sdf_get_type();
 	vips_eye_get_type();
 	vips_grey_get_type();
 	vips_zone_get_type();

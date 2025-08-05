@@ -86,7 +86,7 @@ entry_to_s(ExifEntry *entry)
 	 * for formats like float. Ban crazy size values.
 	 */
 	int size = VIPS_MIN(entry->size, 10000);
-	int max_size = size * 5;
+	int max_size = size * 3 + 32;
 	char *text = VIPS_MALLOC(NULL, max_size + 1);
 
 	// this renders floats as eg. "12.2345", enums as "Inch", etc.
@@ -491,7 +491,7 @@ vips_image_resolution_from_exif(VipsImage *image, ExifData *ed)
 		break;
 
 	default:
-		g_warning("%s", _("unknown EXIF resolution unit"));
+		g_warning("unknown EXIF resolution unit");
 		return -1;
 	}
 
@@ -748,7 +748,7 @@ vips_exif_set_double(ExifData *ed,
 		else
 			old_value = (double) rv.numerator / rv.denominator;
 
-		if (VIPS_FABS(old_value - value) > 0.0001) {
+		if (fabs(old_value - value) > 0.0001) {
 			vips_exif_double_to_rational(value, &rv);
 
 			VIPS_DEBUG_MSG("vips_exif_set_double: %u / %u\n",
@@ -767,7 +767,7 @@ vips_exif_set_double(ExifData *ed,
 		else
 			old_value = (double) srv.numerator / srv.denominator;
 
-		if (VIPS_FABS(old_value - value) > 0.0001) {
+		if (fabs(old_value - value) > 0.0001) {
 			vips_exif_double_to_srational(value, &srv);
 
 			VIPS_DEBUG_MSG("vips_exif_set_double: %d / %d\n",
@@ -1066,7 +1066,7 @@ vips_exif_resolution_from_image(ExifData *ed, VipsImage *image)
 		break;
 
 	default:
-		g_warning("%s", _("unknown EXIF resolution unit"));
+		g_warning("unknown EXIF resolution unit");
 		return 0;
 	}
 
@@ -1257,17 +1257,17 @@ vips_exif_image_field(VipsImage *image,
 	/* value must be a string.
 	 */
 	if (vips_image_get_string(image, field, &string)) {
-		g_warning(_("bad exif meta \"%s\""), field);
+		g_warning("bad exif meta \"%s\"", field);
 		return NULL;
 	}
 
 	p = field + strlen("exif-ifd");
 	ifd = atoi(p);
 
-	for (; isdigit(*p); p++)
+	for (; g_ascii_isdigit(*p); p++)
 		;
 	if (*p != '-') {
-		g_warning(_("bad exif meta \"%s\""), field);
+		g_warning("bad exif meta \"%s\"", field);
 		return NULL;
 	}
 
@@ -1276,7 +1276,7 @@ vips_exif_image_field(VipsImage *image,
 	 */
 	if (!(tag = exif_tag_from_name(p + 1)) &&
 		strcmp(p + 1, "GPSVersionID") != 0) {
-		g_warning(_("bad exif meta \"%s\""), field);
+		g_warning("bad exif meta \"%s\"", field);
 		return NULL;
 	}
 
@@ -1316,7 +1316,7 @@ vips_exif_exif_entry(ExifEntry *entry, VipsExifRemove *ve)
 		/* No easy way to return an error code from here, sadly.
 		 */
 		if (vips_image_get_string(ve->image, vips_name, &vips_value))
-			g_warning(_("bad exif meta \"%s\""), vips_name);
+			g_warning("bad exif meta \"%s\"", vips_name);
 	}
 
 	/* Does this field exist on the image? If not, schedule it for

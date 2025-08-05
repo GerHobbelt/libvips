@@ -53,6 +53,7 @@
 #include <stdlib.h>
 
 #include <vips/vips.h>
+#include <vips/internal.h>
 
 #include "pconversion.h"
 
@@ -102,7 +103,10 @@ vips_subsample_line_gen(VipsRegion *out_region,
 		VipsPel *q = VIPS_REGION_ADDR(out_region, le, y);
 		VipsPel *p;
 
-		/* Loop across the region, in owidth sized pieces.
+		if (vips__worker_exit())
+			return 0;
+
+		/* Loop across the region, in owidth-sized pieces.
 		 */
 		for (x = le; x < ri; x += owidth) {
 			/* How many pixels do we make this time?
@@ -165,11 +169,10 @@ vips_subsample_point_gen(VipsRegion *out_region,
 		VipsPel *q = VIPS_REGION_ADDR(out_region, le, y);
 		VipsPel *p;
 
-		/* Loop across the region, in owidth sized pieces.
-		 */
+		if (vips__worker_exit())
+			return 0;
+
 		for (x = le; x < ri; x++) {
-			/* Ask for input.
-			 */
 			s.left = x * subsample->xfac;
 			s.top = y * subsample->yfac;
 			s.width = 1;
@@ -177,8 +180,6 @@ vips_subsample_point_gen(VipsRegion *out_region,
 			if (vips_region_prepare(ir, &s))
 				return -1;
 
-			/* Append new pels to output.
-			 */
 			p = VIPS_REGION_ADDR(ir, s.left, s.top);
 			for (k = 0; k < ps; k++)
 				q[k] = p[k];
@@ -302,11 +303,7 @@ vips_subsample_init(VipsSubsample *subsample)
  * @out: (out): output image
  * @xfac: horizontal shrink factor
  * @yfac: vertical shrink factor
- * @...: %NULL-terminated list of optional named arguments
- *
- * Optional arguments:
- *
- * * @point: turn on point sample mode
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Subsample an image by an integer fraction. This is fast, nearest-neighbour
  * shrink.
@@ -318,7 +315,11 @@ vips_subsample_init(VipsSubsample *subsample)
  * If @point is set, @in will always be sampled in points. This can be faster
  * if the previous operations in the pipeline are very slow.
  *
- * See also: vips_affine(), vips_shrink(), vips_zoom().
+ * ::: tip "Optional arguments"
+ *     * @point: `gboolean`, turn on point sample mode
+ *
+ * ::: seealso
+ *     [method@Image.affine], [method@Image.shrink], [method@Image.zoom].
  *
  * Returns: 0 on success, -1 on error.
  */

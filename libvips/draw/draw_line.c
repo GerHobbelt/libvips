@@ -338,13 +338,14 @@ vips_draw_linev(VipsImage *image,
  * @y1: start of draw_line
  * @x2: end of draw_line
  * @y2: end of draw_line
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Draws a 1-pixel-wide line on an image.
  *
  * @ink is an array of double containing values to draw.
  *
- * See also: vips_draw_line1(), vips_draw_circle(), vips_draw_mask().
+ * ::: seealso
+ *     [method@Image.draw_line1], [method@Image.draw_circle], [method@Image.draw_mask].
  *
  * Returns: 0 on success, or -1 on error.
  */
@@ -370,11 +371,12 @@ vips_draw_line(VipsImage *image,
  * @y1: start of draw_line
  * @x2: end of draw_line
  * @y2: end of draw_line
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * As vips_draw_line(), but just take a single double for @ink.
+ * As [method@Image.draw_line], but just take a single double for @ink.
  *
- * See also: vips_draw_line().
+ * ::: seealso
+ *     [method@Image.draw_line].
  *
  * Returns: 0 on success, or -1 on error.
  */

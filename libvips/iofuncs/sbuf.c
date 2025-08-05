@@ -56,16 +56,11 @@
 #include <vips/debug.h>
 
 /**
- * SECTION: sbuf
- * @short_description: buffered read from a source
- * @stability: Stable
- * @see_also: <link linkend="libvips-foreign">foreign</link>
- * @include: vips/vips.h
- * @title: VipsSbuf
+ * VipsSbuf:
  *
- * #VipsSbuf wraps up a #VipsSource and provides a set of calls for
- * text-oriented buffered reading. You can fetch lines of text, skip
- * whitespace, and so on.
+ * A [class@Sbuf] provides a buffered reading interface for a [class@Source].
+ *
+ * You can fetch lines of text, skip whitespace, and so on.
  *
  * It is useful for implementing things like CSV readers, for example.
  */
@@ -104,9 +99,9 @@ vips_sbuf_init(VipsSbuf *sbuf)
  * vips_sbuf_new_from_source:
  * @source: source to operate on
  *
- * Create a VipsSbuf wrapping a source.
+ * Create a [class@Sbuf] wrapping a source.
  *
- * Returns: a new #VipsSbuf
+ * Returns: a new [class@Sbuf]
  */
 VipsSbuf *
 vips_sbuf_new_from_source(VipsSource *source)
@@ -132,7 +127,7 @@ vips_sbuf_new_from_source(VipsSource *source)
  * @sbuf: source to operate on
  *
  * Discard the input buffer and reset the read point. You must call this
- * before using read or seek on the underlying #VipsSource class.
+ * before using read or seek on the underlying [class@Source] class.
  */
 void
 vips_sbuf_unbuffer(VipsSbuf *sbuf)
@@ -180,7 +175,7 @@ vips_sbuf_refill(VipsSbuf *sbuf)
  *
  * Fetch the next character from the source.
  *
- * If you can, use the macro VIPS_SBUF_GETC() instead for speed.
+ * If you can, use the macro [func@SBUF_GETC] instead for speed.
  *
  * Returns: the next char from @sbuf, -1 on read error or EOF.
  */
@@ -209,12 +204,12 @@ vips_sbuf_getc(VipsSbuf *sbuf)
  * vips_sbuf_ungetc:
  * @sbuf: source to operate on
  *
- * The opposite of vips_sbuf_getc(): undo the previous getc.
+ * The opposite of [method@Sbuf.getc]: undo the previous getc.
  *
  * unget more than one character is undefined. Unget at the start of the file
  * does nothing.
  *
- * If you can, use the macro VIPS_SBUF_UNGETC() instead for speed.
+ * If you can, use the macro [func@SBUF_UNGETC] instead for speed.
  */
 void
 vips_sbuf_ungetc(VipsSbuf *sbuf)
@@ -227,7 +222,7 @@ vips_sbuf_ungetc(VipsSbuf *sbuf)
  * VIPS_SBUF_UNGETC:
  * @sbuf: source to operate on
  *
- * The opposite of vips_sbuf_getc(): undo the previous getc.
+ * The opposite of [method@Sbuf.getc]: undo the previous getc.
  *
  * unget more than one character is undefined. Unget at the start of the file
  * does nothing.
@@ -295,7 +290,7 @@ vips_sbuf_require(VipsSbuf *sbuf, int require)
  * @require: need this many characters
  *
  * Make sure at least @require characters are available for
- * VIPS_SBUF_PEEK() and VIPS_SBUF_FETCH().
+ * [func@SBUF_PEEK] and [func@SBUF_FETCH].
  *
  * Returns: 0 on success, -1 on read error or EOF.
  */
@@ -304,7 +299,7 @@ vips_sbuf_require(VipsSbuf *sbuf, int require)
  * VIPS_SBUF_PEEK:
  * @sbuf: source to operate on
  *
- * After a successful VIPS_SBUF_REQUIRE(), you can index this to get
+ * After a successful [func@SBUF_REQUIRE], you can index this to get
  * require characters of input.
  *
  * Returns: a pointer to the next require characters of input.
@@ -314,7 +309,7 @@ vips_sbuf_require(VipsSbuf *sbuf, int require)
  * VIPS_SBUF_FETCH:
  * @sbuf: source to operate on
  *
- * After a successful VIPS_SBUF_REQUIRE(), you can use this require times
+ * After a successful [func@SBUF_REQUIRE], you can use this require times
  * to fetch characters of input.
  *
  * Returns: the next input character.
@@ -328,16 +323,16 @@ vips_sbuf_require(VipsSbuf *sbuf, int require)
  * line character (or characters, for DOS files) are removed, and the string
  * is terminated with a null (`\0` character).
  *
- * Returns NULL on end of file or read error.
+ * Returns `NULL` on end of file or read error.
  *
  * If the line is longer than some arbitrary (but large) limit, it is
  * truncated. If you need to be able to read very long lines, use the
- * slower vips_sbuf_get_line_copy().
+ * slower [method@Sbuf.get_line_copy].
  *
  * The return value is owned by @sbuf and must not be freed. It
  * is valid until the next get call to @sbuf.
  *
- * Returns: the next line of text, or NULL on EOF or read error.
+ * Returns: the next line of text, or `NULL` on EOF or read error.
  */
 const char *
 vips_sbuf_get_line(VipsSbuf *sbuf)
@@ -398,12 +393,12 @@ vips_sbuf_get_line(VipsSbuf *sbuf)
  * line character (or characters, for DOS files) are removed, and the string
  * is terminated with a null (`\0` character).
  *
- * The return result must be freed with g_free().
+ * The return result must be freed with [func@GLib.free].
  *
- * This is slower than vips_sbuf_get_line(), but can work with lines of
+ * This is slower than [method@Sbuf.get_line], but can work with lines of
  * any length.
  *
- * Returns: the next line of text, or NULL on EOF or read error.
+ * Returns: the next line of text, or `NULL` on EOF or read error.
  */
 char *
 vips_sbuf_get_line_copy(VipsSbuf *sbuf)
@@ -469,7 +464,7 @@ vips_sbuf_get_line_copy(VipsSbuf *sbuf)
  * The return value is owned by @sbuf and must not be freed. It
  * is valid until the next get call to @sbuf.
  *
- * Returns: the next block of non-whitespace, or NULL on EOF or read error.
+ * Returns: the next block of non-whitespace, or `NULL` on EOF or read error.
  */
 const char *
 vips_sbuf_get_non_whitespace(VipsSbuf *sbuf)
@@ -478,7 +473,7 @@ vips_sbuf_get_non_whitespace(VipsSbuf *sbuf)
 	int i;
 
 	for (i = 0; i < VIPS_SBUF_BUFFER_SIZE &&
-		 !isspace(ch = VIPS_SBUF_GETC(sbuf)) &&
+		 !g_ascii_isspace(ch = VIPS_SBUF_GETC(sbuf)) &&
 		 ch != EOF;
 		 i++)
 		sbuf->line[i] = ch;
@@ -487,15 +482,15 @@ vips_sbuf_get_non_whitespace(VipsSbuf *sbuf)
 	/* If we stopped before seeing any whitespace, skip to the end of the
 	 * block of non-whitespace.
 	 */
-	if (!isspace(ch))
-		while (!isspace(ch = VIPS_SBUF_GETC(sbuf)) &&
+	if (!g_ascii_isspace(ch))
+		while (!g_ascii_isspace(ch = VIPS_SBUF_GETC(sbuf)) &&
 			ch != EOF)
 			;
 
 	/* If we finally stopped on whitespace, step back one so the next get
 	 * will be whitespace (or EOF).
 	 */
-	if (isspace(ch))
+	if (g_ascii_isspace(ch))
 		VIPS_SBUF_UNGETC(sbuf);
 
 	return (const char *) sbuf->line;
@@ -529,7 +524,7 @@ vips_sbuf_skip_whitespace(VipsSbuf *sbuf)
 				return -1;
 			ch = VIPS_SBUF_GETC(sbuf);
 		}
-	} while (isspace(ch));
+	} while (g_ascii_isspace(ch));
 
 	VIPS_SBUF_UNGETC(sbuf);
 

@@ -143,7 +143,7 @@ vips_freqmult_init(VipsFreqmult *freqmult)
  * @in: input image
  * @mask: mask image
  * @out: (out): output image
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Multiply @in by @mask in Fourier space.
  *
@@ -151,7 +151,8 @@ vips_freqmult_init(VipsFreqmult *freqmult)
  * transformed back to real space. If @in is already a complex image, just
  * multiply then inverse transform.
  *
- * See also: vips_invfft(), vips_mask_ideal().
+ * ::: seealso
+ *     [method@Image.invfft], [ctor@Image.mask_ideal].
  *
  * Returns: 0 on success, -1 on error.
  */

@@ -36,11 +36,11 @@
 
 /* Defined in config.h
  */
-#ifdef _VIPS_PUBLIC
-#define VIPS_API _VIPS_PUBLIC extern
-#else
-#define VIPS_API extern
+#ifndef _VIPS_PUBLIC
+#define _VIPS_PUBLIC
 #endif
+
+#define VIPS_API _VIPS_PUBLIC extern
 
 /* VIPS_DISABLE_DEPRECATION_WARNINGS:
  *
@@ -54,6 +54,18 @@
 #else
 #define VIPS_DEPRECATED G_DEPRECATED VIPS_API
 #define VIPS_DEPRECATED_FOR(f) G_DEPRECATED_FOR(f) VIPS_API
+#endif
+
+#if !defined(VIPS_DISABLE_DEPRECATION_WARNINGS) && \
+	(G_GNUC_CHECK_VERSION(4, 6) || \
+		__clang_major__ > 3 || (__clang_major__ == 3 && __clang_minor__ >= 4))
+#define _VIPS_GNUC_DO_PRAGMA(x) _Pragma(G_STRINGIFY(x))
+#define VIPS_DEPRECATED_MACRO _VIPS_GNUC_DO_PRAGMA(GCC warning "Deprecated pre-processor symbol")
+#define VIPS_DEPRECATED_MACRO_FOR(f) \
+	_VIPS_GNUC_DO_PRAGMA(GCC warning G_STRINGIFY(Deprecated pre-processor symbol: replace with #f))
+#else
+#define VIPS_DEPRECATED_MACRO
+#define VIPS_DEPRECATED_MACRO_FOR(f)
 #endif
 
 #ifdef __cplusplus
@@ -85,8 +97,10 @@ typedef enum {
 	VIPS_PRECISION_INTEGER,
 	VIPS_PRECISION_FLOAT,
 	VIPS_PRECISION_APPROXIMATE,
-	VIPS_PRECISION_LAST
+	VIPS_PRECISION_LAST	/*< skip >*/
 } VipsPrecision;
+
+#ifndef __GI_SCANNER__
 
 /* Just for testing.
  */
@@ -94,6 +108,8 @@ VIPS_API
 char *vips_path_filename7(const char *path);
 VIPS_API
 char *vips_path_mode7(const char *path);
+
+#endif /* !__GI_SCANNER__ */
 
 struct _VipsImage;
 typedef struct _VipsImage VipsImage;

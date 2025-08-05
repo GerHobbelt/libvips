@@ -94,13 +94,11 @@ static int
 vips_foreign_save_raw_block(VipsRegion *region, VipsRect *area, void *a)
 {
 	VipsForeignSaveRaw *raw = (VipsForeignSaveRaw *) a;
-	VipsImage *image = region->im;
 
-	for (int i = 0; i < area->height; i++) {
-		VipsPel *p = VIPS_REGION_ADDR(region, area->left, area->top + i);
-
-		if (vips_target_write(raw->target, p,
-				VIPS_IMAGE_SIZEOF_PEL(image) * area->width))
+	for (int y = 0; y < area->height; y++)
+		if (vips_target_write(raw->target,
+			VIPS_REGION_ADDR(region, area->left, area->top + y),
+			VIPS_IMAGE_SIZEOF_PEL(region->im) * area->width))
 			return -1;
 	}
 
@@ -141,7 +139,7 @@ vips_foreign_save_raw_class_init(VipsForeignSaveRawClass *class)
 	object_class->description = _("save image to raw");
 	object_class->build = vips_foreign_save_raw_build;
 
-	save_class->saveable = VIPS_SAVEABLE_ANY;
+	save_class->saveable = VIPS_FOREIGN_SAVEABLE_ANY;
 }
 
 static void
@@ -330,12 +328,13 @@ vips_foreign_save_raw_buffer_init(VipsForeignSaveRawBuffer *buffer)
  * vips_rawsave: (method)
  * @in: image to save
  * @filename: file to write to
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Writes the pixels in @in to the file @filename with no header or other
  * metadata.
  *
- * See also: vips_image_write_to_file().
+ * ::: seealso
+ *     [method@Image.write_to_file].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -357,15 +356,16 @@ vips_rawsave(VipsImage *in, const char *filename, ...)
  * @in: image to save
  * @buf: (array length=len) (element-type guint8): return output buffer here
  * @len: (type gsize): return output length here
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * As vips_rawsave(), but save to a memory buffer.
+ * As [method@Image.rawsave], but save to a memory buffer.
  *
  * The address of the buffer is returned in @buf, the length of the buffer in
- * @len. You are responsible for freeing the buffer with g_free() when you
+ * @len. You are responsible for freeing the buffer with [func@GLib.free] when you
  * are done with it.
  *
- * See also: vips_rawsave(), vips_image_write_to_memory(), vips_image_write_to_file().
+ * ::: seealso
+ *     [method@Image.rawsave], [method@Image.write_to_memory], [method@Image.write_to_file].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -395,17 +395,16 @@ vips_rawsave_buffer(VipsImage *in, void **buf, size_t *len, ...)
 	}
 
 	return result;
-}
-
 /**
  * vips_rawsave_target: (method)
  * @in: image to save
  * @target: save image to this target
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * As vips_rawsave(), but save to a target.
+ * As [method@Image.rawsave], but save to a target.
  *
- * See also: vips_rawsave().
+ * ::: seealso
+ *     [method@Image.rawsave].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -416,23 +415,6 @@ vips_rawsave_target(VipsImage *in, VipsTarget *target, ...)
 	int result;
 
 	va_start(ap, target);
-	result = vips_call_split("rawsave_target", ap, in, target);
-	va_end(ap);
-
-	return result;
-}
-
-int
-vips_rawsave_fd(VipsImage *in, int fd, ...)
-{
-	va_list ap;
-	int result;
-	VipsTarget *target;
-
-	if (!(target = vips_target_new_to_descriptor(fd)))
-		return -1;
-
-	va_start(ap, fd);
 	result = vips_call_split("rawsave_target", ap, in, target);
 	va_end(ap);
 

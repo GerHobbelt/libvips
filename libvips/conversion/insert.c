@@ -139,7 +139,7 @@ vips__insert_just_one(VipsRegion *out_region, VipsRegion *ir, int x, int y)
 	return 0;
 }
 
-/* Paste in parts of ir that fall within out_region --- ir is an input REGION
+/* Paste in parts of ir that fall within out_region -- ir is an input REGION
  * for an image positioned at pos within out_region.
  *
  * Also used by vips_arrayjoin.
@@ -375,11 +375,9 @@ vips_insert_build(VipsObject *object)
 
 	if (vips_image_pio_input(insert->main) ||
 		vips_image_pio_input(insert->sub) ||
-		vips_check_bands_1orn(class->nickname,
-			insert->main, insert->sub) ||
+		vips_check_bands_1orn(class->nickname, insert->main, insert->sub) ||
 		vips_check_coding_known(class->nickname, insert->main) ||
-		vips_check_coding_same(class->nickname,
-			insert->main, insert->sub))
+		vips_check_coding_same(class->nickname, insert->main, insert->sub))
 		return -1;
 
 	/* Cast our input images up to a common format and bands.
@@ -520,16 +518,11 @@ vips_insert_init(VipsInsert *insert)
  * @out: (out): output image
  * @x: left position of @sub
  * @y: top position of @sub
- * @...: %NULL-terminated list of optional named arguments
- *
- * Optional arguments:
- *
- * * @expand: expand output to hold whole of both images
- * * @background: colour for new pixels
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Insert @sub into @main at position @x, @y.
  *
- * Normally @out shows the whole of @main. If @expand is #TRUE then @out is
+ * Normally @out shows the whole of @main. If @expand is `TRUE` then @out is
  * made large enough to hold all of @main and @sub.
  * Any areas of @out not coming from
  * either @main or @sub are set to @background (default 0).
@@ -544,9 +537,14 @@ vips_insert_init(VipsInsert *insert)
  *
  * The two input images are cast up to the smallest common type (see table
  * Smallest common format in
- * <link linkend="libvips-arithmetic">arithmetic</link>).
+ * [arithmetic](libvips-arithmetic.html)).
  *
- * See also: vips_join(), vips_embed(), vips_extract_area().
+ * ::: tip "Optional arguments"
+ *     * @expand: `gdouble`, expand output to hold whole of both images
+ *     * @background: [struct@ArrayDouble], colour for new pixels
+ *
+ * ::: seealso
+ *     [method@Image.join], [method@Image.embed], [method@Image.extract_area].
  *
  * Returns: 0 on success, -1 on error
  */

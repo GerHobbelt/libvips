@@ -80,7 +80,7 @@ typedef enum {
 	VIPS_REGION_SHRINK_MAX,
 	VIPS_REGION_SHRINK_MIN,
 	VIPS_REGION_SHRINK_NEAREST,
-	VIPS_REGION_SHRINK_LAST
+	VIPS_REGION_SHRINK_LAST	/*< skip >*/
 } VipsRegionShrink;
 
 /* Sub-area of image.
@@ -90,9 +90,9 @@ typedef enum {
 struct _VipsRegion {
 	VipsObject parent_object;
 
-	/*< public >*/
 	/* Users may read these two fields.
 	 */
+	/*< public >*/
 	VipsImage *im;	/* Link back to parent image */
 	VipsRect valid; /* Area of parent we can see */
 
@@ -128,8 +128,6 @@ typedef struct _VipsRegionClass {
 
 } VipsRegionClass;
 
-/* Don't put spaces around void here, it breaks gtk-doc.
- */
 VIPS_API
 GType vips_region_get_type(void);
 

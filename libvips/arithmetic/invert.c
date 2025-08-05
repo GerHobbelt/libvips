@@ -74,7 +74,7 @@ G_DEFINE_TYPE(VipsInvert, vips_invert, VIPS_TYPE_UNARY);
 		TYPE *restrict q = (TYPE *) out; \
 \
 		for (x = 0; x < sz; x++) \
-			q[x] = (L) -p[x]; \
+			q[x] = (L) - p[x]; \
 	}
 
 #define LOOPN(TYPE) \
@@ -191,15 +191,16 @@ vips_invert_init(VipsInvert *invert)
  * vips_invert: (method)
  * @in: input image
  * @out: (out): output image
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * For unsigned formats, this operation calculates (max - @in), eg. (255 -
  * @in) for uchar. For signed and float formats, this operation calculates (-1
  * @in).
  *
- * For complex images, only the real part is inverted. See also vips_conj().
+ * For complex images, only the real part is inverted. See also [method@Image.conj].
  *
- * See also: vips_linear().
+ * ::: seealso
+ *     [method@Image.linear].
  *
  * Returns: 0 on success, -1 on error
  */

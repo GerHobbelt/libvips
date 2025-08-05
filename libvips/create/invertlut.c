@@ -212,7 +212,7 @@ vips_invertlut_build_create(VipsInvertlut *lut)
 
 		/* Interpolate the data sections.
 		 */
-		for (k = first; k < last; k++) {
+		for (k = first; k <= last; k++) {
 			/* Where we're at in the [0,1] range.
 			 */
 			double ki = (double) k / (lut->size - 1);
@@ -308,28 +308,23 @@ vips_invertlut_init(VipsInvertlut *lut)
  * vips_invertlut: (method)
  * @in: input mask
  * @out: (out): output LUT
- * @...: %NULL-terminated list of optional named arguments
- *
- * Optional arguments:
- *
- * * @size: generate this much
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Given a mask of target values and real values, generate a LUT which
- * will map reals to targets. Handy for linearising images from
- * measurements of a colour chart. All values in [0,1]. Piecewise linear
- * interpolation, extrapolate head and tail to 0 and 1.
+ * will map reals to targets.
+ *
+ * Handy for linearising images from measurements of a colour chart. All
+ * values in [0,1]. Piecewise linear interpolation, extrapolate head and tail
+ * to 0 and 1.
  *
  * Eg. input like this:
  *
- * |[
- *     |-------|-------|-------|-------|
- *     | 0.1   | 0.2   | 0.3   | 0.1   |
- *     |-------|-------|-------|-------|
- *     | 0.2   | 0.4   | 0.4   | 0.2   |
- *     |-------|-------|-------|-------|
- *     | 0.7   | 0.5   | 0.6   | 0.3   |
- *     |-------|-------|-------|-------|
- * ]|
+ * ```
+ * 4 3
+ * 0.1 0.2 0.3 0.1
+ * 0.2 0.4 0.4 0.2
+ * 0.7 0.5 0.6 0.3
+ * ```
  *
  * Means a patch with 10% reflectance produces an image with 20% in
  * channel 1, 30% in channel 2, and 10% in channel 3, and so on.
@@ -341,7 +336,11 @@ vips_invertlut_init(VipsInvertlut *lut)
  * (we should fix this). Interpolation is simple piecewise linear; we ought to
  * do something better really.
  *
- * See also: vips_buildlut().
+ * ::: tip "Optional arguments"
+ *     * @size: `gint`, generate this much
+ *
+ * ::: seealso
+ *     [method@Image.buildlut].
  *
  * Returns: 0 on success, -1 on error
  */

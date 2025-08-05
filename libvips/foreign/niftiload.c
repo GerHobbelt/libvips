@@ -134,10 +134,8 @@ vips_foreign_load_nifti_build(VipsObject *object)
 		nifti->filename = filename;
 	}
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_load_nifti_parent_class)->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_load_nifti_parent_class)
+		->build(object);
 }
 
 /* Map DT_* datatype values to VipsBandFormat.
@@ -372,7 +370,7 @@ vips_foreign_load_nifti_set(const char *name, GValue *value, glong offset,
 	char vips_name[256];
 
 	vips_gvalue_read(value, (char *) nim + offset);
-	vips_snprintf(vips_name, 256, "nifti-%s", name);
+	g_snprintf(vips_name, 256, "nifti-%s", name);
 	vips_image_set(out, vips_name, value);
 
 	return NULL;
@@ -500,15 +498,15 @@ vips_foreign_load_nifti_set_header(VipsForeignLoadNifti *nifti,
 	/* One byte longer than the spec to leave space for any extra
 	 * '\0' termination.
 	 */
-	vips_strncpy(txt, nim->intent_name, 17);
+	g_strlcpy(txt, nim->intent_name, 17);
 	vips_image_set_string(out, "nifti-intent_name", txt);
-	vips_strncpy(txt, nim->descrip, 81);
+	g_strlcpy(txt, nim->descrip, 81);
 	vips_image_set_string(out, "nifti-descrip", txt);
 
 	for (i = 0; i < nim->num_ext; i++) {
 		nifti1_extension *ext = &nim->ext_list[i];
 
-		vips_snprintf(txt, 256, "nifti-ext-%d-%d", i, ext->ecode);
+		g_snprintf(txt, 256, "nifti-ext-%d-%d", i, ext->ecode);
 		vips_image_set_blob_copy(out, txt, ext->edata, ext->esize);
 	}
 
@@ -637,11 +635,8 @@ vips_foreign_load_nifti_file_build(VipsObject *object)
 				vips_source_new_from_file(file->filename)))
 		return -1;
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_load_nifti_file_parent_class)
-			->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_load_nifti_file_parent_class)
+		->build(object);
 }
 
 const char *vips_foreign_nifti_suffs[] = {
@@ -748,11 +743,8 @@ vips_foreign_load_nifti_source_build(VipsObject *object)
 		g_object_ref(nifti->source);
 	}
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_load_nifti_source_parent_class)
-			->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_load_nifti_source_parent_class)
+		->build(object);
 }
 
 static gboolean
@@ -808,13 +800,14 @@ vips_foreign_load_nifti_source_init(
  * vips_niftiload:
  * @filename: file to load
  * @out: (out): decompressed image
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Read a NIFTI image file into a VIPS image.
  *
  * NIFTI metadata is attached with the "nifti-" prefix.
  *
- * See also: vips_image_new_from_file().
+ * ::: seealso
+ *     [ctor@Image.new_from_file].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -835,9 +828,9 @@ vips_niftiload(const char *filename, VipsImage **out, ...)
  * vips_niftiload_source:
  * @source: source to load from
  * @out: (out): decompressed image
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Exactly as vips_niftiload(), but read from a source.
+ * Exactly as [ctor@Image.niftiload], but read from a source.
  *
  * Returns: 0 on success, -1 on error.
  */

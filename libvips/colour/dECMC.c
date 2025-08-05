@@ -72,11 +72,11 @@ vips_dECMC_init(VipsdECMC *dECMC)
 }
 
 /**
- * vips_dECMC:
+ * vips_dECMC: (method)
  * @left: first input image
  * @right: second input image
  * @out: (out): output image
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Calculate dE CMC. The input images are transformed to CMC colour space and
  * the euclidean distance between corresponding pixels calculated.
@@ -85,7 +85,8 @@ vips_dECMC_init(VipsdECMC *dECMC)
  * transform the two source images to CMC yourself, scale the channels
  * appropriately, and call this function.
  *
- * See also: vips_colourspace()
+ * ::: seealso
+ *     [method@Image.colourspace]
  *
  * Returns: 0 on success, -1 on error
  */

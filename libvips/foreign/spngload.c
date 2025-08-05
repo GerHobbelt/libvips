@@ -196,7 +196,7 @@ vips_foreign_load_png_set_text(VipsImage *out,
 		/* Save as a string comment. Some PNGs have EXIF data as
 		 * text segments, unfortunately.
 		 */
-		vips_snprintf(name, 256, "png-comment-%d-%s", i, key);
+		g_snprintf(name, 256, "png-comment-%d-%s", i, key);
 
 		vips_image_set_string(out, name, value);
 	}
@@ -249,7 +249,7 @@ vips_foreign_load_png_set_header(VipsForeignLoadPng *png, VipsImage *image)
 		 * attacks.
 		 */
 		if (!png->unlimited && n_text > MAX_PNG_TEXT_CHUNKS) {
-			g_warning(_("%d text chunks, only %d text chunks will be loaded"),
+			g_warning("%d text chunks, only %d text chunks will be loaded",
 				n_text, MAX_PNG_TEXT_CHUNKS);
 			n_text = MAX_PNG_TEXT_CHUNKS;
 		}
@@ -673,12 +673,14 @@ vips_foreign_load_png_class_init(VipsForeignLoadPngClass *class)
 	load_class->header = vips_foreign_load_png_header;
 	load_class->load = vips_foreign_load_png_load;
 
+#ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 	VIPS_ARG_BOOL(class, "unlimited", 23,
 		_("Unlimited"),
 		_("Remove all denial of service limits"),
 		VIPS_ARGUMENT_OPTIONAL_INPUT,
 		G_STRUCT_OFFSET(VipsForeignLoadPng, unlimited),
 		FALSE);
+#endif
 }
 
 static void
@@ -711,11 +713,8 @@ vips_foreign_load_png_source_build(VipsObject *object)
 		g_object_ref(png->source);
 	}
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_load_png_source_parent_class)
-			->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_load_png_source_parent_class)
+		->build(object);
 }
 
 static gboolean
@@ -788,10 +787,8 @@ vips_foreign_load_png_file_build(VipsObject *object)
 		!(png->source = vips_source_new_from_file(file->filename)))
 		return -1;
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_load_png_file_parent_class)->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_load_png_file_parent_class)
+		->build(object);
 }
 
 static gboolean
@@ -868,11 +865,8 @@ vips_foreign_load_png_buffer_build(VipsObject *object)
 			  VIPS_AREA(buffer->blob)->length)))
 		return -1;
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_load_png_buffer_parent_class)
-			->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_load_png_buffer_parent_class)
+		->build(object);
 }
 
 static gboolean

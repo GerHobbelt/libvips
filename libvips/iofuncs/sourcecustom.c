@@ -181,8 +181,8 @@ vips_source_custom_class_init(VipsSourceCustomClass *class)
 	/**
 	 * VipsSourceCustom::read:
 	 * @source_custom: the source being operated on
-	 * @buffer: %gpointer, buffer to fill
-	 * @size: %gint64, size of buffer
+	 * @buffer: `gpointer`, buffer to fill
+	 * @size: `gint64`, size of buffer
 	 *
 	 * This signal is emitted to read bytes from the source into @buffer.
 	 *
@@ -200,8 +200,8 @@ vips_source_custom_class_init(VipsSourceCustomClass *class)
 	/**
 	 * VipsSourceCustom::seek:
 	 * @source_custom: the source being operated on
-	 * @offset: %gint64, seek offset
-	 * @whence: %gint, seek origin
+	 * @offset: `gint64`, seek offset
+	 * @whence: `gint`, seek origin
 	 *
 	 * This signal is emitted to seek the source. The handler should
 	 * change the source position appropriately.
@@ -229,9 +229,9 @@ vips_source_custom_init(VipsSourceCustom *source_custom)
 /**
  * vips_source_custom_new:
  *
- * Create a #VipsSourceCustom. Attach signals to implement read and seek.
+ * Create a [class@SourceCustom]. Attach signals to implement read and seek.
  *
- * Returns: a new #VipsSourceCustom
+ * Returns: a new [class@SourceCustom]
  */
 VipsSourceCustom *
 vips_source_custom_new(void)

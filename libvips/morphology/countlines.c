@@ -160,7 +160,7 @@ vips_countlines_init(VipsCountlines *countlines)
  * @in: input image
  * @nolines: (out): output average number of lines
  * @direction: count lines horizontally or vertically
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Function which calculates the number of transitions
  * between black and white for the horizontal or the vertical
@@ -169,7 +169,8 @@ vips_countlines_init(VipsCountlines *countlines)
  * Xsize or Ysize and returns the mean of the result
  * Input should be one band, 8-bit.
  *
- * See also: vips_morph(), vips_conv().
+ * ::: seealso
+ *     [method@Image.morph], [method@Image.conv].
  *
  * Returns: 0 on success, -1 on error.
  */

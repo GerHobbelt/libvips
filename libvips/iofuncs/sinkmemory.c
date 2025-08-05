@@ -51,8 +51,6 @@
 
 #include <vips/vips.h>
 #include <vips/internal.h>
-#include <vips/thread.h>
-#include <vips/threadpool.h>
 #include <vips/debug.h>
 
 #include "sink.h"
@@ -97,8 +95,8 @@ typedef struct _SinkMemoryThreadStateClass {
 
 } SinkMemoryThreadStateClass;
 
-G_DEFINE_TYPE(SinkMemoryThreadState,
-	sink_memory_thread_state, VIPS_TYPE_THREAD_STATE);
+G_DEFINE_TYPE(SinkMemoryThreadState, sink_memory_thread_state,
+	VIPS_TYPE_THREAD_STATE);
 
 static void
 sink_memory_thread_state_class_init(SinkMemoryThreadStateClass *class)
@@ -110,7 +108,7 @@ sink_memory_thread_state_class_init(SinkMemoryThreadStateClass *class)
 }
 
 static void
-sink_memory_thread_state_init(SinkMemoryThreadState *state)
+sink_memory_thread_state_init(SinkMemoryThreadState *smstate)
 {
 }
 
@@ -167,8 +165,8 @@ sink_memory_area_position(SinkMemoryArea *area, int top, int height)
 /* Our VipsThreadpoolAllocate function ... move the thread to the next tile
  * that needs doing. If we fill the current area, we block until the previous
  * area is finished, then swap areas.
- * If all tiles are done, we return FALSE to end
- * iteration.
+ *
+ * If all tiles are done, we return FALSE to end iteration.
  */
 static gboolean
 sink_memory_area_allocate_fn(VipsThreadState *state, void *a, gboolean *stop)
@@ -244,7 +242,7 @@ sink_memory_area_allocate_fn(VipsThreadState *state, void *a, gboolean *stop)
 
 	/* Add the number of pixels we've just allocated to progress.
 	 */
-	sink_base->processed += state->pos.width * state->pos.height;
+	sink_base->processed += (guint64) state->pos.width * state->pos.height;
 
 	return 0;
 }
@@ -316,7 +314,9 @@ sink_memory_init(SinkMemory *memory, VipsImage *image)
  * Loops over @im, generating it to a memory buffer attached to @im. It is
  * used by vips to implement writing to a memory buffer.
  *
- * See also: vips_sink(), vips_get_tile_size(), vips_image_new_memory().
+ * ::: seealso
+ *     [method@Image.sink], [method@Image.get_tile_size],
+ *     [ctor@Image.new_memory].
  *
  * Returns: 0 on success, or -1 on error.
  */
@@ -331,15 +331,13 @@ vips_sink_memory(VipsImage *image)
 
 	vips_image_preeval(image);
 
-	result = 0;
 	sink_memory_area_position(memory.area, 0, memory.sink_base.n_lines);
-	if (vips_threadpool_run(image,
-			sink_memory_thread_state_new,
-			sink_memory_area_allocate_fn,
-			sink_memory_area_work_fn,
-			vips_sink_base_progress,
-			&memory))
-		result = -1;
+	result = vips_threadpool_run(image,
+		sink_memory_thread_state_new,
+		sink_memory_area_allocate_fn,
+		sink_memory_area_work_fn,
+		vips_sink_base_progress,
+		&memory);
 
 	vips_image_posteval(image);
 

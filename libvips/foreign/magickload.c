@@ -64,23 +64,18 @@
  * vips_magickload:
  * @filename: file to load
  * @out: (out): decompressed image
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Optional arguments:
+ * Read in an image using libMagick, the ImageMagick library.
  *
- * * @page: %gint, load from this page
- * * @n: %gint, load this many pages
- * * @density: string, canvas resolution for rendering vector formats like SVG
- *
- * Read in an image using libMagick, the ImageMagick library. This library can
- * read more than 80 file formats, including SVG, BMP, EPS, DICOM and many
- * others.
+ * This library can read more than 80 file formats, including BMP, EPS,
+ * DICOM and many others.
  * The reader can handle any ImageMagick image, including the float and double
  * formats. It will work with any quantum size, including HDR. Any metadata
  * attached to the libMagick image is copied on to the VIPS image.
  *
  * The reader should also work with most versions of GraphicsMagick. See the
- * "--with-magickpackage" configure option.
+ * `-Dmagick-package` configure option.
  *
  * The file format is usually guessed from the filename suffix, or sniffed
  * from the file contents.
@@ -94,7 +89,14 @@
  * docs](http://www.imagemagick.org/script/command-line-options.php#density)
  * on the imagemagick website.
  *
- * See also: vips_image_new_from_file().
+ * ::: tip "Optional arguments"
+ *     * @page: `gint`, load from this page
+ *     * @n: `gint`, load this many pages
+ *     * @density: `gchararray`, canvas resolution for rendering vector formats
+ *       like SVG
+ *
+ * ::: seealso
+ *     [ctor@Image.new_from_file].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -116,21 +118,22 @@ vips_magickload(const char *filename, VipsImage **out, ...)
  * @buf: (array length=len) (element-type guint8): memory area to load
  * @len: size of memory area
  * @out: (out): image to write
- * @...: %NULL-terminated list of optional named arguments
- *
- * Optional arguments:
- *
- * * @page: %gint, load from this page
- * * @n: %gint, load this many pages
- * * @density: string, canvas resolution for rendering vector formats like SVG
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Read an image memory block using libMagick into a VIPS image. Exactly as
- * vips_magickload(), but read from a memory source.
+ * [ctor@Image.magickload], but read from a memory source.
  *
  * You must not free the buffer while @out is active. The
- * #VipsObject::postclose signal on @out is a good place to free.
+ * [signal@Object::postclose] signal on @out is a good place to free.
  *
- * See also: vips_magickload().
+ * ::: tip "Optional arguments"
+ *     * @page: `gint`, load from this page
+ *     * @n: `gint`, load this many pages
+ *     * @density: `gchararray`, canvas resolution for rendering vector formats
+ *       like SVG
+ *
+ * ::: seealso
+ *     [ctor@Image.magickload].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -150,6 +153,38 @@ vips_magickload_buffer(void *buf, size_t len, VipsImage **out, ...)
 	va_end(ap);
 
 	vips_area_unref(VIPS_AREA(blob));
+
+	return result;
+}
+
+/**
+ * vips_magickload_source:
+ * @source: source to load
+ * @out: (out): image to write
+ * @...: `NULL`-terminated list of optional named arguments
+ *
+ * Exactly as [ctor@Image.magickload], but read from a source.
+ *
+ * ::: tip "Optional arguments"
+ *     * @page: `gint`, load from this page
+ *     * @n: `gint`, load this many pages
+ *     * @density: `gchararray`, canvas resolution for rendering vector formats
+ *       like SVG
+ *
+ * ::: seealso
+ *     [ctor@Image.magickload].
+ *
+ * Returns: 0 on success, -1 on error.
+ */
+int
+vips_magickload_source(VipsSource *source, VipsImage **out, ...)
+{
+	va_list ap;
+	int result;
+
+	va_start(ap, out);
+	result = vips_call_split("magickload_source", ap, source, out);
+	va_end(ap);
 
 	return result;
 }

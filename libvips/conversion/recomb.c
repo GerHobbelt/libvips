@@ -243,7 +243,7 @@ vips_recomb_init(VipsRecomb *recomb)
  * @in: input image
  * @out: (out): output image
  * @m: recombination matrix
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * This operation recombines an image's bands. Each pixel in @in is treated as
  * an n-element vector, where n is the number of bands in @in, and multiplied by
@@ -254,7 +254,8 @@ vips_recomb_init(VipsRecomb *recomb)
  *
  * It's useful for various sorts of colour space conversions.
  *
- * See also: vips_bandmean().
+ * ::: seealso
+ *     [method@Image.bandmean].
  *
  * Returns: 0 on success, -1 on error
  */

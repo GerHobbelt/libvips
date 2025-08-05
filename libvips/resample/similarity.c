@@ -205,7 +205,7 @@ vips_similarity_class_init(VipsSimilarityClass *class)
 
 	VIPS_ARG_DOUBLE(class, "angle", 4,
 		_("Angle"),
-		_("Rotate anticlockwise by this many degrees"),
+		_("Rotate clockwise by this many degrees"),
 		VIPS_ARGUMENT_OPTIONAL_INPUT,
 		G_STRUCT_OFFSET(VipsSimilarity, angle),
 		-10000000, 10000000, 0);
@@ -220,24 +220,24 @@ vips_similarity_init(VipsSimilarity *similarity)
  * vips_similarity: (method)
  * @in: input image
  * @out: (out): output image
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Optional arguments:
+ * This operator calls [method@Image.affine] for you, calculating the matrix
+ * for the affine transform from @scale and @angle. Other parameters are
+ * passed on to [method@Image.affine] unaltered.
  *
- * * @scale: %gdouble, scale by this factor
- * * @angle: %gdouble, rotate by this many degrees clockwise
- * * @interpolate: #VipsInterpolate, interpolate pixels with this
- * * @background: #VipsArrayDouble colour for new pixels
- * * @idx: %gdouble, input horizontal offset
- * * @idy: %gdouble, input vertical offset
- * * @odx: %gdouble, output horizontal offset
- * * @ody: %gdouble, output vertical offset
+ * ::: tip "Optional arguments"
+ *     * @scale: `gdouble`, scale by this factor
+ *     * @angle: `gdouble`, rotate by this many degrees clockwise
+ *     * @interpolate: [class@Interpolate], interpolate pixels with this
+ *     * @background: [struct@ArrayDouble] colour for new pixels
+ *     * @idx: `gdouble`, input horizontal offset
+ *     * @idy: `gdouble`, input vertical offset
+ *     * @odx: `gdouble`, output horizontal offset
+ *     * @ody: `gdouble`, output vertical offset
  *
- * This operator calls vips_affine() for you, calculating the matrix for the
- * affine transform from @scale and @angle. Other parameters are passed on to
- * vips_affine() unaltered.
- *
- * See also: vips_affine(), #VipsInterpolate.
+ * ::: seealso
+ *     [method@Image.affine], [class@Interpolate].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -274,7 +274,7 @@ vips_rotate_class_init(VipsRotateClass *class)
 
 	VIPS_ARG_DOUBLE(class, "angle", 4,
 		_("Angle"),
-		_("Rotate anticlockwise by this many degrees"),
+		_("Rotate clockwise by this many degrees"),
 		VIPS_ARGUMENT_REQUIRED_INPUT,
 		G_STRUCT_OFFSET(VipsSimilarity, angle),
 		-10000000, 10000000, 0);
@@ -289,23 +289,24 @@ vips_rotate_init(VipsRotate *rotate)
  * vips_rotate: (method)
  * @in: input image
  * @out: (out): output image
- * @angle: %gdouble, rotate by this many degrees clockwise
- * @...: %NULL-terminated list of optional named arguments
+ * @angle: `gdouble`, rotate by this many degrees clockwise
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Optional arguments:
+ * This operator calls [method@Image.affine] for you, calculating the matrix
+ * for the affine transform from @scale and @angle.
  *
- * * @interpolate: #VipsInterpolate, interpolate pixels with this
- * * @background: #VipsArrayDouble colour for new pixels
- * * @idx: %gdouble, input horizontal offset
- * * @idy: %gdouble, input vertical offset
- * * @odx: %gdouble, output horizontal offset
- * * @ody: %gdouble, output vertical offset
+ * Other parameters are passed on to [method@Image.affine] unaltered.
  *
- * This operator calls vips_affine() for you, calculating the matrix for the
- * affine transform from @scale and @angle. Other parameters are passed on to
- * vips_affine() unaltered.
+ * ::: tip "Optional arguments"
+ *     * @interpolate: [class@Interpolate], interpolate pixels with this
+ *     * @background: [struct@ArrayDouble], colour for new pixels
+ *     * @idx: `gdouble`, input horizontal offset
+ *     * @idy: `gdouble`, input vertical offset
+ *     * @odx: `gdouble`, output horizontal offset
+ *     * @ody: `gdouble`, output vertical offset
  *
- * See also: vips_affine(), #VipsInterpolate.
+ * ::: seealso
+ *     [method@Image.affine], [class@Interpolate].
  *
  * Returns: 0 on success, -1 on error
  */

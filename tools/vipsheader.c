@@ -121,7 +121,7 @@ dump_field(void *data, void *a, void *b)
 	if (g_str_equal(field, "getext")) {
 		if (vips__has_extension_block(image)) {
 			void *buf;
-			int size;
+			size_t size;
 
 			if (!(buf = vips__read_extension_block(image, &size)))
 				vips_error_exit(NULL);
@@ -252,7 +252,7 @@ main( int argc, const char **argv )
 	result = 0;
 
 	for (i = 1; argv[i]; i++) {
-		VipsImage *image;
+		VipsImage *image = NULL;
 		char filename[VIPS_PATH_MAX];
 		char option_string[VIPS_PATH_MAX];
 

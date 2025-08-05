@@ -333,11 +333,7 @@ vips_hist_find_ndim_init(VipsHistFindNDim *ndim)
  * vips_hist_find_ndim: (method)
  * @in: input image
  * @out: (out): output image
- * @...: %NULL-terminated list of optional named arguments
- *
- * Optional arguments:
- *
- * * @bins: number of bins to make on each axis
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Make a one, two or three dimensional histogram of a 1, 2 or
  * 3 band image. Divide each axis into @bins bins .. ie.
@@ -347,7 +343,11 @@ vips_hist_find_ndim_init(VipsHistFindNDim *ndim)
  * char and uchar images are cast to uchar before histogramming, all other
  * image types are cast to ushort.
  *
- * See also: vips_hist_find(), vips_hist_find_indexed().
+ * ::: tip "Optional arguments"
+ *     * @bins: `gint`, number of bins to make on each axis
+ *
+ * ::: seealso
+ *     [method@Image.hist_find], [method@Image.hist_find_indexed].
  *
  * Returns: 0 on success, -1 on error
  */

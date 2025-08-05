@@ -50,7 +50,6 @@
 
 #include <vips/vips.h>
 #include <vips/internal.h>
-#include <vips/thread.h>
 #include <vips/debug.h>
 
 #ifdef G_OS_WIN32
@@ -75,7 +74,7 @@ int vips__thinstrip_height = VIPS__THINSTRIP_HEIGHT;
 
 /* Set this GPrivate to indicate that is a libvips thread.
  */
-static GPrivate *is_vips_thread_key = NULL;
+static GPrivate is_vips_thread_key;
 
 /* TRUE if we are a vips thread. We sometimes manage resource allocation
  * differently for vips threads since we can cheaply free stuff on thread
@@ -84,46 +83,7 @@ static GPrivate *is_vips_thread_key = NULL;
 gboolean
 vips_thread_isvips(void)
 {
-	return g_private_get(is_vips_thread_key) != NULL;
-}
-
-/* Glib 2.32 revised the thread API. We need some compat functions.
- */
-
-GMutex *
-vips_g_mutex_new(void)
-{
-	GMutex *mutex;
-
-	mutex = g_new(GMutex, 1);
-	g_mutex_init(mutex);
-
-	return mutex;
-}
-
-void
-vips_g_mutex_free(GMutex *mutex)
-{
-	g_mutex_clear(mutex);
-	g_free(mutex);
-}
-
-GCond *
-vips_g_cond_new(void)
-{
-	GCond *cond;
-
-	cond = g_new(GCond, 1);
-	g_cond_init(cond);
-
-	return cond;
-}
-
-void
-vips_g_cond_free(GCond *cond)
-{
-	g_cond_clear(cond);
-	g_free(cond);
+	return g_private_get(&is_vips_thread_key) != NULL;
 }
 
 typedef struct {
@@ -143,7 +103,7 @@ vips_thread_run(gpointer data)
 	 * worker. No need to call g_private_replace as there is no
 	 * GDestroyNotify handler associated with a worker.
 	 */
-	g_private_set(is_vips_thread_key, info);
+	g_private_set(&is_vips_thread_key, info);
 
 	result = info->func(info->data);
 
@@ -154,6 +114,17 @@ vips_thread_run(gpointer data)
 	return result;
 }
 
+/**
+ * vips_g_thread_new:
+ * @domain: (nullable): an (optional) name for the new thread
+ * @func: (scope async) (closure data): a function to execute in the new thread
+ * @data: (nullable): an argument to supply to the new thread
+ *
+ * Wrapper for [ctor@GLib.Thread.try_new].
+ *
+ * Returns: (transfer full): the new [struct@GLib.Thread], or `NULL` if an
+ * error occurred
+ */
 GThread *
 vips_g_thread_new(const char *domain, GThreadFunc func, gpointer data)
 {
@@ -198,7 +169,7 @@ vips__concurrency_get_default(void)
 		nthr = vips__concurrency;
 	else if (
 		((str = g_getenv("VIPS_CONCURRENCY"))
-#if ENABLE_DEPRECATED
+#ifdef ENABLE_DEPRECATED
 			|| (str = g_getenv("IM_CONCURRENCY"))
 #endif
 				) &&
@@ -211,7 +182,7 @@ vips__concurrency_get_default(void)
 		nthr > MAX_THREADS) {
 		nthr = VIPS_CLIP(1, nthr, MAX_THREADS);
 
-		g_warning(_("threads clipped to %d"), nthr);
+		g_warning("threads clipped to %d", nthr);
 	}
 
 	return nthr;
@@ -221,14 +192,15 @@ vips__concurrency_get_default(void)
  * vips_concurrency_set:
  * @concurrency: number of threads to run
  *
- * Sets the number of worker threads that vips should use when running a
- * #VipsThreadPool.
+ * Sets the number of worker threads that vips should use when running
+ * [func@threadpool_run].
  *
  * The special value 0 means "default". In this case, the number of threads
- * is set by the environment variable VIPS_CONCURRENCY, or if that is not
+ * is set by the environment variable `VIPS_CONCURRENCY`, or if that is not
  * set, the number of threads available on the host machine.
  *
- * See also: vips_concurrency_get().
+ * ::: seealso
+ *     [func@concurrency_get].
  */
 void
 vips_concurrency_set(int concurrency)
@@ -240,7 +212,7 @@ vips_concurrency_set(int concurrency)
 	else if (concurrency > MAX_THREADS) {
 		concurrency = MAX_THREADS;
 
-		g_warning(_("threads clipped to %d"), MAX_THREADS);
+		g_warning("threads clipped to %d", MAX_THREADS);
 	}
 
 	vips__concurrency = concurrency;
@@ -249,24 +221,25 @@ vips_concurrency_set(int concurrency)
 /**
  * vips_concurrency_get:
  *
- * Returns the number of worker threads that vips should use when running a
- * #VipsThreadPool.
+ * Returns the number of worker threads that vips should use when running
+ * [func@threadpool_run].
  *
  * vips gets this values from these sources in turn:
  *
- * If vips_concurrency_set() has been called, this value is used. The special
+ * If [func@concurrency_set] has been called, this value is used. The special
  * value 0 means "default". You can also use the command-line argument
- * "--vips-concurrency" to set this value.
+ * `--vips-concurrency` to set this value.
  *
- * If vips_concurrency_set() has not been called and no command-line argument
- * was used, vips uses the value of the environment variable VIPS_CONCURRENCY,
+ * If [func@concurrency_set] has not been called and no command-line argument
+ * was used, vips uses the value of the environment variable `VIPS_CONCURRENCY`.
  *
- * If VIPS_CONCURRENCY has not been set, vips finds the number of hardware
+ * If `VIPS_CONCURRENCY` has not been set, vips finds the number of hardware
  * threads that the host machine can run in parallel and uses that value.
  *
  * The final value is clipped to the range 1 - 1024.
  *
- * See also: vips_concurrency_get().
+ * ::: seealso
+ *     [func@concurrency_get].
  *
  * Returns: number of worker threads to use.
  */
@@ -284,7 +257,7 @@ vips_concurrency_get(void)
  * @n_lines: (out): return buffer height in scanlines
  *
  * Pick a tile size and a buffer height for this image and the current
- * value of vips_concurrency_get(). The buffer height
+ * value of [func@concurrency_get]. The buffer height
  * will always be a multiple of tile_height.
  *
  * The buffer height is the height of each buffer we fill in sink disc. Since
@@ -361,10 +334,6 @@ vips_get_tile_size(VipsImage *im,
 void
 vips__thread_init(void)
 {
-	static GPrivate private = G_PRIVATE_INIT(NULL);
-
-	is_vips_thread_key = &private;
-
 	if (vips__concurrency == 0)
 		vips__concurrency = vips__concurrency_get_default();
 }

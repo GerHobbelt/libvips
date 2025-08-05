@@ -43,8 +43,16 @@ typedef enum {
 	VIPS_TEXT_WRAP_CHAR,
 	VIPS_TEXT_WRAP_WORD_CHAR,
 	VIPS_TEXT_WRAP_NONE,
-	VIPS_TEXT_WRAP_LAST
+	VIPS_TEXT_WRAP_LAST	/*< skip >*/
 } VipsTextWrap;
+
+typedef enum {
+	VIPS_SDF_SHAPE_CIRCLE = 0,
+	VIPS_SDF_SHAPE_BOX,
+	VIPS_SDF_SHAPE_ROUNDED_BOX,
+	VIPS_SDF_SHAPE_LINE,
+	VIPS_SDF_SHAPE_LAST	/*< skip >*/
+} VipsSdfShape;
 
 VIPS_API
 int vips_black(VipsImage **out, int width, int height, ...)
@@ -78,6 +86,9 @@ int vips_sines(VipsImage **out, int width, int height, ...)
 	G_GNUC_NULL_TERMINATED;
 VIPS_API
 int vips_zone(VipsImage **out, int width, int height, ...)
+	G_GNUC_NULL_TERMINATED;
+VIPS_API
+int vips_sdf(VipsImage **out, int width, int height, VipsSdfShape shape, ...)
 	G_GNUC_NULL_TERMINATED;
 
 VIPS_API

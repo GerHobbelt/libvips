@@ -101,20 +101,6 @@
 #include <vips/debug.h>
 #include <vips/internal.h>
 
-/**
- * SECTION: vips
- * @short_description: startup, shutdown, version
- * @stability: Stable
- * @see_also: <link linkend="VipsOperation">VipsOperation</link>
- * @include: vips/vips.h
- *
- * Start VIPS up, shut VIPS down, get version information, relocation.
- *
- * VIPS is a relocatable package, meaning you can move the directory tree you
- * compiled it to at runtime and it will still be able to find all data files.
- * This is required for OS X and Windows, but slightly unusual in the Unix
- * world. See vips_init() and vips_guess_prefix().
- */
 
 /* Open mode for image write.
  *
@@ -371,20 +357,18 @@ vips__read_header_bytes(VipsImage *im, unsigned char *from)
 	 */
 	value = g_enum_get_value(g_type_class_ref(VIPS_TYPE_INTERPRETATION),
 		im->Type);
-	if (!value ||
-		strcmp(value->value_nick, "last") == 0)
+	if (!value)
 		im->Type = VIPS_INTERPRETATION_ERROR;
 	value = g_enum_get_value(g_type_class_ref(VIPS_TYPE_CODING),
 		im->Coding);
-	if (!value ||
-		strcmp(value->value_nick, "last") == 0)
+	if (!value)
 		im->Coding = VIPS_CODING_ERROR;
 
 	/* Offset, Res, etc. don't affect vips file layout, just
 	 * pixel interpretation, don't clip them.
 	 */
 
-	/* Coding values imply Bands and BandFmt settings --- make sure they
+	/* Coding values imply Bands and BandFmt settings -- make sure they
 	 * are sane.
 	 */
 	switch (im->Coding) {
@@ -614,9 +598,9 @@ parser_element_start_handler(void *user_data,
 	if (strcmp(name, "field") == 0) {
 		for (p = atts; *p; p += 2) {
 			if (strcmp(p[0], "name") == 0)
-				vips_strncpy(vep->name, p[1], MAX_PARSE_ATTR);
+				g_strlcpy(vep->name, p[1], MAX_PARSE_ATTR);
 			if (strcmp(p[0], "type") == 0)
-				vips_strncpy(vep->type, p[1], MAX_PARSE_ATTR);
+				g_strlcpy(vep->type, p[1], MAX_PARSE_ATTR);
 		}
 
 		vips_dbuf_reset(&vep->dbuf);
@@ -1036,8 +1020,7 @@ vips_image_open_input(VipsImage *image)
 			VIPS_SIZEOF_HEADER ||
 		vips__read_header_bytes(image, header)) {
 		vips_error_system(errno, "VipsImage",
-			_("unable to read header for \"%s\""),
-			image->filename);
+			_("unable to read header for \"%s\""), image->filename);
 		return -1;
 	}
 
@@ -1050,8 +1033,8 @@ vips_image_open_input(VipsImage *image)
 		return -1;
 	image->file_length = rsize;
 	if (psize > rsize)
-		g_warning(_("unable to read data for \"%s\", %s"),
-			image->filename, _("file has been truncated"));
+		g_warning("unable to read data for \"%s\", %s",
+			image->filename, "file has been truncated");
 
 	/* Set demand style. This suits a disc file we read sequentially.
 	 */
@@ -1062,8 +1045,7 @@ vips_image_open_input(VipsImage *image)
 	 * harmless.
 	 */
 	if (readhist(image)) {
-		g_warning(_("error reading vips image metadata: %s"),
-			vips_error_buffer());
+		g_warning("error reading vips image metadata: %s", vips_error_buffer());
 		vips_error_clear();
 	}
 

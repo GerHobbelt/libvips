@@ -70,7 +70,6 @@
 
 #include <vips/vips.h>
 #include <vips/internal.h>
-#include <vips/thread.h>
 
 #ifdef DEBUG
 /* Track all buffers here for debugging.
@@ -89,7 +88,9 @@ static const int buffer_cache_max_reserve = 2;
 /* Workers have a BufferThread (and BufferCache) in a GPrivate they have
  * exclusive access to.
  */
-static GPrivate *buffer_thread_key = NULL;
+static void buffer_thread_destroy_notify(gpointer data);
+static GPrivate buffer_thread_key =
+	G_PRIVATE_INIT(buffer_thread_destroy_notify);
 
 void
 vips_buffer_print(VipsBuffer *buffer)
@@ -204,12 +205,12 @@ vips_buffer_free(VipsBuffer *buffer)
 	g_free(buffer);
 
 #ifdef DEBUG
-	g_mutex_lock(vips__global_lock);
+	g_mutex_lock(&vips__global_lock);
 
 	g_assert(g_slist_find(vips__buffer_all, buffer));
 	vips__buffer_all = g_slist_remove(vips__buffer_all, buffer);
 
-	g_mutex_unlock(vips__global_lock);
+	g_mutex_unlock(&vips__global_lock);
 #endif /*DEBUG*/
 
 #ifdef DEBUG_VERBOSE
@@ -232,10 +233,10 @@ buffer_cache_free(VipsBufferCache *cache)
 	GSList *p;
 
 #ifdef DEBUG_CREATE
-	g_mutex_lock(vips__global_lock);
+	g_mutex_lock(&vips__global_lock);
 	vips__buffer_cache_all =
 		g_slist_remove(vips__buffer_cache_all, cache);
-	g_mutex_unlock(vips__global_lock);
+	g_mutex_unlock(&vips__global_lock);
 
 	printf("buffer_cache_free: freeing cache %p on thread %p\n",
 		cache, g_thread_self());
@@ -281,10 +282,10 @@ buffer_cache_new(VipsBufferThread *buffer_thread, VipsImage *im)
 	cache->n_reserve = 0;
 
 #ifdef DEBUG_CREATE
-	g_mutex_lock(vips__global_lock);
+	g_mutex_lock(&vips__global_lock);
 	vips__buffer_cache_all =
 		g_slist_prepend(vips__buffer_cache_all, cache);
-	g_mutex_unlock(vips__global_lock);
+	g_mutex_unlock(&vips__global_lock);
 
 	printf("buffer_cache_new: new cache %p for thread %p on image %p\n",
 		cache, g_thread_self(), im);
@@ -321,9 +322,9 @@ buffer_thread_get(void)
 		 * will be calling vips_thread_shutdown() on thread
 		 * termination.
 		 */
-		if (!(buffer_thread = g_private_get(buffer_thread_key))) {
+		if (!(buffer_thread = g_private_get(&buffer_thread_key))) {
 			buffer_thread = buffer_thread_new();
-			g_private_set(buffer_thread_key, buffer_thread);
+			g_private_set(&buffer_thread_key, buffer_thread);
 		}
 
 		g_assert(buffer_thread->thread == g_thread_self());
@@ -535,10 +536,10 @@ vips_buffer_new(VipsImage *im, VipsRect *area)
 		buffer->bsize = 0;
 
 #ifdef DEBUG
-		g_mutex_lock(vips__global_lock);
+		g_mutex_lock(&vips__global_lock);
 		vips__buffer_all =
 			g_slist_prepend(vips__buffer_all, buffer);
-		g_mutex_unlock(vips__global_lock);
+		g_mutex_unlock(&vips__global_lock);
 #endif /*DEBUG*/
 	}
 
@@ -657,7 +658,7 @@ vips_buffer_unref_ref(VipsBuffer *old_buffer, VipsImage *im, VipsRect *area)
 }
 
 static void
-buffer_thread_destroy_notify(VipsBufferThread *buffer_thread)
+buffer_thread_destroy_notify(gpointer data)
 {
 	/* We only come here if vips_thread_shutdown() was not called for this
 	 * thread. Do our best to clean up.
@@ -665,7 +666,7 @@ buffer_thread_destroy_notify(VipsBufferThread *buffer_thread)
 	 * GPrivate has stopped working by this point in destruction, be
 	 * careful not to touch that.
 	 */
-	buffer_thread_free(buffer_thread);
+	buffer_thread_free(data);
 }
 
 /* Init the buffer cache system. This is called during vips_init.
@@ -673,11 +674,6 @@ buffer_thread_destroy_notify(VipsBufferThread *buffer_thread)
 void
 vips__buffer_init(void)
 {
-	static GPrivate private =
-		G_PRIVATE_INIT((GDestroyNotify) buffer_thread_destroy_notify);
-
-	buffer_thread_key = &private;
-
 	if (buffer_cache_max_reserve < 1)
 		printf("vips__buffer_init: buffer reserve disabled\n");
 
@@ -695,8 +691,8 @@ vips__buffer_shutdown(void)
 {
 	VipsBufferThread *buffer_thread;
 
-	if ((buffer_thread = g_private_get(buffer_thread_key))) {
+	if ((buffer_thread = g_private_get(&buffer_thread_key))) {
 		buffer_thread_free(buffer_thread);
-		g_private_set(buffer_thread_key, NULL);
+		g_private_set(&buffer_thread_key, NULL);
 	}
 }

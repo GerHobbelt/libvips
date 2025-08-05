@@ -189,7 +189,7 @@ vips_sharpen_build(VipsObject *object)
 	 */
 	if (!vips_object_argument_isset(object, "sigma") &&
 		vips_object_argument_isset(object, "radius"))
-		sharpen->sigma = 1 + sharpen->radius / 2;
+		sharpen->sigma = 1 + sharpen->radius / 2; // FIXME: Invalidates operation cache
 
 	in = sharpen->in;
 
@@ -199,8 +199,7 @@ vips_sharpen_build(VipsObject *object)
 	in = t[0];
 
 	if (vips_check_uncoded(class->nickname, in) ||
-		vips_check_bands_atleast(class->nickname, in, 3) ||
-		vips_check_format(class->nickname, in, VIPS_FORMAT_SHORT))
+		vips_check_bands_atleast(class->nickname, in, 3))
 		return -1;
 
 	/* Stop at 10% of max ... a bit mean. We always sharpen a short,
@@ -216,6 +215,12 @@ vips_sharpen_build(VipsObject *object)
 	printf("sharpen: blurring with:\n");
 	vips_matrixprint(t[1], NULL);
 #endif /*DEBUG*/
+
+	/* Make sure we're short (need this for the LUT) and not eg. float LABS.
+	 */
+	if (vips_cast_short(in, &t[2], NULL))
+		return -1;
+	in = t[2];
 
 	/* Index with the signed difference between two 0 - 32767 images.
 	 */
@@ -248,7 +253,7 @@ vips_sharpen_build(VipsObject *object)
 		if (y > sharpen->y2)
 			y = sharpen->y2;
 
-		sharpen->lut[i] = VIPS_RINT(y * 327.67);
+		sharpen->lut[i] = rint(y * 327.67);
 	}
 
 #ifdef DEBUG
@@ -392,19 +397,10 @@ vips_sharpen_init(VipsSharpen *sharpen)
  * vips_sharpen: (method)
  * @in: input image
  * @out: (out): output image
- * @...: %NULL-terminated list of optional named arguments
- *
- * Optional arguments:
- *
- * * @sigma: sigma of gaussian
- * * @x1: flat/jaggy threshold
- * * @y2: maximum amount of brightening
- * * @y3: maximum amount of darkening
- * * @m1: slope for flat areas
- * * @m2: slope for jaggy areas
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Selectively sharpen the L channel of a LAB image. The input image is
- * transformed to #VIPS_INTERPRETATION_LABS.
+ * transformed to [enum@Vips.Interpretation.LABS].
  *
  * The operation performs a gaussian blur and subtracts from @in to generate a
  * high-frequency signal. This signal is passed through a lookup table formed
@@ -412,36 +408,36 @@ vips_sharpen_init(VipsSharpen *sharpen)
  *
  * The lookup table is formed like this:
  *
- * |[
- * .                     ^
- * .                  y2 |- - - - - -----------
- * .                     |         /
- * .                     |        / slope m2
- * .                     |    .../
- * .             -x1     | ...   |
- * . -------------------...---------------------->
- * .             |   ... |      x1
- * .             |... slope m1
- * .             /       |
- * .            / m2     |
- * .           /         |
- * .          /          |
- * .         /           |
- * .        /            |
- * . ______/ _ _ _ _ _ _ | -y3
- * .                     |
- * ]|
+ * ```
+ *                     ^
+ *                  y2 |- - - - - -----------
+ *                     |         /
+ *                     |        / slope m2
+ *                     |    .../
+ *             -x1     | ...   |
+ * -------------------...---------------------->
+ *             |   ... |      x1
+ *             |... slope m1
+ *             /       |
+ *            / m2     |
+ *           /         |
+ *          /          |
+ *         /           |
+ *        /            |
+ * ______/ _ _ _ _ _ _ | -y3
+ *                     |
+ * ```
  *
  * For screen output, we suggest the following settings (the defaults):
  *
- * |[
- *   sigma == 0.5
- *   x1 == 2
- *   y2 == 10         (don't brighten by more than 10 L*)
- *   y3 == 20         (can darken by up to 20 L*)
- *   m1 == 0          (no sharpening in flat areas)
- *   m2 == 3          (some sharpening in jaggy areas)
- * ]|
+ * ```
+ * sigma == 0.5
+ * x1 == 2
+ * y2 == 10         (don't brighten by more than 10 L*)
+ * y3 == 20         (can darken by up to 20 L*)
+ * m1 == 0          (no sharpening in flat areas)
+ * m2 == 3          (some sharpening in jaggy areas)
+ * ```
  *
  * If you want more or less sharpening, we suggest you just change the
  * m2 parameter.
@@ -453,7 +449,16 @@ vips_sharpen_init(VipsSharpen *sharpen)
  * pixels/mm). These figures refer to the image raster, not the half-tone
  * resolution.
  *
- * See also: vips_conv().
+ * ::: tip "Optional arguments"
+ *     * @sigma: `gdouble`, sigma of gaussian
+ *     * @x1: `gdouble`, flat/jaggy threshold
+ *     * @y2: `gdouble`, maximum amount of brightening
+ *     * @y3: `gdouble`, maximum amount of darkening
+ *     * @m1: `gdouble`, slope for flat areas
+ *     * @m2: `gdouble`, slope for jaggy areas
+ *
+ * ::: seealso
+ *     [method@Image.conv].
  *
  * Returns: 0 on success, -1 on error.
  */

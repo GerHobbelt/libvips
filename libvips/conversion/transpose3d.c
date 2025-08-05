@@ -126,7 +126,7 @@ vips_transpose3d_build(VipsObject *object)
 
 	if (!vips_object_argument_isset(object, "page_height")) {
 		if (vips_image_get_int(in,
-				VIPS_META_PAGE_HEIGHT, &transpose3d->page_height))
+				VIPS_META_PAGE_HEIGHT, &transpose3d->page_height)) // FIXME: Invalidates operation cache
 			return -1;
 	}
 
@@ -186,27 +186,27 @@ vips_transpose3d_init(VipsTranspose3d *transpose3d)
  * vips_transpose3d: (method)
  * @in: input image
  * @out: (out): output image
- * @...: %NULL-terminated list of optional named arguments
- *
- * Optional arguments:
- *
- * * @page_height: %gint, size of each input page
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Transpose a volumetric image.
  *
  * Volumetric images are very tall, thin images, with the metadata item
- * #VIPS_META_PAGE_HEIGHT set to the height of each sub-image.
+ * [const@META_PAGE_HEIGHT] set to the height of each sub-image.
  *
  * This operation swaps the two major dimensions, so that page N in the
  * output contains the Nth scanline, in order, from each input page.
  *
- * You can override the #VIPS_META_PAGE_HEIGHT metadata item with the optional
+ * You can override the [const@META_PAGE_HEIGHT] metadata item with the optional
  * @page_height parameter.
  *
- * #VIPS_META_PAGE_HEIGHT in the output image is the number of pages in the
+ * [const@META_PAGE_HEIGHT] in the output image is the number of pages in the
  * input image.
  *
- * See also: vips_grid().
+ * ::: tip "Optional arguments"
+ *     * @page_height: `gint`, size of each input page
+ *
+ * ::: seealso
+ *     [method@Image.grid].
  *
  * Returns: 0 on success, -1 on error
  */

@@ -144,36 +144,13 @@ G_DEFINE_TYPE(VipsComplex, vips_complex, VIPS_TYPE_UNARY);
 	}
 
 static double
-vips_complex_hypot(double a, double b)
-{
-	double d;
-
-	/* hypot() is less sensitive to overflow. Use it if we can.
-	 */
-#ifdef HAVE_HYPOT
-	d = hypot(a, b);
-#else
-	d = sqrt(a * a + b * b);
-#endif
-
-	return d;
-}
-
-static double
 vips_complex_atan2(double a, double b)
 {
 	double h;
 
-	/* atan2() is very slow, but is better behaved when a is near 0. Use
-	 * it in preference when we can.
-	 */
-#ifdef HAVE_ATAN2
 	h = VIPS_DEG(atan2(b, a));
 	if (h < 0.0)
 		h += 360;
-#else
-	h = vips_col_ab2h(a, b);
-#endif
 
 	return h;
 }
@@ -184,7 +161,7 @@ vips_complex_atan2(double a, double b)
 		double im = (Y); \
 		double am, ph; \
 \
-		am = vips_complex_hypot(re, im); \
+		am = hypot(re, im); \
 		ph = vips_complex_atan2(re, im); \
 \
 		Q[0] = am; \
@@ -299,10 +276,10 @@ vips_complexv(VipsImage *in, VipsImage **out,
 
 /**
  * vips_complex: (method)
- * @in: input #VipsImage
- * @out: (out): output #VipsImage
+ * @in: input [class@Image]
+ * @out: (out): output [class@Image]
  * @cmplx: complex operation to perform
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Perform various operations on complex images.
  *
@@ -326,11 +303,11 @@ vips_complex(VipsImage *in, VipsImage **out, VipsOperationComplex cmplx, ...)
 
 /**
  * vips_polar: (method)
- * @in: input #VipsImage
- * @out: (out): output #VipsImage
- * @...: %NULL-terminated list of optional named arguments
+ * @in: input [class@Image]
+ * @out: (out): output [class@Image]
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Perform #VIPS_OPERATION_COMPLEX_POLAR on an image. See vips_complex().
+ * Perform [enum@Vips.OperationComplex.POLAR] on an image. See [method@Image.complex].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -349,11 +326,11 @@ vips_polar(VipsImage *in, VipsImage **out, ...)
 
 /**
  * vips_rect: (method)
- * @in: input #VipsImage
- * @out: (out): output #VipsImage
- * @...: %NULL-terminated list of optional named arguments
+ * @in: input [class@Image]
+ * @out: (out): output [class@Image]
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Perform #VIPS_OPERATION_COMPLEX_RECT on an image. See vips_complex().
+ * Perform [enum@Vips.OperationComplex.RECT] on an image. See [method@Image.complex].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -372,11 +349,11 @@ vips_rect(VipsImage *in, VipsImage **out, ...)
 
 /**
  * vips_conj: (method)
- * @in: input #VipsImage
- * @out: (out): output #VipsImage
- * @...: %NULL-terminated list of optional named arguments
+ * @in: input [class@Image]
+ * @out: (out): output [class@Image]
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Perform #VIPS_OPERATION_COMPLEX_CONJ on an image. See vips_complex().
+ * Perform [enum@Vips.OperationComplex.CONJ] on an image. See [method@Image.complex].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -469,64 +446,37 @@ G_DEFINE_TYPE(VipsComplex2, vips_complex2, VIPS_TYPE_BINARY);
 		g_assert_not_reached(); \
 	}
 
-/* There doesn't seem to be much difference in speed between these two methods
- * (on an Athlon64), so I use the modulus argument version, since atan2() is
- * in c89 but hypot() is c99.
- *
- * If you think that it might be faster on your platform, uncomment the
- * following:
- */
-#define USE_MODARG_DIV
-
-#ifdef USE_MODARG_DIV
-
 #define CROSS(Q, X1, Y1, X2, Y2) \
 	{ \
 		if (((X1) == 0.0 && (Y1) == 0.0) || \
-			((X2) == 0.0 && (Y2) == 0.0)) { \
-			Q[0] = 0.0; \
-			Q[1] = 0.0; \
-		} \
-		else { \
-			double arg = atan2(X2, X1) - atan2(Y2, Y1); \
-\
-			Q[0] = cos(arg); \
-			Q[1] = sin(arg); \
-		} \
-	}
-
-#else /* USE_MODARG_DIV */
-
-#define CROSS(Q, X1, Y1, X2, Y2) \
-	{ \
-		if (((X1) == 0.0 && (Y1) == 0.0) || \
-			((X2) == 0.0 && (Y2) == 0.0)) { \
+			((X2) == 0.0 && (Y2) == 0.0) || \
+			((Y1) == 0.0 && (Y2) == 0.0)) { \
 			Q[0] = 0.0; \
 			Q[1] = 0.0; \
 		} \
 		else if (ABS(Y1) > ABS(Y2)) { \
-			double a = Y2 / Y1; \
+			double y1 = Y1; /* this suppress C2142 (division by zero) error on MSVC */ \
+			double a = Y2 / y1; \
 			double b = Y1 + Y2 * a; \
 			double re = (X1 + X2 * a) / b; \
 			double im = (X2 - X1 * a) / b; \
-			double mod = vips__hypot(re, im); \
+			double mod = hypot(re, im); \
 \
 			Q[0] = re / mod; \
 			Q[1] = im / mod; \
 		} \
 		else { \
-			double a = Y1 / Y2; \
+			double y2 = Y2; \
+			double a = Y1 / y2; \
 			double b = Y2 + Y1 * a; \
 			double re = (X1 * a + X2) / b; \
 			double im = (X2 * a - X1) / b; \
-			double mod = vips__hypot(re, im); \
+			double mod = hypot(re, im); \
 \
 			Q[0] = re / mod; \
 			Q[1] = im / mod; \
 		} \
 	}
-
-#endif /* USE_MODARG_DIV */
 
 static void
 vips_complex2_buffer(VipsArithmetic *arithmetic,
@@ -606,12 +556,12 @@ vips_complex2v(VipsImage *left, VipsImage *right, VipsImage **out,
 }
 
 /**
- * vips_complex2:
- * @left: input #VipsImage
- * @right: input #VipsImage
- * @out: (out): output #VipsImage
+ * vips_complex2: (method)
+ * @left: input [class@Image]
+ * @right: input [class@Image]
+ * @out: (out): output [class@Image]
  * @cmplx: complex2 operation to perform
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Perform various binary operations on complex images.
  *
@@ -635,14 +585,14 @@ vips_complex2(VipsImage *left, VipsImage *right, VipsImage **out,
 }
 
 /**
- * vips_cross_phase:
- * @left: input #VipsImage
- * @right: input #VipsImage
- * @out: (out): output #VipsImage
- * @...: %NULL-terminated list of optional named arguments
+ * vips_cross_phase: (method)
+ * @left: input [class@Image]
+ * @right: input [class@Image]
+ * @out: (out): output [class@Image]
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Perform #VIPS_OPERATION_COMPLEX2_CROSS_PHASE on an image.
- * See vips_complex2().
+ * Perform [enum@Vips.OperationComplex2.CROSS_PHASE] on an image.
+ * See [method@Image.complex2].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -840,16 +790,16 @@ vips_complexgetv(VipsImage *in, VipsImage **out,
 
 /**
  * vips_complexget: (method)
- * @in: input #VipsImage
- * @out: (out): output #VipsImage
+ * @in: input [class@Image]
+ * @out: (out): output [class@Image]
  * @get: complex operation to perform
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Get components of complex images.
  *
- * The output type is the same as the input type, except #VIPS_FORMAT_COMPLEX
- * becomes #VIPS_FORMAT_FLOAT and #VIPS_FORMAT_DPCOMPLEX becomes
- * #VIPS_FORMAT_DOUBLE.
+ * The output type is the same as the input type, except [enum@Vips.BandFormat.COMPLEX]
+ * becomes [enum@Vips.BandFormat.FLOAT] and [enum@Vips.BandFormat.DPCOMPLEX] becomes
+ * [enum@Vips.BandFormat.DOUBLE].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -869,11 +819,11 @@ vips_complexget(VipsImage *in, VipsImage **out,
 
 /**
  * vips_real: (method)
- * @in: input #VipsImage
- * @out: (out): output #VipsImage
- * @...: %NULL-terminated list of optional named arguments
+ * @in: input [class@Image]
+ * @out: (out): output [class@Image]
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Perform #VIPS_OPERATION_COMPLEXGET_REAL on an image. See vips_complexget().
+ * Perform [enum@Vips.OperationComplexget.REAL] on an image. See [method@Image.complexget].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -893,11 +843,11 @@ vips_real(VipsImage *in, VipsImage **out, ...)
 
 /**
  * vips_imag: (method)
- * @in: input #VipsImage
- * @out: (out): output #VipsImage
- * @...: %NULL-terminated list of optional named arguments
+ * @in: input [class@Image]
+ * @out: (out): output [class@Image]
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Perform #VIPS_OPERATION_COMPLEXGET_IMAG on an image. See vips_complexget().
+ * Perform [enum@Vips.OperationComplexget.IMAG] on an image. See [method@Image.complexget].
  *
  * Returns: 0 on success, -1 on error
  */
@@ -1040,15 +990,15 @@ vips_complexform_init(VipsComplexform *complexform)
 }
 
 /**
- * vips_complexform:
+ * vips_complexform: (method)
  * @left: input image
  * @right: input image
  * @out: (out): output image
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Compose two real images to make a complex image. If either @left or @right
- * are #VIPS_FORMAT_DOUBLE, @out is #VIPS_FORMAT_DPCOMPLEX. Otherwise @out
- * is #VIPS_FORMAT_COMPLEX. @left becomes the real component of @out and
+ * are [enum@Vips.BandFormat.DOUBLE], @out is [enum@Vips.BandFormat.DPCOMPLEX]. Otherwise @out
+ * is [enum@Vips.BandFormat.COMPLEX]. @left becomes the real component of @out and
  * @right the imaginary.
  *
  * If the number of bands differs, one of the images
@@ -1056,7 +1006,8 @@ vips_complexform_init(VipsComplexform *complexform)
  * one-band image by joining n copies of the one-band image together, and then
  * the two n-band images are operated upon.
  *
- * See also: vips_complexget().
+ * ::: seealso
+ *     [method@Image.complexget].
  *
  * Returns: 0 on success, -1 on error
  */

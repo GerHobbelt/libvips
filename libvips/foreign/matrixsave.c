@@ -177,7 +177,7 @@ vips_foreign_save_matrix_class_init(VipsForeignSaveMatrixClass *class)
 
 	foreign_class->suffs = vips_foreign_save_matrix_suffs;
 
-	save_class->saveable = VIPS_SAVEABLE_MONO;
+	save_class->saveable = VIPS_FOREIGN_SAVEABLE_MONO;
 	save_class->format_table = bandfmt_matrix;
 }
 
@@ -305,13 +305,11 @@ vips_foreign_print_matrix_build(VipsObject *object)
 {
 	VipsForeignSaveMatrix *matrix = (VipsForeignSaveMatrix *) object;
 
-	if (!(matrix->target = vips_target_new_to_descriptor(0)))
+	if (!(matrix->target = vips_target_new_to_descriptor(1)))
 		return -1;
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_print_matrix_parent_class)->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_print_matrix_parent_class)
+		->build(object);
 }
 
 static void
@@ -333,12 +331,13 @@ vips_foreign_print_matrix_init(VipsForeignPrintMatrix *matrix)
  * vips_matrixsave: (method)
  * @in: image to save
  * @filename: file to write to
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Write @in to @filename in matrix format. See vips_matrixload() for a
+ * Write @in to @filename in matrix format. See [ctor@Image.matrixload] for a
  * description of the format.
  *
- * See also: vips_matrixload().
+ * ::: seealso
+ *     [ctor@Image.matrixload].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -359,11 +358,12 @@ vips_matrixsave(VipsImage *in, const char *filename, ...)
  * vips_matrixsave_target: (method)
  * @in: image to save
  * @target: save image to this target
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * As vips_matrixsave(), but save to a target.
+ * As [method@Image.matrixsave], but save to a target.
  *
- * See also: vips_matrixsave().
+ * ::: seealso
+ *     [method@Image.matrixsave].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -383,12 +383,13 @@ vips_matrixsave_target(VipsImage *in, VipsTarget *target, ...)
 /**
  * vips_matrixprint: (method)
  * @in: image to print
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Print @in to %stdout in matrix format. See vips_matrixload() for a
+ * Print @in to %stdout in matrix format. See [ctor@Image.matrixload] for a
  * description of the format.
  *
- * See also: vips_matrixload().
+ * ::: seealso
+ *     [ctor@Image.matrixload].
  *
  * Returns: 0 on success, -1 on error.
  */

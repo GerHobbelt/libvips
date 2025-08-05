@@ -285,10 +285,6 @@
  */
 #define MAX_ALPHA (64)
 
-/* Bioformats uses this tag for lossy jp2k compressed tiles.
- */
-#define JP2K_LOSSY 33004
-
 /* Compression types we handle ourselves.
  */
 static int wtiff_we_compress[] = {
@@ -367,7 +363,7 @@ struct _Wtiff {
 	int rgbjpeg;					/* True for RGB not YCbCr */
 	int properties;					/* Set to save XML props */
 	VipsRegionShrink region_shrink; /* How to shrink regions */
-	int level;						/* zstd compression level */
+	int level;						/* Deflate (zlib) / zstd compression level */
 	gboolean lossless;				/* lossless mode */
 	VipsForeignDzDepth depth;		/* Pyr depth */
 	gboolean subifd;				/* Write pyr layers into subifds */
@@ -393,8 +389,18 @@ struct _Wtiff {
 
 	/* Lock thread calls into libtiff with this.
 	 */
-	GMutex *lock;
+	GMutex lock;
 };
+
+/* libvips uses size_t for the length of binary data items, but libtiff wants
+ * uint32.
+ */
+static void
+set_data64(TIFF *tif, guint32 tag, size_t length, const void *data)
+{
+	if (length <= UINT_MAX)
+        TIFFSetField(tif, tag, (guint32) length, data);
+}
 
 /* Write an ICC Profile from a file into the JPEG stream.
  */
@@ -410,7 +416,7 @@ embed_profile_file(TIFF *tif, const char *profile)
 		size_t length;
 		const void *data = vips_blob_get(blob, &length);
 
-		TIFFSetField(tif, TIFFTAG_ICCPROFILE, length, data);
+		set_data64(tif, TIFFTAG_ICCPROFILE, length, data);
 
 #ifdef DEBUG
 		printf("vips2tiff: attached profile \"%s\"\n", profile);
@@ -432,13 +438,29 @@ embed_profile_meta(TIFF *tif, VipsImage *im)
 
 	if (vips_image_get_blob(im, VIPS_META_ICC_NAME, &data, &length))
 		return -1;
-	TIFFSetField(tif, TIFFTAG_ICCPROFILE, length, data);
+	set_data64(tif, TIFFTAG_ICCPROFILE, length, data);
 
 #ifdef DEBUG
 	printf("vips2tiff: attached profile from meta\n");
 #endif /*DEBUG*/
 
 	return 0;
+}
+
+static int
+wtiff_handler_error(TIFF *tiff, void* user_data,
+	const char *module, const char *fmt, va_list ap)
+{
+	vips_verror("vips2tiff", fmt, ap);
+	return 1;
+}
+
+static int
+wtiff_handler_warning(TIFF *tiff, void* user_data,
+	const char *module, const char *fmt, va_list ap)
+{
+	g_logv(G_LOG_DOMAIN, G_LOG_LEVEL_WARNING, fmt, ap);
+	return 1;
 }
 
 static void
@@ -475,9 +497,16 @@ wtiff_layer_init(Wtiff *wtiff, Layer **layer, Layer *above,
 			(*layer)->target = wtiff->target;
 			g_object_ref((*layer)->target);
 		}
-		else
-			(*layer)->target =
-				vips_target_new_temp(wtiff->target);
+		else {
+			const guint64 disc_threshold = vips_get_disc_threshold();
+			const guint64 layer_size =
+				VIPS_IMAGE_SIZEOF_PEL(wtiff->ready) * width * height;
+
+			if (layer_size > disc_threshold)
+				(*layer)->target = vips_target_new_temp(wtiff->target);
+			else
+				(*layer)->target = vips_target_new_to_memory();
+		}
 
 		/*
 		printf("wtiff_layer_init: sub = %d, width = %d, height = %d\n",
@@ -504,6 +533,9 @@ wtiff_layer_init(Wtiff *wtiff, Layer **layer, Layer *above,
 			break;
 
 		default:
+			// stop a compiler warning
+			limitw = 128;
+			limith = 128;
 			g_assert_not_reached();
 		}
 
@@ -513,8 +545,7 @@ wtiff_layer_init(Wtiff *wtiff, Layer **layer, Layer *above,
 		 * Very tall or wide images might end up with a smallest layer
 		 * larger than one tile.
 		 */
-		if (((*layer)->width > limitw ||
-				(*layer)->height > limith) &&
+		if (((*layer)->width > limitw || (*layer)->height > limith) &&
 			(*layer)->width > 1 &&
 			(*layer)->height > 1)
 			wtiff_layer_init(wtiff, &(*layer)->below, *layer,
@@ -551,7 +582,7 @@ wtiff_embed_xmp(Wtiff *wtiff, TIFF *tif)
 	if (vips_image_get_blob(wtiff->ready, VIPS_META_XMP_NAME,
 			&data, &size))
 		return -1;
-	TIFFSetField(tif, TIFFTAG_XMLPACKET, size, data);
+	set_data64(tif, TIFFTAG_XMLPACKET, size, data);
 
 #ifdef DEBUG
 	printf("vips2tiff: attached XMP from meta\n");
@@ -576,14 +607,14 @@ wtiff_embed_iptc(Wtiff *wtiff, TIFF *tif)
 	 * long, not byte.
 	 */
 	if (size & 3) {
-		g_warning("%s", _("rounding up IPTC data length"));
+		g_warning("rounding up IPTC data length");
 		size /= 4;
 		size += 1;
 	}
 	else
 		size /= 4;
 
-	TIFFSetField(tif, TIFFTAG_RICHTIFFIPTC, size, data);
+	set_data64(tif, TIFFTAG_RICHTIFFIPTC, size, data);
 
 #ifdef DEBUG
 	printf("vips2tiff: attached IPTC from meta\n");
@@ -598,16 +629,16 @@ wtiff_embed_photoshop(Wtiff *wtiff, TIFF *tif)
 	const void *data;
 	size_t size;
 
-	if (!vips_image_get_typeof(wtiff->ready, VIPS_META_PHOTOSHOP_NAME))
-		return 0;
-	if (vips_image_get_blob(wtiff->ready, VIPS_META_PHOTOSHOP_NAME,
-			&data, &size))
-		return -1;
-	TIFFSetField(tif, TIFFTAG_PHOTOSHOP, size, data);
+	if (vips_image_get_typeof(wtiff->ready, VIPS_META_PHOTOSHOP_NAME)) {
+		if (vips_image_get_blob(wtiff->ready, VIPS_META_PHOTOSHOP_NAME,
+				&data, &size))
+			return -1;
+		set_data64(tif, TIFFTAG_PHOTOSHOP, size, data);
 
 #ifdef DEBUG
-	printf("vips2tiff: attached photoshop data from meta\n");
+		printf("vips2tiff: attached %zd bytes of photoshop data\n", size);
 #endif /*DEBUG*/
+	}
 
 	return 0;
 }
@@ -686,28 +717,27 @@ wtiff_compress_jpeg_header(Wtiff *wtiff,
 	 */
 	jpeg_set_quality(cinfo, wtiff->Q, TRUE);
 
-	if (image->Bands != 3 ||
-		wtiff->Q >= 90)
-		/* No chroma subsample.
-		 */
-		for (int i = 0; i < image->Bands; i++) {
-			cinfo->comp_info[i].h_samp_factor = 1;
-			cinfo->comp_info[i].v_samp_factor = 1;
-		}
-	else {
-		/* Use 4:2:0 subsampling, we must set this explicitly, since some
-		 * jpeg libraries do not enable chroma subsample by default.
-		 */
-		cinfo->comp_info[0].h_samp_factor = 2;
-		cinfo->comp_info[0].v_samp_factor = 2;
+	/* We must set chroma subsampling explicitly since some libjpegs do not
+	 * enable this by default.
+	 */
+	if (image->Bands == 3 &&
+		wtiff->Q < 90)
+		cinfo->comp_info[0].h_samp_factor = cinfo->comp_info[0].v_samp_factor = 2;
+	else
+		cinfo->comp_info[0].h_samp_factor = cinfo->comp_info[0].v_samp_factor = 1;
 
-		/* Rest should have sampling factors 1,1.
-		 */
-		for (int i = 1; i < image->Bands; i++) {
-			cinfo->comp_info[i].h_samp_factor = 1;
-			cinfo->comp_info[i].v_samp_factor = 1;
-		}
-	}
+	/* Rest should have sampling factors 1,1.
+	 */
+	for (int i = 1; i < image->Bands; i++)
+		cinfo->comp_info[i].h_samp_factor = cinfo->comp_info[i].v_samp_factor = 1;
+
+	/* For low Q, we write YCbCr, for high Q, RGB. The jpeg coeffs don't
+	 * encode the photometric interpretation, the tiff header does that,
+	 * so this code must be kept synced with wtiff_write_header().
+	 */
+	if (image->Bands == 3 &&
+		wtiff->Q >= 90)
+		jpeg_set_colorspace(cinfo, JCS_RGB);
 
 	// Avoid writing the JFIF APP0 marker.
 	cinfo->write_JFIF_header = FALSE;
@@ -731,6 +761,9 @@ wtiff_compress_jpeg(Wtiff *wtiff,
 
 	// we could have one of these per thread and reuse it for a small speedup
 	cinfo.err = jpeg_std_error(&eman.pub);
+	cinfo.err->addon_message_table = vips__jpeg_message_table;
+	cinfo.err->first_addon_message = 1000;
+	cinfo.err->last_addon_message = 1001;
 	cinfo.dest = NULL;
 	eman.pub.error_exit = vips__new_error_exit;
 	eman.pub.output_message = vips__new_output_message;
@@ -739,7 +772,7 @@ wtiff_compress_jpeg(Wtiff *wtiff,
 	// we need a line buffer to pad edge tiles
 	line = VIPS_MALLOC(NULL, wtiff->tilew * sizeof_pel);
 
-	/* Error handling. The error message will have ben set by our handlers.
+	/* Error handling. The error message will have been set by our handlers.
 	 */
 	if (setjmp(eman.jmp)) {
 		jpeg_destroy_compress(&cinfo);
@@ -804,6 +837,9 @@ wtiff_compress_jpeg_tables(Wtiff *wtiff,
 	struct jpeg_error_mgr jerr;
 
 	cinfo.err = jpeg_std_error(&jerr);
+	cinfo.err->addon_message_table = vips__jpeg_message_table;
+	cinfo.err->first_addon_message = 1000;
+	cinfo.err->last_addon_message = 1001;
 	jpeg_create_compress(&cinfo);
 
 	/* Attach output.
@@ -853,12 +889,18 @@ wtiff_write_header(Wtiff *wtiff, Layer *layer)
 		TIFFSetField(tif, TIFFTAG_WEBP_LOSSLESS, wtiff->lossless);
 	}
 	if (wtiff->compression == COMPRESSION_ZSTD) {
-		TIFFSetField(tif, TIFFTAG_ZSTD_LEVEL, wtiff->level);
-		if (wtiff->predictor != VIPS_FOREIGN_TIFF_PREDICTOR_NONE)
+		// Set zstd compression level - only accept valid values (1-22)
+		if (wtiff->level)
 			TIFFSetField(tif,
-				TIFFTAG_PREDICTOR, wtiff->predictor);
+				TIFFTAG_ZSTD_LEVEL, VIPS_CLIP(1, wtiff->level, 22));
+		if (wtiff->predictor != VIPS_FOREIGN_TIFF_PREDICTOR_NONE)
+			TIFFSetField(tif, TIFFTAG_PREDICTOR, wtiff->predictor);
 	}
 #endif /*HAVE_TIFF_COMPRESSION_WEBP*/
+
+	// Set deflate (zlib) compression level - only accept valid values (1-9)
+	if (wtiff->compression == COMPRESSION_ADOBE_DEFLATE && wtiff->level)
+		TIFFSetField(tif, TIFFTAG_ZIPQUALITY, VIPS_CLIP(1, wtiff->level, 9));
 
 	if ((wtiff->compression == COMPRESSION_ADOBE_DEFLATE ||
 			wtiff->compression == COMPRESSION_LZW) &&
@@ -924,8 +966,7 @@ wtiff_write_header(Wtiff *wtiff, Layer *layer)
 
 		int alpha_bands;
 
-		TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL,
-			wtiff->ready->Bands);
+		TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, wtiff->ready->Bands);
 		TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE,
 			vips_format_sizeof(wtiff->ready->BandFmt) << 3);
 
@@ -934,9 +975,8 @@ wtiff_write_header(Wtiff *wtiff, Layer *layer)
 			wtiff->ready->Bands < 3) {
 			/* Mono or mono + alpha.
 			 */
-			photometric = wtiff->miniswhite
-				? PHOTOMETRIC_MINISWHITE
-				: PHOTOMETRIC_MINISBLACK;
+			photometric = wtiff->miniswhite ?
+				PHOTOMETRIC_MINISWHITE : PHOTOMETRIC_MINISBLACK;
 			colour_bands = 1;
 		}
 		else if (wtiff->ready->Type == VIPS_INTERPRETATION_LAB ||
@@ -950,12 +990,10 @@ wtiff_write_header(Wtiff *wtiff, Layer *layer)
 			photometric = PHOTOMETRIC_LOGLUV;
 			/* Tell libtiff we will write as float XYZ.
 			 */
-			TIFFSetField(tif,
-				TIFFTAG_SGILOGDATAFMT, SGILOGDATAFMT_FLOAT);
+			TIFFSetField(tif, TIFFTAG_SGILOGDATAFMT, SGILOGDATAFMT_FLOAT);
 			stonits = 1.0;
 			if (vips_image_get_typeof(wtiff->ready, "stonits"))
-				vips_image_get_double(wtiff->ready,
-					"stonits", &stonits);
+				vips_image_get_double(wtiff->ready, "stonits", &stonits);
 			TIFFSetField(tif, TIFFTAG_STONITS, stonits);
 			colour_bands = 3;
 		}
@@ -974,8 +1012,7 @@ wtiff_write_header(Wtiff *wtiff, Layer *layer)
 			 * that we will supply the image as YCbCr.
 			 */
 			photometric = PHOTOMETRIC_YCBCR;
-			TIFFSetField(tif, TIFFTAG_JPEGCOLORMODE,
-				JPEGCOLORMODE_RGB);
+			TIFFSetField(tif, TIFFTAG_JPEGCOLORMODE, JPEGCOLORMODE_RGB);
 			colour_bands = 3;
 		}
 		else {
@@ -1001,11 +1038,9 @@ wtiff_write_header(Wtiff *wtiff, Layer *layer)
 			 * we are premultiplying.
 			 */
 			for (i = 0; i < alpha_bands; i++)
-				v[i] = i == 0 && wtiff->premultiply
-					? EXTRASAMPLE_ASSOCALPHA
-					: EXTRASAMPLE_UNASSALPHA;
-			TIFFSetField(tif,
-				TIFFTAG_EXTRASAMPLES, alpha_bands, v);
+				v[i] = i == 0 && wtiff->premultiply ?
+					EXTRASAMPLE_ASSOCALPHA : EXTRASAMPLE_UNASSALPHA;
+			TIFFSetField(tif, TIFFTAG_EXTRASAMPLES, alpha_bands, v);
 		}
 
 		TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, photometric);
@@ -1079,7 +1114,7 @@ wtiff_write_header(Wtiff *wtiff, Layer *layer)
 		printf("setting %zd bytes of table data\n", length);
 #endif /*DEBUG*/
 
-		TIFFSetField(tif, TIFFTAG_JPEGTABLES, length, buffer);
+		set_data64(tif, TIFFTAG_JPEGTABLES, length, buffer);
 
 		g_free(buffer);
 	}
@@ -1139,7 +1174,8 @@ wtiff_allocate_layers(Wtiff *wtiff)
 			vips__region_no_ownership(layer->copy);
 
 			layer->tif = vips__tiff_openout_target(layer->target,
-				wtiff->bigtiff);
+				wtiff->bigtiff, wtiff_handler_error,
+				wtiff_handler_warning, wtiff);
 			if (!layer->tif)
 				return -1;
 		}
@@ -1192,7 +1228,7 @@ wtiff_free(Wtiff *wtiff)
 
 	VIPS_UNREF(wtiff->ready);
 	VIPS_FREE(wtiff->tbuf);
-	VIPS_FREEF(vips_g_mutex_free, wtiff->lock);
+	g_mutex_clear(&wtiff->lock);
 	VIPS_FREE(wtiff);
 }
 
@@ -1359,7 +1395,7 @@ wtiff_new(VipsImage *input, VipsTarget *target,
 	wtiff->page_number = 0;
 	wtiff->n_pages = 1;
 	wtiff->image_height = input->Ysize;
-	wtiff->lock = vips_g_mutex_new();
+	g_mutex_init(&wtiff->lock);
 
 	/* Any pre-processing on the image.
 	 */
@@ -1449,8 +1485,7 @@ wtiff_new(VipsImage *input, VipsTarget *target,
 		!(wtiff->bitdepth == 1 ||
 			wtiff->bitdepth == 2 ||
 			wtiff->bitdepth == 4)) {
-		g_warning("%s",
-			_("bitdepth 1, 2 or 4 only -- disabling bitdepth"));
+		g_warning("bitdepth 1, 2 or 4 only -- disabling bitdepth");
 		wtiff->bitdepth = 0;
 	}
 
@@ -1461,16 +1496,14 @@ wtiff_new(VipsImage *input, VipsTarget *target,
 		!(wtiff->ready->Coding == VIPS_CODING_NONE &&
 			wtiff->ready->BandFmt == VIPS_FORMAT_UCHAR &&
 			wtiff->ready->Bands == 1)) {
-		g_warning("%s",
-			("can only set bitdepth for 1-band uchar and "
-			 "3-band float lab -- disabling bitdepth"));
+		g_warning("can only set bitdepth for 1-band uchar and "
+				  "3-band float lab -- disabling bitdepth");
 		wtiff->bitdepth = 0;
 	}
 
 	if (wtiff->bitdepth &&
 		wtiff->compression == COMPRESSION_JPEG) {
-		g_warning("%s",
-			_("can't have <8 bit JPEG -- disabling JPEG"));
+		g_warning("can't have <8 bit JPEG -- disabling JPEG");
 		wtiff->compression = COMPRESSION_NONE;
 	}
 
@@ -1480,9 +1513,8 @@ wtiff_new(VipsImage *input, VipsTarget *target,
 		(wtiff->ready->Coding != VIPS_CODING_NONE ||
 			vips_band_format_iscomplex(wtiff->ready->BandFmt) ||
 			wtiff->ready->Bands > 2)) {
-		g_warning("%s",
-			_("can only save non-complex greyscale images "
-			  "as miniswhite -- disabling miniswhite"));
+		g_warning("can only save non-complex greyscale images "
+				  "as miniswhite -- disabling miniswhite");
 		wtiff->miniswhite = FALSE;
 	}
 
@@ -1757,11 +1789,11 @@ wtiff_row_add_tile(WtiffRow *row,
 	tile->buffer = buffer;
 	tile->length = length;
 
-	g_mutex_lock(row->wtiff->lock);
+	g_mutex_lock(&row->wtiff->lock);
 
 	row->tiles = g_slist_prepend(row->tiles, tile);
 
-	g_mutex_unlock(row->wtiff->lock);
+	g_mutex_unlock(&row->wtiff->lock);
 
 	return 0;
 }
@@ -2270,7 +2302,7 @@ wtiff_write_lines(Wtiff *wtiff, VipsRegion *region, VipsRect *lines)
  */
 #define CopyField(tag, v) \
 	if (TIFFGetField(in, tag, &v)) \
-	TIFFSetField(out, tag, v)
+		TIFFSetField(out, tag, v)
 
 static int
 wtiff_copy_tiles(Wtiff *wtiff, TIFF *out, TIFF *in)
@@ -2288,7 +2320,7 @@ wtiff_copy_tiles(Wtiff *wtiff, TIFF *out, TIFF *in)
 	 * simpler than searching every page for the largest tile with
 	 * TIFFTAG_TILEBYTECOUNTS.
 	 */
-	tile_size = 2 * wtiff->tls * wtiff->tileh;
+	tile_size = (tsize_t) 2 * wtiff->tls * wtiff->tileh;
 
 	buf = vips_malloc(NULL, tile_size);
 
@@ -2394,7 +2426,8 @@ wtiff_gather(Wtiff *wtiff)
 			if (!(source = vips_source_new_from_target(layer->target)))
 				return -1;
 
-			if (!(in = vips__tiff_openin_source(source))) {
+			if (!(in = vips__tiff_openin_source(source, wtiff_handler_error,
+				wtiff_handler_warning, NULL, FALSE))) {
 				VIPS_UNREF(source);
 				return -1;
 			}

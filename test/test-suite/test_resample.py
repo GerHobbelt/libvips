@@ -83,7 +83,8 @@ class TestResample:
         for fac in [1, 1.1, 1.5, 1.999]:
             for fmt in all_formats:
                 for kernel in ["nearest", "linear",
-                               "cubic", "lanczos2", "lanczos3"]:
+                               "cubic", "lanczos2",
+                               "lanczos3", "mks2013", "mks2021"]:
                     x = im.cast(fmt)
                     r = x.reduce(fac, fac, kernel=kernel)
                     d = abs(r.avg() - im.avg())
@@ -93,7 +94,8 @@ class TestResample:
         for const in [0, 1, 2, 254, 255]:
             im = (pyvips.Image.black(10, 10) + const).cast("uchar")
             for kernel in ["nearest", "linear",
-                           "cubic", "lanczos2", "lanczos3"]:
+                           "cubic", "lanczos2",
+                           "lanczos3", "mks2013", "mks2021"]:
                 # print "testing kernel =", kernel
                 # print "testing const =", const
                 shr = im.reduce(2, 2, kernel=kernel)
@@ -149,8 +151,6 @@ class TestResample:
         assert im2.height == int(im.height / 2.5 + 0.5)
         assert abs(im.avg() - im2.avg()) < 1
 
-    @pytest.mark.skipif(not pyvips.at_least_libvips(8, 5),
-                        reason="requires libvips >= 8.5")
     def test_thumbnail(self):
         im = pyvips.Image.thumbnail(JPEG_FILE, 100)
 
@@ -215,9 +215,10 @@ class TestResample:
         assert abs(im1.avg() - im2.avg()) < 1
 
         # linear shrink should work on rgba images
-        im1 = pyvips.Image.thumbnail(RGBA_FILE, 64, linear=True)
-        im2 = pyvips.Image.new_from_file(RGBA_CORRECT_FILE)
-        assert abs(im1.flatten(background=255).avg() - im2.avg()) < 1
+        if have("ppmload"):
+            im1 = pyvips.Image.thumbnail(RGBA_FILE, 64, linear=True)
+            im2 = pyvips.Image.new_from_file(RGBA_CORRECT_FILE)
+            assert abs(im1.flatten(background=255).avg() - im2.avg()) < 1
 
         # thumbnailing a 16-bit image should always make an 8-bit image
         rgb16_buffer = pyvips.Image \
@@ -236,10 +237,8 @@ class TestResample:
             assert thumb.width < thumb.height
             assert thumb.height == 100
 
-    @pytest.mark.skipif(not pyvips.at_least_libvips(8, 5),
-                        reason="requires libvips >= 8.5")
     def test_thumbnail_icc(self):
-        im = pyvips.Image.thumbnail(JPEG_FILE_XYB, 442, export_profile="srgb", intent="perceptual")
+        im = pyvips.Image.thumbnail(JPEG_FILE_XYB, 442, output_profile="srgb")
 
         assert im.width == 290
         assert im.height == 442
@@ -248,7 +247,7 @@ class TestResample:
         # the colour distance should not deviate too much
         # (i.e. the embedded profile should not be ignored)
         im_orig = pyvips.Image.new_from_file(JPEG_FILE)
-        assert im_orig.de00(im).max() < 11
+        assert im_orig.de00(im).max() < 10
 
     def test_similarity(self):
         im = pyvips.Image.new_from_file(JPEG_FILE)

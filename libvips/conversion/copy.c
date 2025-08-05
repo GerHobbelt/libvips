@@ -178,8 +178,7 @@ vips_copy_build(VipsObject *object)
 		return -1;
 
 	if (copy->swap)
-		g_warning("%s",
-			_("copy swap is deprecated, use byteswap instead"));
+		g_warning("copy swap is deprecated, use byteswap instead");
 
 	if (vips_image_pipelinev(conversion->out,
 			VIPS_DEMAND_STYLE_THINSTRIP, copy->in, NULL))
@@ -363,20 +362,7 @@ vips_copy_init(VipsCopy *copy)
  * vips_copy: (method)
  * @in: input image
  * @out: (out): output image
- * @...: %NULL-terminated list of optional named arguments
- *
- * Optional arguments:
- *
- * * @width: %gint, set image width
- * * @height: %gint, set image height
- * * @bands: %gint, set image bands
- * * @format: #VipsBandFormat, set image format
- * * @coding: #VipsCoding, set image coding
- * * @interpretation: #VipsInterpretation, set image interpretation
- * * @xres: %gdouble, set image xres
- * * @yres: %gdouble, set image yres
- * * @xoffset: %gint, set image xoffset
- * * @yoffset: %gint, set image yoffset
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Copy an image, optionally modifying the header. VIPS copies images by
  * copying pointers, so this operation is instant, even for very large images.
@@ -386,7 +372,21 @@ vips_copy_init(VipsCopy *copy)
  * you can turn a 4-band uchar image into a 2-band ushort image, but you
  * cannot change a 100 x 100 RGB image into a 300 x 100 mono image.
  *
- * See also: vips_byteswap(), vips_bandfold(), vips_bandunfold().
+ * ::: tip "Optional arguments"
+ *     * @width: `gint`, set image width
+ *     * @height: `gint`, set image height
+ *     * @bands: `gint`, set image bands
+ *     * @format: [enum@BandFormat], set image format
+ *     * @coding: [enum@Coding], set image coding
+ *     * @interpretation: [enum@Interpretation], set image interpretation
+ *     * @xres: `gdouble`, set image xres
+ *     * @yres: `gdouble`, set image yres
+ *     * @xoffset: `gint`, set image xoffset
+ *     * @yoffset: `gint`, set image yoffset
+ *
+ * ::: seealso
+ *     [method@Image.byteswap], [method@Image.bandfold],
+ *     [method@Image.bandunfold].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -407,16 +407,17 @@ vips_copy(VipsImage *in, VipsImage **out, ...)
  * vips_copy_file: (method)
  * @in: input image
  * @out: (out): output image
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * A simple convenience function to copy an image to a file, then copy
  * again to output. If the image is already a file, just copy straight
  * through.
  *
- * The file is allocated with vips_image_new_temp_file().
+ * The file is allocated with [ctor@Image.new_temp_file].
  * The file is automatically deleted when @out is closed.
  *
- * See also: vips_copy(), vips_image_new_temp_file().
+ * ::: seealso
+ *     [method@Image.copy], [ctor@Image.new_temp_file].
  *
  * Returns: 0 on success, -1 on error
  */

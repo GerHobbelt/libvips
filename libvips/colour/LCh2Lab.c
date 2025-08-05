@@ -69,8 +69,8 @@ G_DEFINE_TYPE(VipsLCh2Lab, vips_LCh2Lab, VIPS_TYPE_COLOUR_TRANSFORM);
 void
 vips_col_Ch2ab(float C, float h, float *a, float *b)
 {
-	*a = C * cos(VIPS_RAD(h));
-	*b = C * sin(VIPS_RAD(h));
+	*a = C * cosf(VIPS_RAD(h));
+	*b = C * sinf(VIPS_RAD(h));
 }
 
 /* Process a buffer of data.
@@ -125,7 +125,7 @@ vips_LCh2Lab_init(VipsLCh2Lab *LCh2Lab)
  * vips_LCh2Lab: (method)
  * @in: input image
  * @out: (out): output image
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Turn LCh to Lab.
  *

@@ -45,6 +45,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* For vips_image_new_mode()
+ */
+#define VIPS_DISABLE_DEPRECATION_WARNINGS
 #include <vips/vips.h>
 #include <vips/internal.h>
 
@@ -125,8 +128,6 @@ extern const char *vips__suffs[];
 static void
 vips_foreign_save_vips_class_init(VipsForeignSaveVipsClass *class)
 {
-	int i;
-
 	GObjectClass *gobject_class = G_OBJECT_CLASS(class);
 	VipsObjectClass *object_class = (VipsObjectClass *) class;
 	VipsForeignClass *foreign_class = (VipsForeignClass *) class;
@@ -140,9 +141,8 @@ vips_foreign_save_vips_class_init(VipsForeignSaveVipsClass *class)
 
 	foreign_class->suffs = vips__suffs;
 
-	save_class->saveable = VIPS_SAVEABLE_ANY;
-	for (i = 0; i < VIPS_CODING_LAST; i++)
-		save_class->coding[i] = TRUE;
+	save_class->saveable = VIPS_FOREIGN_SAVEABLE_ANY;
+	save_class->coding = VIPS_FOREIGN_CODING_ALL;
 }
 
 static void
@@ -170,11 +170,8 @@ vips_foreign_save_vips_file_build(VipsObject *object)
 	if (!(vips->target = vips_target_new_to_file(file->filename)))
 		return -1;
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_save_vips_file_parent_class)
-			->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_save_vips_file_parent_class)
+		->build(object);
 }
 
 static void
@@ -225,11 +222,8 @@ vips_foreign_save_vips_target_build(VipsObject *object)
 	vips->target = target->target;
 	g_object_ref(vips->target);
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_save_vips_target_parent_class)
-			->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_save_vips_target_parent_class)
+		->build(object);
 }
 
 static void
@@ -263,11 +257,12 @@ vips_foreign_save_vips_target_init(VipsForeignSaveVipsTarget *target)
  * vips_vipssave: (method)
  * @in: image to save
  * @filename: file to write to
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Write @in to @filename in VIPS format.
  *
- * See also: vips_vipsload().
+ * ::: seealso
+ *     [ctor@Image.vipsload].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -288,9 +283,9 @@ vips_vipssave(VipsImage *in, const char *filename, ...)
  * vips_vipssave_target: (method)
  * @in: image to save
  * @target: save image to this target
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * As vips_vipssave(), but save to a target.
+ * As [method@Image.vipssave], but save to a target.
  *
  * Returns: 0 on success, -1 on error.
  */

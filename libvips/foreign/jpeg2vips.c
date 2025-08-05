@@ -184,10 +184,6 @@ typedef struct _ReadJpeg {
 	ErrorManager eman;
 	gboolean invert_pels;
 
-	/* Track the y pos during a read with this.
-	 */
-	int y_pos;
-
 	/* Use orientation tag to automatically rotate and flip image
 	 * during load.
 	 */
@@ -234,7 +230,7 @@ source_init_source(j_decompress_ptr cinfo)
 	 */
 }
 
-/* Fill the input buffer --- called whenever buffer is emptied.
+/* Fill the input buffer -- called whenever buffer is emptied.
  */
 static boolean
 source_fill_input_buffer(j_decompress_ptr cinfo)
@@ -249,10 +245,10 @@ source_fill_input_buffer(j_decompress_ptr cinfo)
 			/* Knock the output out of cache.
 			 */
 			vips_foreign_load_invalidate(src->jpeg->out);
-			ERREXIT(cinfo, JERR_INPUT_EOF);
+			ERREXIT(cinfo, JERR_VIPS_IMAGE_EOF);
 		}
 		else
-			WARNMS(cinfo, JWRN_JPEG_EOF);
+			WARNMS(cinfo, JWRN_VIPS_IMAGE_EOF);
 
 		/* Insert a fake EOI marker.
 		 */
@@ -276,10 +272,10 @@ source_fill_input_buffer_mappable(j_decompress_ptr cinfo)
 		/* Knock the output out of cache.
 		 */
 		vips_foreign_load_invalidate(src->jpeg->out);
-		ERREXIT(cinfo, JERR_INPUT_EOF);
+		ERREXIT(cinfo, JERR_VIPS_IMAGE_EOF);
 	}
 	else
-		WARNMS(cinfo, JWRN_JPEG_EOF);
+		WARNMS(cinfo, JWRN_VIPS_IMAGE_EOF);
 
 	/* Insert a fake EOI marker.
 	 */
@@ -416,7 +412,7 @@ static int
 readjpeg_free(ReadJpeg *jpeg)
 {
 	if (jpeg->eman.pub.num_warnings != 0) {
-		g_warning(_("read gave %ld warnings"),
+		g_warning("read gave %ld warnings",
 			jpeg->eman.pub.num_warnings);
 		g_warning("%s", vips_error_buffer());
 
@@ -467,11 +463,13 @@ readjpeg_new(VipsSource *source, VipsImage *out,
 	jpeg->shrink = shrink;
 	jpeg->fail_on = fail_on;
 	jpeg->cinfo.err = jpeg_std_error(&jpeg->eman.pub);
+	jpeg->cinfo.err->addon_message_table = vips__jpeg_message_table;
+	jpeg->cinfo.err->first_addon_message = 1000;
+	jpeg->cinfo.err->last_addon_message = 1001;
 	jpeg->eman.pub.error_exit = vips__new_error_exit;
 	jpeg->eman.pub.emit_message = readjpeg_emit_message;
 	jpeg->eman.pub.output_message = vips__new_output_message;
 	jpeg->eman.fp = NULL;
-	jpeg->y_pos = 0;
 	jpeg->autorotate = autorotate;
 	jpeg->unlimited = unlimited;
 	jpeg->cinfo.client_data = jpeg;
@@ -656,7 +654,7 @@ read_jpeg_header(ReadJpeg *jpeg, VipsImage *out)
 			break;
 
 		default:
-			g_warning("%s", _("unknown JFIF resolution unit"));
+			g_warning("unknown JFIF resolution unit");
 			break;
 		}
 
@@ -880,13 +878,13 @@ read_jpeg_generate(VipsRegion *out_region,
 	 */
 	g_assert(r->height == VIPS_MIN(8, out_region->im->Ysize - r->top));
 
-	/* And check that y_pos is correct. It should be, since we are inside
-	 * a vips_sequential().
+	/* And check that the y position is correct. It should be, since we are
+	 * inside a vips_sequential().
 	 */
-	if (r->top != jpeg->y_pos) {
+	if (r->top != cinfo->output_scanline) {
 		VIPS_GATE_STOP("read_jpeg_generate: work");
-		vips_error("VipsJpeg",
-			_("out of order read at line %d"), jpeg->y_pos);
+		vips_error("VipsJpeg", _("out of order read at line %d"),
+			cinfo->output_scanline);
 
 		return -1;
 	}
@@ -898,7 +896,7 @@ read_jpeg_generate(VipsRegion *out_region,
 		VIPS_GATE_STOP("read_jpeg_generate: work");
 
 #ifdef DEBUG
-		printf("read_jpeg_generate: longjmp() exit\n");
+		printf("read_jpeg_generate() exit\n");
 #endif /*DEBUG*/
 
 		return -1;
@@ -929,8 +927,6 @@ read_jpeg_generate(VipsRegion *out_region,
 			for (x = 0; x < sz; x++)
 				row_pointer[0][x] = 255 - row_pointer[0][x];
 		}
-
-		jpeg->y_pos += 1;
 	}
 
 	VIPS_GATE_STOP("read_jpeg_generate: work");

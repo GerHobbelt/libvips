@@ -39,7 +39,7 @@ custom_target('vips-operators-source',
     output: 'vips-operators.cpp'
 )
 
-if get_option('doxygen')
+if get_option('cpp-docs')
     doxygen = find_program('doxygen')
     doxygen_data = configuration_data()
     doxygen_data.set('VIPS_MAJOR_VERSION', version_major)
@@ -59,6 +59,6 @@ if get_option('doxygen')
         output: 'html',
         command: [doxygen, doxyfile],
         install: true,
-        install_dir: get_option('prefix') / get_option('datadir') / 'doc' / 'vips-doc'
+        install_dir: get_option('prefix') / get_option('datadir') / 'doc' / 'vips-cpp'
     )
 endif

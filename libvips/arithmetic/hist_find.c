@@ -451,11 +451,7 @@ vips_hist_find_init(VipsHistFind *hist_find)
  * vips_hist_find: (method)
  * @in: input image
  * @out: (out): output image
- * @...: %NULL-terminated list of optional named arguments
- *
- * Optional arguments:
- *
- * * @band: band to equalise
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Find the histogram of @in. Find the histogram for band @band (producing a
  * one-band histogram), or for all bands (producing an n-band histogram) if
@@ -464,7 +460,11 @@ vips_hist_find_init(VipsHistFind *hist_find)
  * char and uchar images are cast to uchar before histogramming, all other
  * image types are cast to ushort.
  *
- * See also: vips_hist_find_ndim(), vips_hist_find_indexed().
+ * ::: tip "Optional arguments"
+ *     * @band: `gint`, band to equalise
+ *
+ * ::: seealso
+ *     [method@Image.hist_find_ndim], [method@Image.hist_find_indexed].
  *
  * Returns: 0 on success, -1 on error
  */

@@ -217,7 +217,7 @@ vips_embed_base_paint_edge(VipsEmbedBase *base,
 		 */
 		for (y = 0; y < todo.height; y++) {
 			q = VIPS_REGION_ADDR(out_region, todo.left, todo.top + y);
-			memcpy(q, p, bs * todo.width);
+			memcpy(q, p, (size_t) bs * todo.width);
 		}
 	}
 
@@ -371,7 +371,7 @@ vips_embed_base_build(VipsObject *object)
 
 	if (!vips_object_argument_isset(object, "extend") &&
 		vips_object_argument_isset(object, "background"))
-		base->extend = VIPS_EXTEND_BACKGROUND;
+		base->extend = VIPS_EXTEND_BACKGROUND; // FIXME: Invalidates operation cache
 
 	if (base->extend == VIPS_EXTEND_BACKGROUND)
 		if (!(base->ink = vips__vector_to_ink(
@@ -680,20 +680,20 @@ vips_embed_init(VipsEmbed *embed)
  * @y: place @in at this y position in @out
  * @width: @out should be this many pixels across
  * @height: @out should be this many pixels down
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Optional arguments:
+ * The opposite of [method@Image.extract_area]: embed @in within an image of
+ * size @width by @height at position @x, @y.
  *
- * * @extend: #VipsExtend to generate the edge pixels (default: black)
- * * @background: #VipsArrayDouble colour for edge pixels
+ * @extend controls what appears in the new pels, see [enum@Extend].
  *
- * The opposite of vips_extract_area(): embed @in within an image of size
- * @width by @height at position @x, @y.
+ * ::: tip "Optional arguments"
+ *     * @extend: [enum@Extend] to generate the edge pixels
+ *       (default: [enum@Vips.Extend.BLACK])
+ *     * @background: [struct@ArrayDouble] colour for edge pixels
  *
- * @extend
- * controls what appears in the new pels, see #VipsExtend.
- *
- * See also: vips_extract_area(), vips_insert().
+ * ::: seealso
+ *     [method@Image.extract_area], [method@Image.insert].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -822,26 +822,26 @@ vips_gravity_init(VipsGravity *gravity)
 }
 
 /**
- * vips_gravity:
+ * vips_gravity: (method)
  * @in: input image
  * @out: output image
  * @direction: place @in at this direction in @out
  * @width: @out should be this many pixels across
  * @height: @out should be this many pixels down
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Optional arguments:
+ * The opposite of [method@Image.extract_area]: place @in within an image of
+ * size @width by @height at a certain gravity.
  *
- * * @extend: #VipsExtend to generate the edge pixels (default: black)
- * * @background: #VipsArrayDouble colour for edge pixels
+ * @extend controls what appears in the new pels, see [enum@Extend].
  *
- * The opposite of vips_extract_area(): place @in within an image of size
- * @width by @height at a certain gravity.
+ * ::: tip "Optional arguments"
+ *     * @extend: [enum@Extend] to generate the edge pixels
+ *       (default: [enum@Vips.Extend.BLACK])
+ *     * @background: [struct@ArrayDouble] colour for edge pixels
  *
- * @extend
- * controls what appears in the new pels, see #VipsExtend.
- *
- * See also: vips_extract_area(), vips_insert().
+ * ::: seealso
+ *     [method@Image.extract_area], [method@Image.insert].
  *
  * Returns: 0 on success, -1 on error.
  */

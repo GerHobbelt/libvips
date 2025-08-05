@@ -187,14 +187,15 @@ vips_sign_init(VipsSign *sign)
  * vips_sign: (method)
  * @in: input image
  * @out: (out): output image
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Finds the unit vector in the direction of the pixel value. For non-complex
  * images, it returns a signed char image with values -1, 0, and 1 for negative,
  * zero and positive pixels. For complex images, it returns a
  * complex normalised to length 1.
  *
- * See also: vips_abs().
+ * ::: seealso
+ *     [method@Image.abs].
  *
  * Returns: 0 on success, -1 on error
  */

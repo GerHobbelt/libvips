@@ -14,7 +14,7 @@
 31/8/93 JC
 	- forgot to init global max/min properly! sorry.
 21/6/95 JC
-	- still did not init max and min correctly --- now fixed for good
+	- still did not init max and min correctly -- now fixed for good
 
  * 13/1/05
  *	- use 64 bit arithmetic
@@ -160,14 +160,14 @@ vips_stats_build(VipsObject *object)
 
 		row[COL_AVG] = row[COL_SUM] / pels;
 		row[COL_SD] = sqrt(
-			VIPS_FABS(row[COL_SUM2] -
+			fabs(row[COL_SUM2] -
 				(row[COL_SUM] * row[COL_SUM] / pels)) /
 			(pels - 1));
 	}
 
 	row0[COL_AVG] = row0[COL_SUM] / vals;
 	row0[COL_SD] = sqrt(
-		VIPS_FABS(row0[COL_SUM2] -
+		fabs(row0[COL_SUM2] -
 			(row0[COL_SUM] * row0[COL_SUM] / vals)) /
 		(vals - 1));
 
@@ -455,15 +455,15 @@ vips_stats_init(VipsStats *stats)
  * vips_stats: (method)
  * @in: image to scan
  * @out: (out): image of statistics
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Find many image statistics in a single pass through the data. @out is a
- * one-band #VIPS_FORMAT_DOUBLE image of at least 10 columns by n + 1
+ * one-band [enum@Vips.BandFormat.DOUBLE] image of at least 10 columns by n + 1
  * (where n is number of bands in image @in)
  * rows. Columns are statistics, and are, in order: minimum, maximum, sum,
  * sum of squares, mean, standard deviation, x coordinate of minimum, y
  * coordinate of minimum, x coordinate of maximum, y coordinate of maximum.
- * Later versions of vips_stats() may add more columns.
+ * Later versions of [method@Image.stats] may add more columns.
  *
  * Row 0 has statistics for all
  * bands together, row 1 has stats for band 1, and so on.
@@ -471,7 +471,8 @@ vips_stats_init(VipsStats *stats)
  * If there is more than one maxima or minima, one of them will be chosen at
  * random.
  *
- * See also: vips_avg(), vips_min().
+ * ::: seealso
+ *     [method@Image.avg], [method@Image.min].
  *
  * Returns: 0 on success, -1 on error
  */

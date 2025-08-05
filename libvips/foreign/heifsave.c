@@ -200,7 +200,6 @@ vips_foreign_save_heif_write_metadata(VipsForeignSaveHeif *heif)
 	return 0;
 }
 
-#ifdef HAVE_HEIF_COLOR_PROFILE
 static int
 vips_foreign_save_heif_add_icc(VipsForeignSaveHeif *heif,
 	const void *profile, size_t length)
@@ -261,7 +260,6 @@ vips_foreign_save_heif_add_orig_icc(VipsForeignSaveHeif *heif)
 
 	return 0;
 }
-#endif /*HAVE_HEIF_COLOR_PROFILE*/
 
 static int
 vips_foreign_save_heif_write_page(VipsForeignSaveHeif *heif, int page)
@@ -270,8 +268,10 @@ vips_foreign_save_heif_write_page(VipsForeignSaveHeif *heif, int page)
 
 	struct heif_error error;
 	struct heif_encoding_options *options;
+#ifdef HAVE_HEIF_ENCODING_OPTIONS_OUTPUT_NCLX_PROFILE
+	struct heif_color_profile_nclx *nclx = NULL;
+#endif
 
-#ifdef HAVE_HEIF_COLOR_PROFILE
 	/* A profile supplied as an argument overrides an embedded
 	 * profile.
 	 */
@@ -283,19 +283,19 @@ vips_foreign_save_heif_write_page(VipsForeignSaveHeif *heif, int page)
 		if (vips_foreign_save_heif_add_orig_icc(heif))
 			return -1;
 	}
-#endif /*HAVE_HEIF_COLOR_PROFILE*/
 
 	options = heif_encoding_options_alloc();
-	if (vips_image_hasalpha(save->ready))
-		options->save_alpha_channel = 1;
+	options->save_alpha_channel = save->ready->Bands > 3;
 
 #ifdef HAVE_HEIF_ENCODING_OPTIONS_OUTPUT_NCLX_PROFILE
-	/* Matrix coefficients have to be identity (CICP x/y/0) in lossless mode.
+	/* Matrix coefficients have to be identity (CICP x/y/0) in lossless
+	 * mode.
 	 */
 	if (heif->lossless) {
-		struct heif_color_profile_nclx *nclx = heif_nclx_color_profile_alloc();
-		if (!nclx)
+		if (!(nclx = heif_nclx_color_profile_alloc())) {
+			heif_encoding_options_free(options);
 			return -1;
+		}
 
 		nclx->matrix_coefficients = heif_matrix_coefficients_RGB_GBR;
 		options->output_nclx_profile = nclx;
@@ -305,6 +305,14 @@ vips_foreign_save_heif_write_page(VipsForeignSaveHeif *heif, int page)
 		options->macOS_compatibility_workaround_no_nclx_profile = 0;
 	}
 #endif /*HAVE_HEIF_ENCODING_OPTIONS_OUTPUT_NCLX_PROFILE*/
+
+#ifdef HAVE_HEIF_ENCODING_OPTIONS_IMAGE_ORIENTATION
+	/* EXIF orientation is informational in the HEIF specification.
+	 * Orientation is defined using irot and imir transformations.
+	 */
+	options->image_orientation = vips_image_get_orientation(save->ready);
+	vips_autorot_remove_angle(save->ready);
+#endif
 
 #ifdef DEBUG
 	{
@@ -317,13 +325,15 @@ vips_foreign_save_heif_write_page(VipsForeignSaveHeif *heif, int page)
 			heif->img, heif->encoder, options, &heif->handle);
 
 #ifdef DEBUG
-		printf("... libheif took %.2g seconds\n",
-			g_timer_elapsed(timer, NULL));
+		printf("... libheif took %.2g seconds\n", g_timer_elapsed(timer, NULL));
 		g_timer_destroy(timer);
 	}
 #endif /*DEBUG*/
 
 	heif_encoding_options_free(options);
+#ifdef HAVE_HEIF_ENCODING_OPTIONS_OUTPUT_NCLX_PROFILE
+	VIPS_FREEF(heif_nclx_color_profile_free, nclx);
+#endif
 
 	if (error.code) {
 		vips__heif_error(&error);
@@ -333,13 +343,11 @@ vips_foreign_save_heif_write_page(VipsForeignSaveHeif *heif, int page)
 	if (vips_image_get_typeof(save->ready, "heif-primary")) {
 		int primary;
 
-		if (vips_image_get_int(save->ready,
-				"heif-primary", &primary))
+		if (vips_image_get_int(save->ready, "heif-primary", &primary))
 			return -1;
 
 		if (page == primary) {
-			error = heif_context_set_primary_image(heif->ctx,
-				heif->handle);
+			error = heif_context_set_primary_image(heif->ctx, heif->handle);
 			if (error.code) {
 				vips__heif_error(&error);
 				return -1;
@@ -391,15 +399,13 @@ vips_foreign_save_heif_pack(VipsForeignSaveHeif *heif,
 		 */
 		int vips_bitdepth =
 			save->ready->Type == VIPS_INTERPRETATION_RGB16 ||
-				save->ready->Type == VIPS_INTERPRETATION_GREY16
-			? 16
-			: 8;
+				save->ready->Type == VIPS_INTERPRETATION_GREY16 ? 16 : 8;
 		int shift = vips_bitdepth - heif->bitdepth;
 
 		for (i = 0; i < ne; i++) {
 			guint16 v = *((gushort *) p) >> shift;
 
-			q[i] = v;
+			q[i] = VIPS_MIN(v, UCHAR_MAX);
 
 			p += 2;
 		}
@@ -410,9 +416,7 @@ vips_foreign_save_heif_pack(VipsForeignSaveHeif *heif,
 		 */
 		int vips_bitdepth =
 			save->ready->Type == VIPS_INTERPRETATION_RGB16 ||
-				save->ready->Type == VIPS_INTERPRETATION_GREY16
-			? 16
-			: 8;
+				save->ready->Type == VIPS_INTERPRETATION_GREY16 ? 16 : 8;
 		int shift = vips_bitdepth - heif->bitdepth;
 
 		for (i = 0; i < ne; i++) {
@@ -426,10 +430,10 @@ vips_foreign_save_heif_pack(VipsForeignSaveHeif *heif,
 		}
 	}
 	else {
-		VipsObjectClass *class = VIPS_OBJECT_CLASS(heif);
+		VipsObjectClass *class = VIPS_OBJECT_GET_CLASS(heif);
 
 		vips_error(class->nickname,
-			"%s", _("unimplemeted format conversion"));
+			"%s", _("unimplemented format conversion"));
 		return -1;
 	}
 
@@ -457,7 +461,7 @@ vips_foreign_save_heif_write_block(VipsRegion *region, VipsRect *area,
 		int page = (area->top + y) / heif->page_height;
 		int line = (area->top + y) % heif->page_height;
 		VipsPel *p = VIPS_REGION_ADDR(region, 0, area->top + y);
-		VipsPel *q = heif->data + line * heif->stride;
+		VipsPel *q = heif->data + (size_t) heif->stride * line;
 
 		if (vips_foreign_save_heif_pack(heif,
 				q, p, VIPS_REGION_N_ELEMENTS(region)))
@@ -507,9 +511,12 @@ vips_foreign_save_heif_build(VipsObject *object)
 	struct heif_writer writer;
 	char *chroma;
 	const struct heif_encoder_descriptor *out_encoder;
+#ifdef HAVE_HEIF_ENCODER_PARAMETER_GET_VALID_INTEGER_VALUES
 	const struct heif_encoder_parameter *const *param;
+#endif
+	gboolean has_alpha;
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_save_heif_parent_class)->build(object))
+	if (VIPS_OBJECT_CLASS(vips_foreign_save_heif_parent_class)-> build(object))
 		return -1;
 
 	/* If the old, deprecated "speed" param is being used and the new
@@ -519,15 +526,12 @@ vips_foreign_save_heif_build(VipsObject *object)
 		!vips_object_argument_isset(object, "effort"))
 		heif->effort = 9 - heif->speed;
 
-	/* Disable chroma subsampling by default when the "lossless" param
-	 * is being used.
+	/* The "lossless" param implies no chroma subsampling.
 	 */
-	if (vips_object_argument_isset(object, "lossless") &&
-		!vips_object_argument_isset(object, "subsample_mode"))
+	if (heif->lossless)
 		heif->subsample_mode = VIPS_FOREIGN_SUBSAMPLE_OFF;
 
-	/* Default 12 bit save for 16-bit images. HEIC (for example) implements
-	 * 8 / 10 / 12.
+	/* Default 12 bit save for 16-bit images.
 	 */
 	if (!vips_object_argument_isset(object, "bitdepth"))
 		heif->bitdepth =
@@ -535,6 +539,16 @@ vips_foreign_save_heif_build(VipsObject *object)
 				save->ready->Type == VIPS_INTERPRETATION_GREY16
 			? 12
 			: 8;
+
+	/* HEIC and AVIF only implements 8 / 10 / 12 bit depth.
+	 */
+	if (heif->bitdepth != 12 &&
+		heif->bitdepth != 10 &&
+		heif->bitdepth != 8) {
+		vips_error("heifsave", _("%d-bit colour depth not supported"),
+			heif->bitdepth);
+		return -1;
+	}
 
 	/* Try to find the selected encoder.
 	 */
@@ -564,8 +578,7 @@ vips_foreign_save_heif_build(VipsObject *object)
 
 	if (error.code) {
 		if (error.code == heif_error_Unsupported_filetype)
-			vips_error("heifsave",
-				"%s", _("Unsupported compression"));
+			vips_error("heifsave", "%s", _("Unsupported compression"));
 		else
 			vips__heif_error(&error);
 
@@ -605,7 +618,9 @@ vips_foreign_save_heif_build(VipsObject *object)
 		return -1;
 	}
 
-	for (param = heif_encoder_list_parameters(heif->encoder); *param; param++) {
+#ifdef HAVE_HEIF_ENCODER_PARAMETER_GET_VALID_INTEGER_VALUES
+	for (param = heif_encoder_list_parameters(heif->encoder);
+		*param; param++) {
 		int have_minimum;
 		int have_maximum;
 		int minimum;
@@ -629,6 +644,29 @@ vips_foreign_save_heif_build(VipsObject *object)
 			return -1;
 		}
 	}
+#endif /*HAVE_HEIF_ENCODER_PARAMETER_GET_VALID_INTEGER_VALUES*/
+
+	/* Try to enable auto_tiles. This can make AVIF encoding a lot faster,
+	 * with only a very small increase in file size.
+	 */
+	error = heif_encoder_set_parameter_boolean(heif->encoder,
+		"auto-tiles", TRUE);
+	if (error.code &&
+		error.subcode != heif_suberror_Unsupported_parameter) {
+		vips__heif_error(&error);
+		return -1;
+	}
+
+	/* Try to prevent the AVIF encoder from using intra block copy,
+	 * helps ensure encoding time is more predictable.
+	 */
+	error = heif_encoder_set_parameter_boolean(heif->encoder,
+		"enable-intrabc", FALSE);
+	if (error.code &&
+		error.subcode != heif_suberror_Unsupported_parameter) {
+		vips__heif_error(&error);
+		return -1;
+	}
 
 	/* TODO .. support extra per-encoder params with
 	 * heif_encoder_list_parameters().
@@ -637,6 +675,7 @@ vips_foreign_save_heif_build(VipsObject *object)
 	heif->page_width = save->ready->Xsize;
 	heif->page_height = vips_image_get_page_height(save->ready);
 	heif->n_pages = save->ready->Ysize / heif->page_height;
+	has_alpha = save->ready->Bands > 3;
 
 	if (heif->page_width > 16384 || heif->page_height > 16384) {
 		vips_error("heifsave", _("image too large"));
@@ -650,12 +689,11 @@ vips_foreign_save_heif_build(VipsObject *object)
 	printf("vips_foreign_save_heif_build:\n");
 	printf("\twidth = %d\n", heif->page_width);
 	printf("\theight = %d\n", heif->page_height);
-	printf("\talpha = %d\n", vips_image_hasalpha(save->ready));
+	printf("\talpha = %d\n", has_alpha);
 #endif /*DEBUG*/
 	error = heif_image_create(heif->page_width, heif->page_height,
 		heif_colorspace_RGB,
-		vips__heif_chroma(heif->bitdepth,
-			vips_image_hasalpha(save->ready)),
+		vips__heif_chroma(heif->bitdepth, has_alpha),
 		&heif->img);
 	if (error.code) {
 		vips__heif_error(&error);
@@ -679,8 +717,7 @@ vips_foreign_save_heif_build(VipsObject *object)
 
 	/* Write data.
 	 */
-	if (vips_sink_disc(save->ready,
-			vips_foreign_save_heif_write_block, heif))
+	if (vips_sink_disc(save->ready, vips_foreign_save_heif_write_block, heif))
 		return -1;
 
 	/* This has to come right at the end :-( so there's no support for
@@ -728,7 +765,8 @@ vips_foreign_save_heif_class_init(VipsForeignSaveHeifClass *class)
 	object_class->description = _("save image in HEIF format");
 	object_class->build = vips_foreign_save_heif_build;
 
-	save_class->saveable = VIPS_SAVEABLE_RGBA_ONLY;
+	save_class->saveable =
+		VIPS_FOREIGN_SAVEABLE_RGB | VIPS_FOREIGN_SAVEABLE_ALPHA;
 	save_class->format_table = vips_heif_bandfmt;
 
 	VIPS_ARG_INT(class, "Q", 10,
@@ -743,7 +781,7 @@ vips_foreign_save_heif_class_init(VipsForeignSaveHeifClass *class)
 		_("Number of bits per pixel"),
 		VIPS_ARGUMENT_OPTIONAL_INPUT,
 		G_STRUCT_OFFSET(VipsForeignSaveHeif, bitdepth),
-		1, 16, 12);
+		8, 12, 12);
 
 	VIPS_ARG_BOOL(class, "lossless", 13,
 		_("Lossless"),
@@ -832,11 +870,8 @@ vips_foreign_save_heif_file_build(VipsObject *object)
 	if (vips_iscasepostfix(file->filename, ".avif"))
 		heif->compression = VIPS_FOREIGN_HEIF_COMPRESSION_AV1;
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_save_heif_file_parent_class)
-			->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_save_heif_file_parent_class)
+		->build(object);
 }
 
 static void
@@ -885,8 +920,7 @@ static int
 vips_foreign_save_heif_buffer_build(VipsObject *object)
 {
 	VipsForeignSaveHeif *heif = (VipsForeignSaveHeif *) object;
-	VipsForeignSaveHeifBuffer *buffer =
-		(VipsForeignSaveHeifBuffer *) object;
+	VipsForeignSaveHeifBuffer *buffer = (VipsForeignSaveHeifBuffer *) object;
 
 	VipsBlob *blob;
 
@@ -948,19 +982,15 @@ static int
 vips_foreign_save_heif_target_build(VipsObject *object)
 {
 	VipsForeignSaveHeif *heif = (VipsForeignSaveHeif *) object;
-	VipsForeignSaveHeifTarget *target =
-		(VipsForeignSaveHeifTarget *) object;
+	VipsForeignSaveHeifTarget *target = (VipsForeignSaveHeifTarget *) object;
 
 	if (target->target) {
 		heif->target = target->target;
 		g_object_ref(heif->target);
 	}
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_save_heif_target_parent_class)
-			->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_save_heif_target_parent_class)
+		->build(object);
 }
 
 static void

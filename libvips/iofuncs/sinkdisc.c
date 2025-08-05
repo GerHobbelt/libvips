@@ -59,8 +59,6 @@
 
 #include <vips/vips.h>
 #include <vips/internal.h>
-#include <vips/thread.h>
-#include <vips/threadpool.h>
 #include <vips/debug.h>
 
 #include "sink.h"
@@ -97,6 +95,20 @@ typedef struct _Write {
 	VipsRegionWrite write_fn;
 	void *a;
 } Write;
+
+static int
+write_check_error(Write *write)
+{
+	if (write->buf->write_errno ||
+		write->buf_back->write_errno) {
+		vips_error_system(write->buf->write_errno ?
+			write->buf->write_errno : write->buf_back->write_errno,
+			"wbuffer_write", "%s", _("write failed"));
+		return -1;
+	}
+
+	return 0;
+}
 
 /* Our per-thread state ... we need to also track the buffer that pos is
  * supposed to write to.
@@ -259,13 +271,8 @@ wbuffer_flush(Write *write)
 	if (write->buf->area.top > 0) {
 		vips_semaphore_down(&write->buf_back->done);
 
-		/* Previous write succeeded?
-		 */
-		if (write->buf_back->write_errno) {
-			vips_error_system(write->buf_back->write_errno,
-				"wbuffer_write", "%s", _("write failed"));
+		if (write_check_error(write))
 			return -1;
-		}
 	}
 
 	/* Set the background writer going for this buffer.
@@ -410,7 +417,7 @@ wbuffer_allocate_fn(VipsThreadState *state, void *a, gboolean *stop)
 
 	/* Add the number of pixels we've just allocated to progress.
 	 */
-	sink_base->processed += state->pos.width * state->pos.height;
+	sink_base->processed += (guint64) state->pos.width * state->pos.height;
 
 	return 0;
 }
@@ -467,9 +474,10 @@ write_free(Write *write)
  * @a: client data
  *
  * The function should write the pixels in @area from @region. @a is the
- * value passed into vips_sink_disc().
+ * value passed into [method@Image.sink_disc].
  *
- * See also: vips_sink_disc().
+ * ::: seealso
+ *     [method@Image.sink_disc].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -477,10 +485,10 @@ write_free(Write *write)
 /**
  * vips_sink_disc: (method)
  * @im: image to process
- * @write_fn: (scope call): called for every batch of pixels
- * @a: (closure write_fn): client data
+ * @write_fn: (scope call) (closure a): called for every batch of pixels
+ * @a: client data
  *
- * vips_sink_disc() loops over @im, top-to-bottom, generating it in sections.
+ * [method@Image.sink_disc] loops over @im, top-to-bottom, generating it in sections.
  * As each section is produced, @write_fn is called.
  *
  * @write_fn is always called single-threaded (though not always from the same
@@ -488,10 +496,11 @@ write_free(Write *write)
  * sections in top-to-bottom order, and there are never any gaps.
  *
  * This operation is handy for making image sinks which output to things like
- * disc files. Things like vips_jpegsave(), for example, use this to write
+ * disc files. Things like [method@Image.jpegsave], for example, use this to write
  * images to files in JPEG format.
  *
- * See also: vips_concurrency_set().
+ * ::: seealso
+ *     [func@concurrency_set].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -532,6 +541,10 @@ vips_sink_disc(VipsImage *im, VipsRegionWrite write_fn, void *a)
 		vips_semaphore_down(&write.buf->done);
 
 	vips_image_posteval(im);
+
+	/* The final write might have failed, pick up any error code.
+	 */
+	result |= write_check_error(&write);
 
 	write_free(&write);
 

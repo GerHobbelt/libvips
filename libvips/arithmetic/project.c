@@ -109,8 +109,8 @@ histogram_new(VipsProject *project)
 		!hist->row_sums)
 		return NULL;
 
-	memset(hist->column_sums, 0, psize * in->Xsize);
-	memset(hist->row_sums, 0, psize * in->Ysize);
+	memset(hist->column_sums, 0, (size_t) psize * in->Xsize);
+	memset(hist->row_sums, 0, (size_t) psize * in->Ysize);
 
 	return hist;
 }
@@ -351,7 +351,7 @@ vips_project_init(VipsProject *project)
  * @in: input image
  * @columns: (out): sums of columns
  * @rows: (out): sums of rows
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Find the horizontal and vertical projections of an image, ie. the sum
  * of every row of pixels, and the sum of every column of pixels. The output
@@ -359,7 +359,8 @@ vips_project_init(VipsProject *project)
  *
  * Non-complex images only.
  *
- * See also: vips_hist_find(), vips_profile().
+ * ::: seealso
+ *     [method@Image.hist_find], [method@Image.profile].
  *
  * Returns: 0 on success, -1 on error
  */

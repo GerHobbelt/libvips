@@ -104,12 +104,10 @@ vips_foreign_load_webp_build(VipsObject *object)
 	if (!vips_object_argument_isset(VIPS_OBJECT(webp), "scale") &&
 		vips_object_argument_isset(VIPS_OBJECT(webp), "shrink") &&
 		webp->shrink != 0)
-		webp->scale = 1.0 / webp->shrink;
+		webp->scale = 1.0 / webp->shrink; // FIXME: Invalidates operation cache
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_load_webp_parent_class)->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_load_webp_parent_class)
+		->build(object);
 }
 
 static VipsForeignFlags
@@ -235,11 +233,8 @@ vips_foreign_load_webp_source_build(VipsObject *object)
 		g_object_ref(webp->source);
 	}
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_load_webp_source_parent_class)
-			->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_load_webp_source_parent_class)
+		->build(object);
 }
 
 static void
@@ -300,11 +295,8 @@ vips_foreign_load_webp_file_build(VipsObject *object)
 				vips_source_new_from_file(file->filename)))
 		return -1;
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_load_webp_file_parent_class)
-			->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_load_webp_file_parent_class)
+			->build(object);
 }
 
 static gboolean
@@ -382,11 +374,8 @@ vips_foreign_load_webp_buffer_build(VipsObject *object)
 			  VIPS_AREA(buffer->blob)->length)))
 		return -1;
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_load_webp_buffer_parent_class)
-			->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_load_webp_buffer_parent_class)
+		->build(object);
 }
 
 static gboolean
@@ -439,13 +428,7 @@ vips_foreign_load_webp_buffer_init(VipsForeignLoadWebpBuffer *buffer)
  * vips_webpload:
  * @filename: file to load
  * @out: (out): decompressed image
- * @...: %NULL-terminated list of optional named arguments
- *
- * Optional arguments:
- *
- * * @page: %gint, page (frame) to read
- * * @n: %gint, load this many pages
- * * @scale: %gdouble, scale by this much on load
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Read a WebP file into a VIPS image.
  *
@@ -453,7 +436,7 @@ vips_foreign_load_webp_buffer_init(VipsForeignLoadWebpBuffer *buffer)
  *
  * Use @n to select the number of pages to render. The default is 1. Pages are
  * rendered in a vertical column, with each individual page aligned to the
- * left. Set to -1 to mean "until the end of the document". Use vips_grid()
+ * left. Set to -1 to mean "until the end of the document". Use [method@Image.grid]
  * to change page layout.
  *
  * Use @scale to specify a scale-on-load factor. For example, 2.0 to double
@@ -462,7 +445,13 @@ vips_foreign_load_webp_buffer_init(VipsForeignLoadWebpBuffer *buffer)
  *
  * The loader supports ICC, EXIF and XMP metadata.
  *
- * See also: vips_image_new_from_file().
+ * ::: tip "Optional arguments"
+ *     * @page: `gint`, page (frame) to read
+ *     * @n: `gint`, load this many pages
+ *     * @scale: `gdouble`, scale by this much on load
+ *
+ * ::: seealso
+ *     [ctor@Image.new_from_file].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -484,21 +473,21 @@ vips_webpload(const char *filename, VipsImage **out, ...)
  * @buf: (array length=len) (element-type guint8): memory area to load
  * @len: (type gsize): size of memory area
  * @out: (out): image to write
- * @...: %NULL-terminated list of optional named arguments
- *
- * Optional arguments:
- *
- * * @page: %gint, page (frame) to read
- * * @n: %gint, load this many pages
- * * @scale: %gdouble, scale by this much on load
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Read a WebP-formatted memory block into a VIPS image. Exactly as
- * vips_webpload(), but read from a memory buffer.
+ * [ctor@Image.webpload], but read from a memory buffer.
  *
  * You must not free the buffer while @out is active. The
- * #VipsObject::postclose signal on @out is a good place to free.
+ * [signal@Object::postclose] signal on @out is a good place to free.
  *
- * See also: vips_webpload()
+ * ::: tip "Optional arguments"
+ *     * @page: `gint`, page (frame) to read
+ *     * @n: `gint`, load this many pages
+ *     * @scale: `gdouble`, scale by this much on load
+ *
+ * ::: seealso
+ *     [ctor@Image.webpload]
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -526,17 +515,17 @@ vips_webpload_buffer(void *buf, size_t len, VipsImage **out, ...)
  * vips_webpload_source:
  * @source: source to load from
  * @out: (out): image to write
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Optional arguments:
+ * Exactly as [ctor@Image.webpload], but read from a source.
  *
- * * @page: %gint, page (frame) to read
- * * @n: %gint, load this many pages
- * * @scale: %gdouble, scale by this much on load
+ * ::: tip "Optional arguments"
+ *     * @page: `gint`, page (frame) to read
+ *     * @n: `gint`, load this many pages
+ *     * @scale: `gdouble`, scale by this much on load
  *
- * Exactly as vips_webpload(), but read from a source.
- *
- * See also: vips_webpload()
+ * ::: seealso
+ *     [ctor@Image.webpload]
  *
  * Returns: 0 on success, -1 on error.
  */

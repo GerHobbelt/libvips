@@ -100,8 +100,6 @@ typedef struct _VipsOperationClass {
 	void (*invalidate)(VipsOperation *operation);
 } VipsOperationClass;
 
-/* Don't put spaces around void here, it breaks gtk-doc.
- */
 VIPS_API
 GType vips_operation_get_type(void);
 
@@ -135,10 +133,6 @@ int vips_call_argv( VipsOperation *operation, int argc, const char **argv );
 
 VIPS_API
 void vips_cache_drop_all(void);
-VIPS_DEPRECATED_FOR(vips_cache_operation_buildp)
-VipsOperation *vips_cache_operation_lookup(VipsOperation *operation);
-VIPS_DEPRECATED_FOR(vips_cache_operation_buildp)
-void vips_cache_operation_add(VipsOperation *operation);
 VIPS_API
 int vips_cache_operation_buildp(VipsOperation **operation);
 VIPS_API

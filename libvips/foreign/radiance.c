@@ -32,6 +32,8 @@
  * 28/1/23 kleisauke
  * 	- clean-up unused macros/externs
  * 	- sync with radiance 5.3
+ * 15/07/24 kleisauke
+ * 	- sync with radiance 5.4
  */
 
 /*
@@ -79,60 +81,50 @@
  */
 
 /* ====================================================================
- * The Radiance Software License, Version 1.0
+ * The Radiance Software License, Version 2.0
  *
- * Copyright (c) 1990 - 2009 The Regents of the University of California,
- * through Lawrence Berkeley National Laboratory.   All rights reserved.
+ * Radiance v5.4 Copyright (c) 1990 to 2022, The Regents of the University of
+ * California, through Lawrence Berkeley National Laboratory (subject to receipt
+ * of any required approvals from the U.S. Dept. of Energy).  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * modification, are permitted provided that the following conditions are met:
  *
- * 1. Redistributions of source code must retain the above copyright
- *         notice, this list of conditions and the following disclaimer.
+ * (1) Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
  *
- * 2. Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in
- *       the documentation and/or other materials provided with the
- *       distribution.
+ * (2) Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
  *
- * 3. The end-user documentation included with the redistribution,
- *           if any, must include the following acknowledgment:
- *             "This product includes Radiance software
- *                 (http://radsite.lbl.gov/)
- *                 developed by the Lawrence Berkeley National Laboratory
- *               (http://www.lbl.gov/)."
- *       Alternately, this acknowledgment may appear in the software itself,
- *       if and wherever such third-party acknowledgments normally appear.
+ * (3) Neither the name of the University of California, Lawrence Berkeley
+ * National Laboratory, U.S. Dept. of Energy nor the names of its contributors
+ * may be used to endorse or promote products derived from this software
+ * without specific prior written permission.
  *
- * 4. The names "Radiance," "Lawrence Berkeley National Laboratory"
- *       and "The Regents of the University of California" must
- *       not be used to endorse or promote products derived from this
- *       software without prior written permission. For written
- *       permission, please contact radiance@radsite.lbl.gov.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  *
- * 5. Products derived from this software may not be called "Radiance",
- *       nor may "Radiance" appear in their name, without prior written
- *       permission of Lawrence Berkeley National Laboratory.
- *
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.   IN NO EVENT SHALL Lawrence Berkeley National Laboratory OR
- * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
- * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
+ * You are under no obligation whatsoever to provide any bug fixes, patches,
+ * or upgrades to the features, functionality or performance of the source
+ * code ("Enhancements") to anyone; however, if you choose to make your
+ * Enhancements available either publicly, or directly to Lawrence Berkeley
+ * National Laboratory, without imposing a separate written license agreement
+ * for such Enhancements, then you hereby grant the following license: a
+ * non-exclusive, royalty-free perpetual license to install, use, modify,
+ * prepare derivative works, incorporate into other computer software,
+ * distribute, and sublicense such enhancements or derivative works thereof,
+ * in binary and source code form.
  * ====================================================================
- *
- * This software consists of voluntary contributions made by many
- * individuals on behalf of Lawrence Berkeley National Laboratory.   For more
- * information on Lawrence Berkeley National Laboratory, please see
- * <http://www.lbl.gov/>.
  */
 
 /*
@@ -203,7 +195,7 @@ typedef float RGBPRIMS[4][2]; /* (x,y) chromaticities for RGBW */
 #define CIE_y_g 0.600
 #define CIE_x_b 0.150
 #define CIE_y_b 0.060
-#define CIE_x_w (1. / 3.) /* use true white */
+#define CIE_x_w (1. / 3.) /* use EE white */
 #define CIE_y_w (1. / 3.)
 
 /* picture format identifier */
@@ -237,8 +229,8 @@ typedef float RGBPRIMS[4][2]; /* (x,y) chromaticities for RGBW */
 #define COLCORSTR "COLORCORR="
 #define LCOLCORSTR 10
 #define iscolcor(hl) (!strncmp(hl, COLCORSTR, LCOLCORSTR))
-#define colcorval(cc, hl) sscanf((hl) + LCOLCORSTR, "%f %f %f", \
-	&(cc)[RED], &(cc)[GRN], &(cc)[BLU])
+#define colcorval(cc, hl) (sscanf((hl) + LCOLCORSTR, "%f %f %f", \
+							   &(cc)[RED], &(cc)[GRN], &(cc)[BLU]) == 3)
 
 #define MINELEN 8	   /* minimum scanline length for encoding */
 #define MAXELEN 0x7fff /* maximum scanline length for encoding */
@@ -261,7 +253,7 @@ typedef struct {
 
 /* resolution string buffer and its size */
 #define RESOLU_BUFLEN 32
-static char resolu_buf[RESOLU_BUFLEN]; /* resolution line buffer */
+static char resolu_buf[RESOLU_BUFLEN];
 
 /* identify header lines */
 #define isformat(s) formatval(NULL, s)
@@ -273,11 +265,11 @@ static char *
 resolu2str(char *buf, register RESOLU *rp)
 {
 	if (rp->rt & YMAJOR)
-		sprintf(buf, "%cY %d %cX %d\n",
+		sprintf(buf, "%cY %8d %cX %8d\n",
 			rp->rt & YDECR ? '-' : '+', rp->yr,
 			rp->rt & XDECR ? '-' : '+', rp->xr);
 	else
-		sprintf(buf, "%cX %d %cY %d\n",
+		sprintf(buf, "%cX %8d %cY %8d\n",
 			rp->rt & XDECR ? '-' : '+', rp->xr,
 			rp->rt & YDECR ? '-' : '+', rp->yr);
 	return buf;
@@ -323,20 +315,24 @@ formatval(char fmt[MAXFMTLEN], const char *s)
 {
 	const char *cp = FMTSTR;
 	char *r = fmt;
-
+	/* check against format string */
 	while (*cp)
 		if (*cp++ != *s++)
 			return 0;
-	while (isspace(*s))
+	while (g_ascii_isspace(*s))
 		s++;
 	if (!*s)
 		return 0;
-	if (r == NULL)
+	if (r == NULL) /* just checking if format? */
 		return 1;
-	do
+	do /* copy format ID */
 		*r++ = *s++;
-	while (*s && !isspace(*s) && r - fmt < MAXFMTLEN - 1);
-	*r = '\0';
+	while (*s && r - fmt < MAXFMTLEN - 1);
+
+	do /* remove trailing white space */
+		*r-- = '\0';
+	while (r > fmt && g_ascii_isspace(*r));
+
 	return 1;
 }
 
@@ -614,7 +610,7 @@ read_new(VipsSource *source, VipsImage *out)
 	strcpy(read->format, COLRFMT);
 	read->expos = 1.0;
 	for (i = 0; i < 3; i++)
-		read->colcor[i] = 1.0;
+		read->colcor[i] = 1.0F;
 	read->aspect = 1.0;
 	read->prims[0][0] = CIE_x_r;
 	read->prims[0][1] = CIE_y_r;
@@ -647,7 +643,8 @@ rad2vips_process_line(char *line, Read *read)
 		COLOR cc;
 		int i;
 
-		(void) colcorval(cc, line);
+		if (!colcorval(cc, line))
+			return -1;
 		for (i = 0; i < 3; i++)
 			read->colcor[i] *= cc[i];
 	}
@@ -655,7 +652,8 @@ rad2vips_process_line(char *line, Read *read)
 		read->aspect *= aspectval(line);
 	}
 	else if (isprims(line)) {
-		(void) primsval(read->prims, line);
+		if (!primsval(read->prims, line))
+			return -1;
 	}
 
 	return 0;
@@ -860,7 +858,7 @@ write_new(VipsImage *in, VipsTarget *target)
 	strcpy(write->format, COLRFMT);
 	write->expos = 1.0;
 	for (i = 0; i < 3; i++)
-		write->colcor[i] = 1.0;
+		write->colcor[i] = 1.0F;
 	write->aspect = 1.0;
 	write->prims[0][0] = CIE_x_r;
 	write->prims[0][1] = CIE_y_r;
@@ -895,7 +893,7 @@ vips2rad_make_header(Write *write)
 
 	if (vips_image_get_typeof(write->in, "rad-format") &&
 		!vips_image_get_string(write->in, "rad-format", &str))
-		vips_strncpy(write->format, str, 256);
+		g_strlcpy(write->format, str, 256);
 
 	if (write->in->Type == VIPS_INTERPRETATION_scRGB)
 		strcpy(write->format, COLRFMT);

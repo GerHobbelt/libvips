@@ -105,10 +105,8 @@ vips_foreign_load_fits_build(VipsObject *object)
 		fits->filename = filename;
 	}
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_load_fits_parent_class)->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_load_fits_parent_class)
+		->build(object);
 }
 
 static VipsForeignFlags
@@ -229,11 +227,8 @@ vips_foreign_load_fits_file_build(VipsObject *object)
 		!(fits->source = vips_source_new_from_file(file->filename)))
 		return -1;
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_load_fits_file_parent_class)
-			->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_load_fits_file_parent_class)
+		->build(object);
 }
 
 static void
@@ -294,11 +289,8 @@ vips_foreign_load_fits_source_build(VipsObject *object)
 		g_object_ref(fits->source);
 	}
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_load_fits_source_parent_class)
-			->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_load_fits_source_parent_class)
+		->build(object);
 }
 
 static gboolean
@@ -353,7 +345,7 @@ vips_foreign_load_fits_source_init(VipsForeignLoadFitsSource *fits)
  * vips_fitsload:
  * @filename: file to load
  * @out: (out): decompressed image
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
  * Read a FITS image file into a VIPS image.
  *
@@ -365,7 +357,8 @@ vips_foreign_load_fits_source_init(VipsForeignLoadFitsSource *fits)
  *
  * FITS metadata is attached with the "fits-" prefix.
  *
- * See also: vips_image_new_from_file().
+ * ::: seealso
+ *     [ctor@Image.new_from_file].
  *
  * Returns: 0 on success, -1 on error.
  */
@@ -386,9 +379,9 @@ vips_fitsload(const char *filename, VipsImage **out, ...)
  * vips_fitsload_source:
  * @source: source to load from
  * @out: (out): decompressed image
- * @...: %NULL-terminated list of optional named arguments
+ * @...: `NULL`-terminated list of optional named arguments
  *
- * Exactly as vips_fitsload(), but read from a source.
+ * Exactly as [ctor@Image.fitsload], but read from a source.
  *
  * Returns: 0 on success, -1 on error.
  */

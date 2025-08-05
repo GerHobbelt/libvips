@@ -92,7 +92,7 @@ typedef struct _VipsForeignLoadMagick7 {
 
 	/* Mutex to serialise calls to libMagick during threaded read.
 	 */
-	GMutex *lock;
+	GMutex lock;
 
 } VipsForeignLoadMagick7;
 
@@ -268,14 +268,14 @@ vips_foreign_load_magick7_get_flags(VipsForeignLoad *load)
 }
 
 static void
-vips_foreign_load_magick7_dispose(GObject *gobject)
+vips_foreign_load_magick7_finalize(GObject *gobject)
 {
 	VipsForeignLoadMagick7 *magick7 = (VipsForeignLoadMagick7 *) gobject;
 
 	int i;
 
 #ifdef DEBUG
-	printf("vips_foreign_load_magick7_dispose: %p\n", gobject);
+	printf("vips_foreign_load_magick7_finalize: %p\n", gobject);
 #endif /*DEBUG*/
 
 	for (i = 0; i < magick7->n_frames; i++) {
@@ -286,9 +286,9 @@ vips_foreign_load_magick7_dispose(GObject *gobject)
 	VIPS_FREE(magick7->frames);
 	VIPS_FREE(magick7->cache_view);
 	VIPS_FREEF(magick_destroy_exception, magick7->exception);
-	VIPS_FREEF(vips_g_mutex_free, magick7->lock);
+	g_mutex_clear(&magick7->lock);
 
-	G_OBJECT_CLASS(vips_foreign_load_magick7_parent_class)->dispose(gobject);
+	G_OBJECT_CLASS(vips_foreign_load_magick7_parent_class)->finalize(gobject);
 }
 
 static int
@@ -304,7 +304,6 @@ vips_foreign_load_magick7_build(VipsObject *object)
 
 	magick7->image_info = CloneImageInfo(NULL);
 	magick7->exception = magick_acquire_exception();
-	magick7->lock = vips_g_mutex_new();
 
 	if (!magick7->image_info)
 		return -1;
@@ -330,10 +329,8 @@ vips_foreign_load_magick7_build(VipsObject *object)
 		magick_set_number_scenes(magick7->image_info,
 			magick7->page, magick7->n);
 
-	if (VIPS_OBJECT_CLASS(vips_foreign_load_magick7_parent_class)->build(object))
-		return -1;
-
-	return 0;
+	return VIPS_OBJECT_CLASS(vips_foreign_load_magick7_parent_class)->
+		build(object);
 }
 
 static void
@@ -345,7 +342,7 @@ vips_foreign_load_magick7_class_init(VipsForeignLoadMagick7Class *class)
 	VipsForeignClass *foreign_class = (VipsForeignClass *) class;
 	VipsForeignLoadClass *load_class = (VipsForeignLoadClass *) class;
 
-	gobject_class->dispose = vips_foreign_load_magick7_dispose;
+	gobject_class->finalize = vips_foreign_load_magick7_finalize;
 	gobject_class->set_property = vips_object_set_property;
 	gobject_class->get_property = vips_object_get_property;
 
@@ -404,6 +401,7 @@ static void
 vips_foreign_load_magick7_init(VipsForeignLoadMagick7 *magick7)
 {
 	magick7->n = 1;
+	g_mutex_init(&magick7->lock);
 }
 
 static void
@@ -675,13 +673,13 @@ vips_foreign_load_magick7_fill_region(VipsRegion *out_region,
 		Quantum *restrict p;
 		VipsPel *restrict q;
 
-		vips__worker_lock(magick7->lock);
+		vips__worker_lock(&magick7->lock);
 
 		p = GetCacheViewAuthenticPixels(magick7->cache_view[frame],
 			r->left, line, r->width, 1,
 			magick7->exception);
 
-		g_mutex_unlock(magick7->lock);
+		g_mutex_unlock(&magick7->lock);
 
 		if (!p)
 			/* This can happen if, for example, some frames of a
@@ -805,7 +803,7 @@ vips_foreign_load_magick7_file_header(VipsForeignLoad *load)
 	printf("vips_foreign_load_magick7_file_header: %p\n", load);
 #endif /*DEBUG*/
 
-	vips_strncpy(magick7->image_info->filename, file->filename,
+	g_strlcpy(magick7->image_info->filename, file->filename,
 		MagickPathExtent);
 
 	magick_sniff_file(magick7->image_info, file->filename);
@@ -938,6 +936,112 @@ vips_foreign_load_magick7_buffer_class_init(
 
 static void
 vips_foreign_load_magick7_buffer_init(VipsForeignLoadMagick7Buffer *buffer)
+{
+}
+
+typedef struct _VipsForeignLoadMagick7Source {
+	VipsForeignLoadMagick7 parent_object;
+
+	VipsSource *source;
+
+} VipsForeignLoadMagick7Source;
+
+typedef VipsForeignLoadMagick7Class VipsForeignLoadMagick7SourceClass;
+
+G_DEFINE_TYPE(VipsForeignLoadMagick7Source, vips_foreign_load_magick7_source,
+	vips_foreign_load_magick7_get_type());
+
+static gboolean
+vips_foreign_load_magick7_source_is_a_source(VipsSource *source)
+{
+	const unsigned char *p;
+
+	// just use the first 100 bytes, we don't want to force too much into
+	// memory
+	return (p = vips_source_sniff(source, 100)) &&
+		magick_ismagick(p, 100);
+}
+
+/* Unfortunately, libMagick7 does not support header-only reads very well. See
+ *
+ * http://www.imagemagick7.org/discourse-server/viewtopic.php?f=1&t=20017
+ *
+ * Test especially with BMP, GIF, TGA. So we are forced to read the entire
+ * image in the @header() method.
+ */
+static int
+vips_foreign_load_magick7_source_header(VipsForeignLoad *load)
+{
+	VipsForeignLoadMagick7 *magick7 = (VipsForeignLoadMagick7 *) load;
+	VipsForeignLoadMagick7Source *magick7_source =
+		(VipsForeignLoadMagick7Source *) load;
+
+#ifdef DEBUG
+	printf("vips_foreign_load_magick7_source_header: %p\n", load);
+#endif /*DEBUG*/
+
+	if (vips_source_is_file(magick7_source->source)) {
+		const char *filename =
+			vips_connection_filename(VIPS_CONNECTION(magick7_source->source));
+
+		g_strlcpy(magick7->image_info->filename, filename, MaxTextExtent);
+		magick_sniff_file(magick7->image_info, filename);
+		magick7->image = ReadImage(magick7->image_info, magick7->exception);
+	}
+	else {
+		size_t length;
+		const void *data;
+
+		if (!(data = vips_source_map(magick7_source->source, &length)))
+			return -1;
+
+		magick_sniff_bytes(magick7->image_info, data, length);
+		magick7->image = BlobToImage(magick7->image_info, data, length,
+			magick7->exception);
+	}
+
+	/* It would be great if we could PingImage and just read the header,
+	 * but sadly many IM coders do not support ping. The critical one for
+	 * us is DICOM. TGA also has issues.
+	 */
+	if (!magick7->image) {
+		vips_foreign_load_magick7_error(magick7);
+		return -1;
+	}
+
+	if (vips_foreign_load_magick7_load(magick7))
+		return -1;
+
+	return 0;
+}
+
+static void
+vips_foreign_load_magick7_source_class_init(
+	VipsForeignLoadMagick7SourceClass *class)
+{
+	GObjectClass *gobject_class = G_OBJECT_CLASS(class);
+	VipsObjectClass *object_class = (VipsObjectClass *) class;
+	VipsForeignLoadClass *load_class = (VipsForeignLoadClass *) class;
+
+	gobject_class->set_property = vips_object_set_property;
+	gobject_class->get_property = vips_object_get_property;
+
+	object_class->nickname = "magickload_source";
+	object_class->description = _("load source with ImageMagick7");
+
+	load_class->is_a_source = vips_foreign_load_magick7_source_is_a_source;
+	load_class->header = vips_foreign_load_magick7_source_header;
+
+	VIPS_ARG_OBJECT(class, "source", 1,
+		_("Source"),
+		_("Source to load from"),
+		VIPS_ARGUMENT_REQUIRED_INPUT,
+		G_STRUCT_OFFSET(VipsForeignLoadMagick7Source, source),
+		VIPS_TYPE_SOURCE);
+}
+
+static void
+vips_foreign_load_magick7_source_init(VipsForeignLoadMagick7Source *source)
 {
 }
 
