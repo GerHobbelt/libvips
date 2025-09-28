@@ -186,23 +186,24 @@
  * not at the top of the image. In this case, the first part of the image will
  * be read and discarded
  *
- * [flags@Vips.OperationFlags.NOCACHE] means that the operation must not be cached by
- * vips.
+ * [flags@Vips.OperationFlags.NOCACHE] means that the operation must not be
+ * cached by vips.
  *
- * [flags@Vips.OperationFlags.DEPRECATED] means this is an old operation kept in vips for
- * compatibility only and should be hidden from users.
+ * [flags@Vips.OperationFlags.DEPRECATED] means this is an old operation kept
+ * in vips for compatibility only and should be hidden from users.
  *
- * [flags@Vips.OperationFlags.UNTRUSTED] means the operation depends on external libraries
- * which have not been hardened against attack. It should probably not be used
- * on untrusted input. Use [func@block_untrusted_set] to block all
- * untrusted operations.
+ * [flags@Vips.OperationFlags.UNTRUSTED] means the operation depends on
+ * external libraries which have not been hardened against attack. It should
+ * probably not be used on untrusted input. Use [func@block_untrusted_set]
+ * to block all untrusted operations.
  *
- * [flags@Vips.OperationFlags.BLOCKED] means the operation is prevented from executing. Use
- * [func@Operation.block_set] to enable and disable groups of operations.
+ * [flags@Vips.OperationFlags.BLOCKED] means the operation is prevented from
+ * executing. Use [func@Operation.block_set] to enable and disable groups of
+ * operations.
  *
- * [flags@Vips.OperationFlags.REVALIDATE] force the operation to run, updating the cache
- * with the new value. This is used by eg. VipsForeignLoad to implement the
- * "revalidate" argument.
+ * [flags@Vips.OperationFlags.REVALIDATE] force the operation to run, updating
+ * the cache with the new value. This is used by eg. VipsForeignLoad to
+ * implement the "revalidate" argument.
  */
 
 /* Abstract base class for operations.
@@ -606,6 +607,20 @@ vips_operation_build(VipsObject *object)
 }
 
 static void
+vips_operation_summary_class(VipsObjectClass *object_class, VipsBuf *buf)
+{
+	VipsOperationClass *operation_class = VIPS_OPERATION_CLASS(object_class);
+
+	VIPS_OBJECT_CLASS(vips_operation_parent_class)
+		->summary_class(object_class, buf);
+ 
+	GType gtype = G_OBJECT_CLASS_TYPE(operation_class);
+	if (!G_TYPE_IS_ABSTRACT(gtype) &&
+		operation_class->flags & VIPS_OPERATION_NOCACHE)
+		vips_buf_appendf(buf, ", nocache");
+}
+
+static void
 vips_operation_summary(VipsObject *object, VipsBuf *buf)
 {
 	VipsOperation *operation = VIPS_OPERATION(object);
@@ -638,6 +653,7 @@ vips_operation_class_init(VipsOperationClass *class)
 	gobject_class->dispose = vips_operation_dispose;
 
 	vobject_class->build = vips_operation_build;
+	vobject_class->summary_class = vips_operation_summary_class;
 	vobject_class->summary = vips_operation_summary;
 	vobject_class->dump = vips_operation_dump;
 	vobject_class->nickname = "operation";
