@@ -7,10 +7,13 @@ master
 - larger mmap windows on 64-bit machines improve random access mode for many
   file formats
 - pdfload: control region to be rendered via `page_box` [lovell]
+- add vips_image_get_tile_width(), vips_image_get_tile_height(): get tile
+  cache geometry hints [jbaiter]
 
 8.17.2
 
 - rank: fix an off-by-one error [larsmaxfield]
+- pdfiumload: allow both dpi and scale to be set [kleisauke]
 
 7/7/25 8.17.1
 

@@ -998,6 +998,54 @@ vips_image_get_orientation_swap(VipsImage *image)
 }
 
 /**
+ * vips_image_get_tile_width:
+ * @image: image to get from
+ *
+ * Fetch and sanity-check [const@META_TILE_WIDTH]. Default to -1 (no tiling)
+ * if not present or crazy.
+ *
+ * Returns: the width of the tiles encoded in the image.
+ */
+int
+vips_image_get_tile_width(VipsImage *image)
+{
+	int tile_width;
+
+	if (vips_image_get_typeof(image, VIPS_META_TILE_WIDTH) &&
+		!vips_image_get_int(image, VIPS_META_TILE_WIDTH,
+			&tile_width) &&
+		tile_width > 0 &&
+		tile_width <= vips_image_get_width(image))
+		return tile_width;
+
+	return -1;
+}
+
+/**
+ * vips_image_get_tile_height:
+ * @image: image to get from
+ *
+ * Fetch and sanity-check [const@META_TILE_HEIGHT]. Default to -1 (no tiling)
+ * if not present or crazy.
+ *
+ * Returns: the height of the tiles encoded in the image.
+ */
+int
+vips_image_get_tile_height(VipsImage *image)
+{
+	int tile_height;
+
+	if (vips_image_get_typeof(image, VIPS_META_TILE_HEIGHT) &&
+		!vips_image_get_int(image, VIPS_META_TILE_HEIGHT,
+			&tile_height) &&
+		tile_height > 0 &&
+		tile_height <= vips_image_get_height(image))
+		return tile_height;
+
+	return -1;
+}
+
+/**
  * vips_image_get_data:
  * @image: image to get data for
  *
@@ -1045,10 +1093,8 @@ vips_image_get_data(VipsImage *image)
  *     [method.Image.pipelinev].
  */
 void
-vips_image_init_fields(VipsImage *image,
-	int xsize, int ysize, int bands,
-	VipsBandFormat format, VipsCoding coding,
-	VipsInterpretation interpretation,
+vips_image_init_fields(VipsImage *image, int xsize, int ysize, int bands,
+	VipsBandFormat format, VipsCoding coding, VipsInterpretation interpretation,
 	double xres, double yres)
 {
 	g_object_set(image,
@@ -1432,11 +1478,9 @@ static const char *vips_image_header_deprecated[] = {
 static void *
 vips_image_map_fn(VipsMeta *meta, VipsImageMapFn fn, void *a)
 {
-	int i;
-
 	/* Hide deprecated fields.
 	 */
-	for (i = 0; i < VIPS_NUMBER(vips_image_header_deprecated); i++)
+	for (int i = 0; i < VIPS_NUMBER(vips_image_header_deprecated); i++)
 		if (strcmp(meta->name, vips_image_header_deprecated[i]) == 0)
 			return NULL;
 
@@ -1464,12 +1508,11 @@ vips_image_map_fn(VipsMeta *meta, VipsImageMapFn fn, void *a)
 void *
 vips_image_map(VipsImage *image, VipsImageMapFn fn, void *a)
 {
-	int i;
-	GValue value = G_VALUE_INIT;
 	void *result;
 
-	for (i = 0; i < VIPS_NUMBER(vips_header_fields); i++) {
+	for (int i = 0; i < VIPS_NUMBER(vips_header_fields); i++) {
 		HeaderField *field = &vips_header_fields[i];
+		GValue value = G_VALUE_INIT;
 
 		(void) vips_image_get(image, field->name, &value);
 		result = fn(image, field->name, &value, a);
@@ -1571,11 +1614,8 @@ meta_get_value(const VipsImage *image,
 		return -1;
 	g_value_init(value_copy, type);
 	if (!g_value_transform(&value, value_copy)) {
-		vips_error("VipsImage",
-			_("field \"%s\" is of type %s, not %s"),
-			name,
-			g_type_name(G_VALUE_TYPE(&value)),
-			g_type_name(type));
+		vips_error("VipsImage", _("field \"%s\" is of type %s, not %s"),
+			name, g_type_name(G_VALUE_TYPE(&value)), g_type_name(type));
 		g_value_unset(&value);
 
 		return -1;
